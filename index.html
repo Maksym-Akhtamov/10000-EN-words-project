@@ -214,12 +214,58 @@
   .wrong {
     color: #f44336;
   }
+
+  /* ===== MOBILE MODE ===== */
+#menuBtn {
+  display: none;
+}
+
+/* только для мобилок */
+@media (max-width: 768px) {
+
+  /* показываем кнопку */
+  #menuBtn {
+    display: block;
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 12px;
+    font-size: 16px;
+    background: #1976d2;
+  }
+
+  /* превращаем sets в выезжающее меню */
+  #sets {
+    position: fixed;
+    top: 0;
+    left: -100%;
+    width: 80%;
+    height: 100%;
+
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+
+    padding: 20px;
+    background: #1a1a1a;
+
+    overflow-y: auto;
+    transition: 0.3s;
+    z-index: 1000;
+  }
+
+  /* когда открыто */
+  #sets.open {
+    left: 0;
+  }
+}
 </style>
 </head>
 
 <body>
 
 <div class="container">
+
+    <button id="menuBtn" onclick="toggleMenu()">📚 Sets</button>
 
   <div id="sets"></div>
 
@@ -321,6 +367,9 @@ function selectSet(index) {
   initOrder();
   renderSets();
   render();
+
+  // закрываем меню на мобиле
+document.getElementById("sets").classList.remove("open");
 }
 
 function getWords() {
@@ -551,6 +600,10 @@ document.addEventListener("keydown", (e) => {
     }
   }
 });
+
+function toggleMenu() {
+  document.getElementById("sets").classList.toggle("open");
+}
 
 
 loadData();
