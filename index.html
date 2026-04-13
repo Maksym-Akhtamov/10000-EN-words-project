@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>English Cards</title>
+
+  <style>
+  body {
+    margin: 0;
+    font-family: Arial;
+    background: #111;
+    color: white;
+    display: flex;
+    justify-content: center; /* центр основного контента */
+  }
+
+  .container {
+    max-width: 400px;
+    width: 100%;
+    text-align: center;
+    padding: 20px;
+  }
+
+  /* ===== SIDEBAR (сеты слева) ===== */
+  #sets {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+
+    display: grid;
+    grid-template-columns: repeat(5, 40px);
+    gap: 6px;
+
+    padding: 10px;
+    background: #1a1a1a;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.5);
+  }
+
+  #sets button {
+    width: 40px;
+    height: 40px;
+    font-size: 12px;
+    padding: 0;
+    border-radius: 6px;
+    background: #2c2c2c;
+  }
+
+  #sets button:hover {
+    background: #555;
+  }
+
+  #sets button.active {
+    background: #4caf50;
+    transform: scale(1.1);
+  }
+
+  /* ===== КАРТОЧКА ===== */
+  .card {
+    width: 100%;
+    height: 220px;
+    perspective: 1000px;
+    cursor: pointer;
+  }
+
+  .inner {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.5s;
+  }
+
+  .flipped {
+    transform: rotateY(180deg);
+  }
+
+  .side {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: #222;
+    border-radius: 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 28px;
+    padding: 20px;
+    box-sizing: border-box;
+    backface-visibility: hidden;
+  }
+
+  .back {
+    transform: rotateY(180deg);
+    background: #4caf50;
+  }
+
+  /* ===== КНОПКИ ===== */
+  button {
+    padding: 10px 14px;
+    font-size: 14px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    background: #2a2a2a;
+    color: white;
+    transition: 0.2s;
+  }
+
+  button:hover {
+    background: #3a3a3a;
+    transform: translateY(-1px);
+  }
+
+  button:active {
+    transform: scale(0.97);
+  }
+
+  .controls {
+    margin-top: 15px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .controls-group {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+
+  .controls-group button {
+    min-width: 120px;
+  }
+
+  /* ===== СПЕЦ КНОПКИ ===== */
+  .shuffle {
+    margin-top: 10px;
+    background: #444;
+  }
+
+  .shuffle.active {
+    background: #4caf50;
+  }
+
+  #modeBtn {
+    background: #1976d2;
+  }
+
+  #keyboardBtn {
+    background: #6a1b9a;
+  }
+
+  button[onclick="toggleDone()"] {
+    background: #ff9800;
+  }
+
+  .done {
+    background: #2196f3 !important;
+  }
+
+  /* ===== ТЕКСТ / ПРОГРЕСС ===== */
+  #progress {
+    margin-bottom: 10px;
+    font-size: 14px;
+    color: #aaa;
+  }
+
+  .counter {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #aaa;
+  }
+
+  /* ===== ФИЛЬТР ===== */
+  .filter {
+    margin-bottom: 15px;
+  }
+
+  .filter button {
+    padding: 5px 10px;
+    margin: 0 5px;
+    background: #333;
+  }
+
+  .filter button.active {
+    background: #4caf50;
+  }
+
+  /* ===== INPUT ===== */
+  .input-area {
+    margin-top: 15px;
+  }
+
+  input {
+    padding: 10px;
+    width: 70%;
+    border-radius: 8px;
+    border: none;
+    font-size: 16px;
+  }
+
+  .result {
+    margin-top: 10px;
+    font-size: 16px;
+  }
+
+  .correct {
+    color: #4caf50;
+  }
+
+  .wrong {
+    color: #f44336;
+  }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <div id="sets"></div>
+
+  <div class="card" onclick="flipCard()">
+    <div id="cardInner" class="inner">
+      <div class="side" id="front"></div>
+      <div class="side back" id="back"></div>
+    </div>
+  </div>
+
+  <div id="inputArea" class="input-area" style="display:none;">
+    <input id="answerInput" placeholder="Type answer..." />
+    <button onclick="checkAnswer()">Check</button>
+    <div id="result" class="result"></div>
+  </div>
+
+  <div id="progress"></div>
+
+    <div class="filter">
+     <button id="filterAll" onclick="setFilter('all')">All</button>
+     <button id="filterNotDone" onclick="setFilter('notDone')">Not Done</button>
+    </div>
+
+  <div class="controls">
+    <button onclick="prevWord()">←</button>
+    <button onclick="nextWord()">→</button>
+  </div>
+
+  <div class="controls-group">
+    <button id="modeBtn" onclick="toggleMode()">Mode: EN → RU</button>
+    <button id="keyboardBtn" onclick="toggleKeyboard()">⌨️ Keyboard OFF</button>
+    <button id="shuffleBtn" class="shuffle" onclick="toggleShuffle()">Shuffle OFF</button>
+  </div>
+
+  <div class="controls-group">
+    <button onclick="toggleDone()">Mark as Done</button>
+  </div>
+
+
+
+  <div class="counter" id="counter"></div>
+
+</div>
+
+<script>
+let sets = [];
+let currentSet = 0;
+let current = 0;
+let flipped = false;
+let shuffle = false;
+let order = [];
+
+async function loadData() {
+  const res = await fetch("words.json");
+  const data = await res.json();
+  sets = data.sets;
+
+  loadProgress();     // ✅ ВАЖНО: сначала грузим прогресс
+  renderSets();       // потом рисуем
+  initOrder();
+  render();
+  updateShuffleUI();
+  updateFilterUI();
+}
+
+function renderSets() {
+  const container = document.getElementById("sets");
+  container.innerHTML = "";
+
+  sets.forEach((set, index) => {
+    const isDone = completedSets.includes(set.id);
+
+    // фильтр
+    if (filterMode === "notDone" && isDone) return;
+
+    const btn = document.createElement("button");
+    btn.innerText = set.id;
+
+    if (index === currentSet) {
+      btn.classList.add("active");
+    }
+
+    if (isDone) {
+      btn.classList.add("done");
+    }
+
+    btn.onclick = () => selectSet(index);
+    container.appendChild(btn);
+  });
+
+  updateProgress();
+}
+
+function selectSet(index) {
+  currentSet = index;
+  current = 0;
+  flipped = false;
+
+  initOrder();
+  renderSets();
+  render();
+}
+
+function getWords() {
+  return sets[currentSet].words;
+}
+
+function initOrder() {
+  const words = getWords();
+  order = words.map((_, i) => i);
+
+  if (shuffle) {
+    order.sort(() => Math.random() - 0.5);
+  }
+}
+
+function render() {
+  if (!sets.length) return;
+
+  const words = getWords();
+  const word = words[order[current]];
+
+  if (mode === "en-ru") {
+    document.getElementById("front").innerText = word.en;
+    document.getElementById("back").innerText =
+      word.ru + " / " + word.uk;
+  } else {
+    document.getElementById("front").innerText =
+      word.ru + " / " + word.uk;
+    document.getElementById("back").innerText = word.en;
+  }
+
+  document.getElementById("cardInner").classList.remove("flipped");
+  flipped = false;
+
+  document.getElementById("counter").innerText =
+    `Карточка ${current + 1} / ${order.length}`;
+
+  document.getElementById("result").innerText = "";
+  document.getElementById("answerInput").value = "";
+  checked = false;
+}
+
+function flipCard() {
+  flipped = !flipped;
+  document.getElementById("cardInner").classList.toggle("flipped");
+}
+
+function nextWord() {
+  current = (current + 1) % order.length;
+  render();
+}
+
+function prevWord() {
+  current = (current - 1 + order.length) % order.length;
+  render();
+}
+
+function toggleShuffle() {
+  shuffle = !shuffle;
+  current = 0;
+
+  initOrder();
+  updateShuffleUI();
+  render();
+}
+
+function updateShuffleUI() {
+  const btn = document.getElementById("shuffleBtn");
+
+  if (shuffle) {
+    btn.classList.add("active");
+    btn.innerText = "Shuffle ON";
+  } else {
+    btn.classList.remove("active");
+    btn.innerText = "Shuffle OFF";
+  }
+}
+
+// свайпы
+let startX = 0;
+
+document.addEventListener("touchstart", e => {
+  startX = e.touches[0].clientX;
+});
+
+document.addEventListener("touchend", e => {
+  let endX = e.changedTouches[0].clientX;
+
+  if (endX - startX > 50) prevWord();
+  else if (startX - endX > 50) nextWord();
+});
+
+let completedSets = [];
+
+function loadProgress() {
+  const saved = localStorage.getItem("completedSets");
+  if (saved) {
+    completedSets = JSON.parse(saved);
+  }
+}
+
+function saveProgress() {
+  localStorage.setItem("completedSets", JSON.stringify(completedSets));
+}
+
+function toggleDone() {
+  const setId = sets[currentSet].id;
+
+  if (completedSets.includes(setId)) {
+    completedSets = completedSets.filter(id => id !== setId);
+  } else {
+    completedSets.push(setId);
+  }
+
+  saveProgress();
+  renderSets();
+}
+
+let filterMode = "all";
+
+function setFilter(mode) {
+  filterMode = mode;
+  renderSets();
+  updateFilterUI();
+}
+
+function updateFilterUI() {
+  document.getElementById("filterAll").classList.toggle("active", filterMode === "all");
+  document.getElementById("filterNotDone").classList.toggle("active", filterMode === "notDone");
+}
+
+function updateProgress() {
+  const total = sets.length;
+  const done = completedSets.length;
+
+  document.getElementById("progress").innerText =
+    `Пройдено: ${done} / ${total}`;
+}
+
+let mode = "en-ru"; // или "ru-en"
+let keyboardMode = false;
+
+function toggleMode() {
+  mode = mode === "en-ru" ? "ru-en" : "en-ru";
+
+  document.getElementById("modeBtn").innerText =
+    mode === "en-ru" ? "Mode: EN → RU" : "Mode: RU → EN";
+
+  // 👉 если уходим из ru-en — выключаем keyboard
+  if (mode === "en-ru" && keyboardMode) {
+    keyboardMode = false;
+
+    document.getElementById("keyboardBtn").innerText = "⌨️ Keyboard OFF";
+    document.getElementById("inputArea").style.display = "none";
+    document.getElementById("result").innerText = "";
+  }
+
+  render();
+}
+
+function toggleKeyboard() {
+  if (mode !== "ru-en") {
+    alert("Switch to RU → EN mode for typing");
+    return;
+  }
+
+  keyboardMode = !keyboardMode;
+
+  document.getElementById("keyboardBtn").innerText =
+    keyboardMode ? "⌨️ Keyboard ON" : "⌨️ Keyboard OFF";
+
+  document.getElementById("inputArea").style.display =
+    keyboardMode ? "block" : "none";
+
+  document.getElementById("result").innerText = "";
+}
+
+function checkAnswer() {
+  const words = getWords();
+  const word = words[order[current]];
+
+  const input = document
+    .getElementById("answerInput")
+    .value
+    .trim()
+    .toLowerCase();
+
+  let correctAnswer = word.en.toLowerCase();
+
+  const result = document.getElementById("result");
+
+  if (input === correctAnswer) {
+    result.innerText = "✅ Correct!";
+    result.className = "result correct";
+  } else {
+    result.innerText = `❌ Wrong! Correct: ${word.en}`;
+    result.className = "result wrong";
+  }
+
+  checked = true;
+}
+
+let checked = false;
+
+document.addEventListener("keydown", (e) => {
+
+  const isTyping = document.activeElement.id === "answerInput";
+
+  if (e.key === "ArrowRight") {
+    nextWord();
+  }
+
+  if (e.key === "ArrowLeft") {
+    prevWord();
+  }
+
+  if (e.key === "Enter") {
+
+    if (!keyboardMode) {
+      nextWord();
+      return;
+    }
+
+    if (!checked) {
+      checkAnswer();
+    } else {
+      nextWord();
+    }
+  }
+});
+
+
+loadData();
+updateShuffleUI();
+</script>
+
+</body>
+</html>
