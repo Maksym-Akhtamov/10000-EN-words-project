@@ -6,225 +6,289 @@
   <title>English Cards</title>
 
   <style>
-  body {
-    margin: 0;
-    font-family: Arial;
-    background: #111;
-    color: white;
-    display: flex;
-    justify-content: center; /* центр основного контента */
-  }
+/* ===== BASE ===== */
+body {
+  margin: 0;
+  font-family: Arial;
+  background: #111;
+  color: white;
+  display: flex;
+  justify-content: center;
+}
 
-  .container {
-    max-width: 400px;
-    width: 100%;
-    text-align: center;
-    padding: 20px;
-  }
+.container {
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+  padding: 20px;
+}
 
-  /* ===== SIDEBAR (сеты слева) ===== */
-  #sets {
-    position: fixed;
-    top: 20px;
-    left: 20px;
+/* ===== SIDEBAR ===== */
+#sets {
+  position: fixed;
+  top: 20px;
+  left: 20px;
 
-    display: grid;
-    grid-template-columns: repeat(5, 40px);
-    gap: 6px;
+  display: grid;
+  grid-template-columns: repeat(5, 40px);
+  gap: 6px;
 
-    padding: 10px;
-    background: #1a1a1a;
-    border-radius: 10px;
-    box-shadow: 0 0 15px rgba(0,0,0,0.5);
-  }
+  padding: 10px;
+  background: #1a1a1a;
+  border-radius: 10px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.5);
+}
 
-  #sets button {
-    width: 40px;
-    height: 40px;
-    font-size: 12px;
-    padding: 0;
-    border-radius: 6px;
-    background: #2c2c2c;
-  }
+#sets button {
+  width: 40px;
+  height: 40px;
+  font-size: 12px;
+  padding: 0;
+  border-radius: 6px;
+  background: #2c2c2c;
+}
 
-  #sets button:hover {
-    background: #555;
-  }
+#sets button.active {
+  background: #4caf50;
+  transform: scale(1.1);
+}
 
-  #sets button.active {
-    background: #4caf50;
-    transform: scale(1.1);
-  }
+/* ===== CARD ===== */
+.card {
+  width: 100%;
+  height: 220px;
+  perspective: 1000px;
+  cursor: pointer;
+}
 
-  /* ===== КАРТОЧКА ===== */
-  .card {
-    width: 100%;
-    height: 220px;
-    perspective: 1000px;
-    cursor: pointer;
-  }
+.inner {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.5s;
+}
 
-  .inner {
-    width: 100%;
-    height: 100%;
-    position: relative;
-    transform-style: preserve-3d;
-    transition: transform 0.5s;
-  }
+.flipped {
+  transform: rotateY(180deg);
+}
 
-  .flipped {
-    transform: rotateY(180deg);
-  }
+.side {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: #222;
+  border-radius: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 28px;
+  padding: 20px;
+  box-sizing: border-box;
+  backface-visibility: hidden;
+}
 
-  .side {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background: #222;
-    border-radius: 16px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 28px;
-    padding: 20px;
-    box-sizing: border-box;
-    backface-visibility: hidden;
-  }
+.back {
+  transform: rotateY(180deg);
+  background: #4caf50;
+}
 
-  .back {
-    transform: rotateY(180deg);
-    background: #4caf50;
-  }
+/* ===== BUTTONS ===== */
+button {
+  height: 42px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  background: #2a2a2a;
+  color: white;
+  font-size: 14px;
+  transition: 0.2s;
+  min-width: 120px;
+}
 
-  /* ===== КНОПКИ ===== */
-  button {
-    padding: 10px 14px;
-    font-size: 14px;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    background: #2a2a2a;
-    color: white;
-    transition: 0.2s;
-  }
+button:hover {
+  background: #3a3a3a;
+  transform: translateY(-1px);
+}
 
-  button:hover {
-    background: #3a3a3a;
-    transform: translateY(-1px);
-  }
+button:active {
+  transform: scale(0.97);
+}
 
-  button:active {
-    transform: scale(0.97);
-  }
+button.icon {
+  min-width: 60px;
+}
 
-  .controls {
-    margin-top: 15px;
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-  }
+button.primary {
+  background: #ff9800;
+  font-weight: bold;
+}
 
-  .controls-group {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-top: 10px;
-    flex-wrap: wrap;
-  }
+#sets button {
+  min-width: unset;
+  width: 40px;
+  height: 40px;
+}
 
-  .controls-group button {
-    min-width: 120px;
-  }
+/* ===== GROUPS ===== */
+.controls-group {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
 
-  /* ===== СПЕЦ КНОПКИ ===== */
-  .shuffle {
-    margin-top: 10px;
-    background: #444;
-  }
+/* ===== SPECIAL BUTTONS ===== */
+#modeBtn {
+  background: #1976d2;
+}
 
-  .shuffle.active {
-    background: #4caf50;
-  }
+#keyboardBtn {
+  background: #6a1b9a;
+}
 
-  #modeBtn {
-    background: #1976d2;
-  }
+#shuffleBtn.active {
+  background: #4caf50;
+}
 
-  #keyboardBtn {
-    background: #6a1b9a;
-  }
+.done {
+  background: #2196f3 !important;
+}
 
-  button[onclick="toggleDone()"] {
-    background: #ff9800;
-  }
+/* ===== TEXT ===== */
+#progress,
+.counter {
+  font-size: 14px;
+  color: #aaa;
+}
 
-  .done {
-    background: #2196f3 !important;
-  }
+#progress {
+  margin-bottom: 10px;
+}
 
-  /* ===== ТЕКСТ / ПРОГРЕСС ===== */
-  #progress {
-    margin-bottom: 10px;
-    font-size: 14px;
-    color: #aaa;
-  }
+.counter {
+  margin-top: 10px;
+}
 
-  .counter {
-    margin-top: 10px;
-    font-size: 14px;
-    color: #aaa;
-  }
+/* ===== FILTER ===== */
+.filter button {
+  background: #333;
+}
 
-  /* ===== ФИЛЬТР ===== */
-  .filter {
-    margin-bottom: 15px;
-  }
+.filter button.active {
+  background: #4caf50;
+}
 
-  .filter button {
-    padding: 5px 10px;
-    margin: 0 5px;
-    background: #333;
-  }
+/* ===== INPUT ===== */
+.input-area {
+  margin-top: 15px;
+}
 
-  .filter button.active {
-    background: #4caf50;
-  }
+input {
+  padding: 10px;
+  width: 70%;
+  border-radius: 8px;
+  border: none;
+  font-size: 16px;
+}
 
-  /* ===== INPUT ===== */
-  .input-area {
-    margin-top: 15px;
-  }
+.result {
+  margin-top: 10px;
+  font-size: 16px;
+}
 
-  input {
-    padding: 10px;
-    width: 70%;
-    border-radius: 8px;
-    border: none;
-    font-size: 16px;
-  }
+.correct {
+  color: #4caf50;
+}
 
-  .result {
-    margin-top: 10px;
-    font-size: 16px;
-  }
+.wrong {
+  color: #f44336;
+}
 
-  .correct {
-    color: #4caf50;
-  }
+/* ===== CUSTOM SETS ===== */
+#customSetsPanel button.active {
+  background: #f5c542;
+  color: black;
+  transform: scale(1.05);
+}
 
-  .wrong {
-    color: #f44336;
-  }
+/* ===== AUTO MENU ===== */
+.auto-wrapper {
+  position: relative;
+  display: inline-block;
+}
 
-  /* ===== MOBILE MODE ===== */
+.auto-menu {
+  position: absolute;
+  bottom: 110%;
+  left: 0;
+  background: #2a2a2a;
+  border-radius: 10px;
+  padding: 6px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 5px;
+  z-index: 10;
+}
+
+.auto-menu button {
+  background: #3a3a3a;
+  border-radius: 6px;
+  padding: 5px;
+  min-width: auto;
+}
+
+.auto-menu button:hover {
+  background: #f5c542;
+  color: black;
+}
+
+.auto-menu button:first-child {
+  background: #444;
+  color: #ff6b6b;
+}
+
+.hidden {
+  display: none;
+}
+
+#customSetsPanel {
+  position: fixed;
+  right: 10px;
+  top: 100px;
+  width: 120px;
+}
+
+/* ===== MOBILE ===== */
 #menuBtn {
   display: none;
 }
 
-/* только для мобилок */
+@media (max-width: 768px) {
+  #customSetsPanel {
+    position: static;
+    margin-top: 15px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 768px) {
+  #customSetsPanel button {
+    min-width: auto;
+    padding: 8px 12px;
+    border-radius: 20px;
+    background: #2a2a2a;
+  }
+}
+
 @media (max-width: 768px) {
 
-  /* показываем кнопку */
   #menuBtn {
     display: block;
     width: 100%;
@@ -234,27 +298,19 @@
     background: #1976d2;
   }
 
-  /* превращаем sets в выезжающее меню */
   #sets {
-    position: fixed;
     top: 0;
     left: -100%;
     width: 80%;
     height: 100%;
-
-    display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 8px;
-
     padding: 20px;
-    background: #1a1a1a;
-
     overflow-y: auto;
     transition: 0.3s;
     z-index: 1000;
   }
 
-  /* когда открыто */
   #sets.open {
     left: 0;
   }
@@ -266,10 +322,11 @@
 
 <div class="container">
 
-    <button id="menuBtn" onclick="toggleMenu()">📚 Sets</button>
-
+  <!-- Sets -->
+  <button id="menuBtn" onclick="toggleMenu()">📚 Sets</button>
   <div id="sets"></div>
 
+  <!-- Карточка -->
   <div class="card" onclick="flipCard()">
     <div id="cardInner" class="inner">
       <div class="side" id="front"></div>
@@ -277,37 +334,58 @@
     </div>
   </div>
 
+  <!-- Input -->
   <div id="inputArea" class="input-area" style="display:none;">
     <input id="answerInput" placeholder="Type answer..." />
     <button onclick="checkAnswer()">Check</button>
     <div id="result" class="result"></div>
   </div>
 
+  <!-- Progress -->
   <div id="progress"></div>
 
-    <div class="filter">
-     <button id="filterAll" onclick="setFilter('all')">All</button>
-     <button id="filterNotDone" onclick="setFilter('notDone')">Not Done</button>
-    </div>
+  <!-- Filter -->
+  <div class="controls-group">
+    <button id="filterAll" onclick="setFilter('all')">All</button>
+    <button id="filterNotDone" onclick="setFilter('notDone')">Not Done</button>
+  </div>
 
-  <div class="controls">
+  <!-- Navigation -->
+  <div class="controls-group">
     <button onclick="prevWord()">←</button>
     <button onclick="nextWord()">→</button>
   </div>
 
+  <!-- Modes -->
   <div class="controls-group">
     <button id="modeBtn" onclick="toggleMode()">Mode: EN → RU</button>
     <button id="keyboardBtn" onclick="toggleKeyboard()">⌨️ Keyboard OFF</button>
-    <button id="shuffleBtn" class="shuffle" onclick="toggleShuffle()">Shuffle OFF</button>
+    <button id="shuffleBtn" onclick="toggleShuffle()">Shuffle OFF</button>
   </div>
 
+  <!-- Actions -->
   <div class="controls-group">
-    <button onclick="toggleDone()">Mark as Done</button>
+    <button onclick="toggleCustomWord()" id="starBtn" class="icon">⭐</button>
+    <button onclick="toggleDone()" class="primary">Mark as Done</button>
+    <button onclick="clearCustomSet()">🧹 Clear</button>
   </div>
 
+  <!-- Auto -->
+  <div class="controls-group">
+    <div class="auto-wrapper">
+      <button id="autoBtn" onclick="toggleAutoMenu()">⏱ Auto OFF</button>
 
+      <div id="autoMenu" class="auto-menu hidden">
+        <!-- генерится через JS -->
+      </div>
+    </div>
+  </div>
 
+  <!-- Counter -->
   <div class="counter" id="counter"></div>
+
+  <!-- Custom Sets -->
+  <div id="customSetsPanel"></div>
 
 </div>
 
@@ -318,18 +396,37 @@ let current = 0;
 let flipped = false;
 let shuffle = false;
 let order = [];
+let customSets = JSON.parse(localStorage.getItem("customSets") || "[]");
+let isAnswerCorrect = false;
+let autoPlay = false;
+let autoPlayInterval = null;
+let autoPlayDelay = 3; // по умолчанию 3 секунды
+
 
 async function loadData() {
   const res = await fetch("words.json");
   const data = await res.json();
-  sets = data.sets;
 
-  loadProgress();     // ✅ ВАЖНО: сначала грузим прогресс
-  renderSets();       // потом рисуем
-  initOrder();
+  let globalId = 1;
+
+  sets = data.sets.map(set => ({
+    ...set,
+    words: set.words.map(word => ({
+      ...word,
+      id: globalId++
+    }))
+  }));
+
+  loadProgress();
+
+  initOrder();         // 🔥 сначала логика
+  renderSets();        
   render();
+
   updateShuffleUI();
   updateFilterUI();
+  renderCustomSets();
+  renderAutoMenu();
 }
 
 function renderSets() {
@@ -365,16 +462,52 @@ function selectSet(index) {
   current = 0;
   flipped = false;
 
+  // 🔥 ВАЖНО — выходим из custom режима
+  filterMode = "all";
+  currentCustomSet = null;
+
   initOrder();
   renderSets();
   render();
 
-  // закрываем меню на мобиле
-document.getElementById("sets").classList.remove("open");
+  document.getElementById("sets").classList.remove("open");
 }
 
 function getWords() {
+  // 🔥 CUSTOM режим — собираем слова из ВСЕХ сетов
+   if (
+   filterMode === "custom" &&
+   currentCustomSet !== null &&
+   customSets[currentCustomSet]
+ ) {
+   const allWords = sets.flatMap(set => set.words);
+
+   return allWords.filter(w =>
+     customSets[currentCustomSet].words.includes(w.id)
+   );
+ }
+
   return sets[currentSet].words;
+}
+
+function removeFromCustomSet(wordObj) {
+  const wordId = wordObj.id;
+
+  customSets[currentCustomSet].words =
+    customSets[currentCustomSet].words.filter(id => id !== wordId);
+
+  localStorage.setItem("customSets", JSON.stringify(customSets));
+
+  // если сет стал пустым — можно сразу обновить
+  if (customSets[currentCustomSet].words.length === 0) {
+    customSets.splice(currentCustomSet, 1);
+    currentCustomSet = null;
+    filterMode = "all";
+  }
+
+  initOrder();
+  render();
+  renderCustomSets();
 }
 
 function initOrder() {
@@ -390,7 +523,15 @@ function render() {
   if (!sets.length) return;
 
   const words = getWords();
-  const word = words[order[current]];
+  
+
+  if (!words.length) {
+  document.getElementById("front").innerText = "No words";
+  document.getElementById("back").innerText = "";
+  return;
+}
+
+const word = words[order[current]];
 
   if (mode === "en-ru") {
     document.getElementById("front").innerText = word.en;
@@ -410,7 +551,42 @@ function render() {
 
   document.getElementById("result").innerText = "";
   document.getElementById("answerInput").value = "";
-  checked = false;
+
+  isAnswerCorrect = false;
+
+  const wordObj = words[order[current]];
+  const starBtn = document.getElementById("starBtn");
+
+  if (isWordInCustom(wordObj.id)) {
+    starBtn.innerText = "⭐"; // можно сделать "⭐ Added"
+  } else {
+    starBtn.innerText = "☆"; // пустая звезда
+}
+}
+
+function clearCustomSet() {
+  if (currentCustomSet === null) {
+    alert("Open a custom set first");
+    return;
+  }
+
+  // очищаем текущий сет
+  customSets[currentCustomSet].words = [];
+
+  // 🔥 УДАЛЯЕМ пустые сеты
+  customSets = customSets.filter(set => set.words.length > 0);
+
+  // 🔥 сбрасываем текущий индекс (он мог стать невалидным)
+  currentCustomSet = null;
+  filterMode = "all";
+
+  // сохраняем
+  localStorage.setItem("customSets", JSON.stringify(customSets));
+
+  // обновляем порядок и UI
+  initOrder();
+  render();
+  renderCustomSets();
 }
 
 function flipCard() {
@@ -419,11 +595,13 @@ function flipCard() {
 }
 
 function nextWord() {
+  if (!order.length) return;
   current = (current + 1) % order.length;
   render();
 }
 
 function prevWord() {
+  if (!order.length) return;
   current = (current - 1 + order.length) % order.length;
   render();
 }
@@ -563,52 +741,233 @@ function checkAnswer() {
   const result = document.getElementById("result");
 
   if (input === correctAnswer) {
-    result.innerText = "✅ Correct!";
+    isAnswerCorrect = true;
+    result.innerText = "Correct!";
     result.className = "result correct";
   } else {
-    result.innerText = `❌ Wrong! Correct: ${word.en}`;
+    isAnswerCorrect = false;
+    result.innerText = `Wrong! Correct: ${correctAnswer}`;
     result.className = "result wrong";
   }
-
-  checked = true;
 }
-
-let checked = false;
-
-document.addEventListener("keydown", (e) => {
-
-  const isTyping = document.activeElement.id === "answerInput";
-
-  if (e.key === "ArrowRight") {
-    nextWord();
-  }
-
-  if (e.key === "ArrowLeft") {
-    prevWord();
-  }
-
-  if (e.key === "Enter") {
-
-    if (!keyboardMode) {
-      nextWord();
-      return;
-    }
-
-    if (!checked) {
-      checkAnswer();
-    } else {
-      nextWord();
-    }
-  }
-});
 
 function toggleMenu() {
   document.getElementById("sets").classList.toggle("open");
 }
 
+function renderCustomSets() {
+  const container = document.getElementById("customSetsPanel");
+  container.innerHTML = "";
+
+  customSets.forEach((set, index) => {
+  const btn = document.createElement("button");
+
+  btn.textContent = `⭐ Review ${index + 1} (${set.words.length})`;
+
+  if (index === currentCustomSet && filterMode === "custom") {
+    btn.classList.add("active");
+  }
+
+  btn.onclick = () => {
+  filterMode = "custom";
+  currentCustomSet = index;
+
+  current = 0;
+  initOrder();
+
+  render();
+  renderCustomSets();
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+};
+
+  container.appendChild(btn);
+});
+}
+
+let currentCustomSet = null;
+
+function openCustomSet(index) {
+  currentCustomSet = index;
+  filterMode = "custom";
+  current = 0;
+
+  initOrder();
+  renderSets(); // ← добавить
+  render();
+}
+
+function isWordInCustom(wordId) {
+  return customSets.some(set =>
+    set.words.includes(wordId)
+  );
+}
+
+function toggleCustomWord() {
+  const wordObj = getWords()[order[current]];
+  const wordId = wordObj.id;
+
+  if (isWordInCustom(wordId)) {
+    customSets.forEach(set => {
+      set.words = set.words.filter(id => id !== wordId);
+    });
+
+    customSets = customSets.filter(set => set.words.length > 0);
+
+    localStorage.setItem("customSets", JSON.stringify(customSets));
+
+    initOrder();
+    render();
+    renderCustomSets();
+    return;
+  }
+
+  if (customSets.length === 0) {
+    customSets.push({ id: 1, words: [] });
+  }
+
+  let targetSet = customSets.find(set => set.words.length < 50);
+
+  if (!targetSet) {
+    targetSet = {
+      id: customSets.length + 1,
+      words: []
+    };
+    customSets.push(targetSet);
+  }
+
+  targetSet.words.push(wordId);
+
+  localStorage.setItem("customSets", JSON.stringify(customSets));
+  renderCustomSets();
+  render();
+}
+
+function startAutoPlay() {
+  if (autoPlayInterval) clearInterval(autoPlayInterval);
+
+  autoPlayInterval = setInterval(() => {
+    nextWord();
+  }, autoPlayDelay * 1000);
+}
+
+function stopAutoPlay() {
+  clearInterval(autoPlayInterval);
+  autoPlayInterval = null;
+}
+
+function toggleAutoPlay() {
+  autoPlay = !autoPlay;
+
+  if (autoPlay) {
+    startAutoPlay();   // ▶ запускаем таймер
+  } else {
+    stopAutoPlay();    // ⏹ останавливаем
+  }
+
+  updateAutoBtn();     // 🔄 обновляем текст кнопки
+}
+
+function changeAutoDelay(value) {
+  autoPlayDelay = Number(value);
+
+  if (autoPlay) {
+    startAutoPlay(); // перезапускаем с новым временем
+  }
+
+  const btn = document.getElementById("autoBtn");
+  if (autoPlay) {
+    btn.innerText = `⏱ Auto ${autoPlayDelay}s`;
+  }
+}
+
+function renderAutoMenu() {
+  const menu = document.getElementById("autoMenu");
+  menu.innerHTML = "";
+
+  // 🔴 КНОПКА OFF
+  const offBtn = document.createElement("button");
+  offBtn.innerText = "OFF";
+
+  offBtn.onclick = () => {
+    autoPlay = false;
+    stopAutoPlay();
+    updateAutoBtn();
+    menu.classList.add("hidden");
+  };
+
+  menu.appendChild(offBtn);
+
+  // ⏱ КНОПКИ 1–10
+  for (let i = 1; i <= 10; i++) {
+    const btn = document.createElement("button");
+    btn.innerText = `${i}s`;
+
+    btn.onclick = () => {
+      autoPlay = true;
+      autoPlayDelay = i;
+      startAutoPlay();
+      updateAutoBtn();
+      menu.classList.add("hidden");
+    };
+
+    menu.appendChild(btn);
+  }
+}
+
+function toggleAutoMenu() {
+  const menu = document.getElementById("autoMenu");
+  menu.classList.toggle("hidden");
+}
+
+function updateAutoBtn() {
+  const btn = document.getElementById("autoBtn");
+
+  if (autoPlay) {
+    btn.innerText = `⏱ Auto ${autoPlayDelay}s`;
+    btn.classList.add("active");
+  } else {
+    btn.innerText = "⏱ Auto OFF";
+    btn.classList.remove("active");
+  }
+}
 
 loadData();
 updateShuffleUI();
+
+document.addEventListener("keydown", (e) => {
+  const activeEl = document.activeElement;
+  const tag = activeEl.tagName;
+
+  const isTyping =
+    tag === "INPUT" ||
+    tag === "TEXTAREA" ||
+    activeEl.isContentEditable;
+
+  // ← →
+  if (e.code === "ArrowRight") nextWord();
+  if (e.code === "ArrowLeft") prevWord();
+
+  // ПРОБЕЛ
+  if (e.code === "Space" && !isTyping) {
+    e.preventDefault();
+    flipCard();
+  }
+
+  // ENTER
+  if (e.code === "Enter") {
+    if (!isTyping) return;
+
+    e.preventDefault();
+
+    if (!isAnswerCorrect) {
+      checkAnswer();
+    } else {
+      nextWord();
+      isAnswerCorrect = false;
+    }
+  }
+});
 </script>
 
 </body>
