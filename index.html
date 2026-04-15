@@ -358,7 +358,7 @@ input {
 
   <!-- Modes -->
   <div class="controls-group">
-    <button id="modeBtn" onclick="toggleMode()">Mode: EN → RU</button>
+    <button id="modeBtn" onclick="toggleMode()">Mode: EN</button>
     <button id="keyboardBtn" onclick="toggleKeyboard()">⌨️ Keyboard OFF</button>
     <button id="shuffleBtn" onclick="toggleShuffle()">Shuffle OFF</button>
   </div>
@@ -695,7 +695,7 @@ function toggleMode() {
   mode = mode === "en-ru" ? "ru-en" : "en-ru";
 
   document.getElementById("modeBtn").innerText =
-    mode === "en-ru" ? "Mode: EN → RU" : "Mode: RU → EN";
+    mode === "en-ru" ? "Mode: EN" : "Mode: Translations";
 
   // 👉 если уходим из ru-en — выключаем keyboard
   if (mode === "en-ru" && keyboardMode) {
@@ -711,7 +711,7 @@ function toggleMode() {
 
 function toggleKeyboard() {
   if (mode !== "ru-en") {
-    alert("Switch to RU → EN mode for typing");
+    alert("Switch to Mode: Translations for typing");
     return;
   }
 
