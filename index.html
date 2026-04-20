@@ -596,7 +596,7 @@ function updateUIVisibility() {
   }
 
   const bottomSettings = document.getElementById("bottomSettings");
-  if (bottomSettings) bottomSettings.style.display = (aiMode || audioMode) ? "none" : "";
+if (bottomSettings) bottomSettings.style.display = (aiMode || audioMode || testMode) ? "none" : "";
 
   const regenBtn = document.getElementById("regenBtn");
   if (regenBtn) regenBtn.style.display = aiMode ? "block" : "none";
