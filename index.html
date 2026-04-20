@@ -396,7 +396,8 @@ button.active { background: #1976d2; color: white; }
     </div>
 
     <button class="btn-clear" onclick="clearCustomSet()">🧹 Clear</button>
-    <button id="regenBtn" style="display:none;" onclick="regenerateAI()">🔄 Regenerate AI</button>
+    <button id="regenBtn" style="display:none;" onclick="regenerateAI()">🔄 Regenerate AI</button>
+
   </div>
 </aside>
 </div>
@@ -1054,7 +1055,7 @@ function render() {
     return;
   }
   if (aiTasks.length === 0) {
-    front.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;gap:16px"><div style="color:#aaa;font-size:18px">No AI tasks for this set</div><button onclick="startAIGeneration()" style="background:#1976d2;color:white;padding:12px 28px;border-radius:12px;font-size:16px;font-weight:bold;border:none;cursor:pointer;">\u26a1 Generate AI</button></div>';
+    front.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;gap:16px"><div style="color:#aaa;font-size:18px">No AI tasks for this set</div><button onclick="event.stopPropagation();startAIGeneration()" style="background:#1976d2;color:white;padding:12px 28px;border-radius:12px;font-size:16px;font-weight:bold;border:none;cursor:pointer;">\u26a1 Generate AI</button></div>';
     back.innerHTML = '';
     aiContainer.innerHTML = '';
     return;
