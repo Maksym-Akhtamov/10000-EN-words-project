@@ -335,6 +335,7 @@ button.active { background: #1976d2; color: white; }
     <div class="option" onclick="selectNewMode('study')">Study Mode</div>
     <div class="option" onclick="selectNewMode('choice')">Choice Mode</div>
     <div class="option" onclick="selectNewMode('audio')">Audio Mode</div>
+    <div class="option" onclick="selectNewMode('ai')">AI Mode</div>
   </div>
 </div>
     
@@ -371,7 +372,7 @@ button.active { background: #1976d2; color: white; }
       <button class="nav-btn" onclick="nextWord()">→</button>
     </div>
 
-    <div class="bottom-settings">
+    <div class="bottom-settings" id="bottomSettings">
       <button id="modeBtn" onclick="toggleMode()">Mode: EN</button>
       <button id="keyboardBtn" onclick="toggleKeyboard()">⌨️ Keyboard OFF</button>
     </div>
@@ -395,6 +396,7 @@ button.active { background: #1976d2; color: white; }
     </div>
 
     <button class="btn-clear" onclick="clearCustomSet()">🧹 Clear</button>
+    <button id="regenBtn" style="display:none;" onclick="regenerateAI()">🔄 Regenerate AI</button>
   </div>
 </aside>
 </div>
@@ -406,6 +408,7 @@ button.active { background: #1976d2; color: white; }
 </div>
 
 <script>
+// API key is stored securely on the server (Vercel env variable)
 let sets = [];
 let currentSet = 0;
 let current = 0;
@@ -419,6 +422,9 @@ let autoPlayInterval = null;
 let autoPlayDelay = 3; // по умолчанию 3 секунды
 let testMode = false;
 let audioMode = false;
+let aiMode = false;
+let aiTasksCache = {};
+let aiTasks = [];
 
 
 async function loadData() {
@@ -444,7 +450,6 @@ async function loadData() {
   updateShuffleUI();
   updateFilterUI();
   renderCustomSets();
-  renderAutoMenu();
   updateUIVisibility();
 }
 
@@ -482,6 +487,12 @@ function selectSet(index) {
   // 🔥 ВАЖНО — выходим из custom режима
   filterMode = "all";
   currentCustomSet = null;
+
+  // Load AI tasks for new set from cache (or reset to empty)
+  if (aiMode) {
+    const cached = loadAITasksFromCache();
+    aiTasks = cached || [];
+  }
 
   initOrder();
   renderSets();
@@ -540,11 +551,15 @@ function initOrder() {
 function switchMode(selectedMode) {
   testMode = false;
   audioMode = false;
+  aiMode = false;
   
   if (selectedMode === "choice") {
     testMode = true;
   } else if (selectedMode === "audio") {
     audioMode = true;
+  } else if (selectedMode === "ai") {
+    aiMode = true;
+    loadAITasks();
   }
   
   if (selectedMode !== "study" || mode !== "ru-en") {
@@ -563,7 +578,7 @@ function updateUIVisibility() {
   const inputArea = document.getElementById("inputArea");
   const clearBtn = document.querySelector(".btn-clear");
 
-  if (testOptions) testOptions.style.display = testMode ? "grid" : "none";
+  if (testOptions) testOptions.style.display = (testMode || aiMode) ? "grid" : "none";
   if (inputArea) inputArea.style.display = (audioMode || keyboardMode) ? "block" : "none";
 
   // Кнопка Clear: показываем, если выбран кастомный сет (Review)
@@ -574,7 +589,20 @@ function updateUIVisibility() {
       clearBtn.style.display = "none";
     }
   }
-  
+
+  if (aiMode) {
+    testOptions.style.display = "grid";
+  }
+
+  const bottomSettings = document.getElementById("bottomSettings");
+  if (bottomSettings) bottomSettings.style.display = (aiMode || audioMode) ? "none" : "";
+
+  const regenBtn = document.getElementById("regenBtn");
+  if (regenBtn) regenBtn.style.display = aiMode ? "block" : "none";
+
+  const speakBtn = document.getElementById("speakBtn");
+  if (speakBtn) speakBtn.style.display = aiMode ? "none" : "";
+
   const modeSelect = document.getElementById("modeSelect");
   if (modeSelect) {
     if (testMode) modeSelect.value = "choice";
@@ -755,7 +783,7 @@ function checkAnswer() {
     result.innerText = "✅ Correct!";
     result.style.color = "lightgreen";
 
-    setTimeout(() => {
+    if (!autoPlay) setTimeout(() => {
       nextWord();
     }, 800); // ⬅️ чуть больше времени
 
@@ -967,7 +995,7 @@ function selectOption(selected, correct) {
     result.className = "result correct";
     isAnswerCorrect = true;
 
-    setTimeout(() => nextWord(), 600);
+    if (!autoPlay) setTimeout(() => nextWord(), 600);
   } else {
     result.innerText = `Wrong! Correct: ${correct}`;
     result.className = "result wrong";
@@ -994,6 +1022,9 @@ function speakCurrent() {
 
 function render() {
 
+  document.getElementById("result").innerText = "";
+  isAnswerCorrect = false;
+
   const words = getWords();
   if (!words.length) {
     document.getElementById("front").innerText = "No words";
@@ -1008,7 +1039,51 @@ function render() {
     document.getElementById("front").innerText = "🔊 Listen...";
     document.getElementById("back").innerText = "";
     setTimeout(() => speak(word.en), 300);
-  } else if (testMode) {
+
+    } else if (aiMode) {
+
+  const front = document.getElementById("front");
+  const back = document.getElementById("back");
+  const aiContainer = document.getElementById("testOptions");
+
+  // null = loading; [] = no cache yet
+  if (aiTasks === null) {
+    front.innerText = '\u23f3 Generating...';
+    back.innerHTML = '';
+    aiContainer.innerHTML = '';
+    return;
+  }
+  if (aiTasks.length === 0) {
+    front.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;gap:16px"><div style="color:#aaa;font-size:18px">No AI tasks for this set</div><button onclick="startAIGeneration()" style="background:#1976d2;color:white;padding:12px 28px;border-radius:12px;font-size:16px;font-weight:bold;border:none;cursor:pointer;">\u26a1 Generate AI</button></div>';
+    back.innerHTML = '';
+    aiContainer.innerHTML = '';
+    return;
+  }
+
+  const wordEn = getWords()[order[current]].en;
+  const setId = sets[currentSet].id;
+  const task = aiTasks.find(t => t.word === wordEn && t.setId === setId);
+
+  if (!task) {
+    front.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;gap:16px"><div style="color:#aaa;font-size:18px">No AI tasks for this set</div><button onclick="event.stopPropagation();startAIGeneration()" style="background:#1976d2;color:white;padding:12px 28px;border-radius:12px;font-size:16px;font-weight:bold;border:none;cursor:pointer;">&#x26A1; Generate AI</button></div>';
+    back.innerHTML = '';
+    aiContainer.innerHTML = '';
+    return;
+  }
+
+  front.innerText = task.sentence;
+  back.innerHTML = "";
+
+  aiContainer.innerHTML = "";
+  aiContainer.style.display = "grid";
+  const shuffledOpts = [...task.options].sort(() => Math.random() - 0.5);
+  shuffledOpts.forEach(opt => {
+    const btn = document.createElement("button");
+    btn.textContent = opt;
+    btn.onclick = () => selectAIOption(opt, task.correct);
+    aiContainer.appendChild(btn);
+  });
+} else if (testMode) {
     // Логика Choice Mode
     document.getElementById("front").innerText = word.ru + " / " + word.uk;
     document.getElementById("back").innerText = "";
@@ -1068,7 +1143,8 @@ function selectNewMode(modeKey) {
   const displayNames = {
     'study': 'Study Mode',
     'choice': 'Choice Mode',
-    'audio': 'Audio Mode'
+    'audio': 'Audio Mode',
+    'ai': 'AI Mode'
   };
   document.querySelector(".dropdown-selected").innerText = displayNames[modeKey];
   
@@ -1076,15 +1152,7 @@ function selectNewMode(modeKey) {
   switchMode(modeKey);
 }
 
-// Закрытие дропдауна, если кликнули мимо него
-window.onclick = function(event) {
-  if (!event.target.matches('.dropdown-selected')) {
-    const dropdown = document.getElementById("modeDropdown");
-    if (dropdown.classList.contains('open')) {
-      dropdown.classList.remove('open');
-    }
-  }
-}
+// Закрытие дропдаунов, если кликнули мимо них
 
 function toggleAutoDropdown() {
   document.getElementById("autoDropdown").classList.toggle("open");
@@ -1107,6 +1175,125 @@ window.onclick = function(event) {
   if (!event.target.closest('.custom-dropdown')) {
     document.querySelectorAll('.custom-dropdown').forEach(d => d.classList.remove('open'));
   }
+}
+
+async function generateAITasks(words) {
+  const res = await fetch("/api/generate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ words: words.map(w => w.en) })
+  });
+
+  if (!res.ok) {
+    console.error("Server error:", res.status);
+    alert("Server error " + res.status + ". Check console.");
+    return [];
+  }
+
+  try {
+    const parsed = await res.json();
+    const setId = sets[currentSet].id;
+    return parsed.map(t => ({ ...t, setId }));
+  } catch (e) {
+    console.error("Parse error:", e);
+    alert("Failed to parse server response.");
+    return [];
+  }
+}
+function getAIStorageKey() {
+  return 'aiTasks_set_' + sets[currentSet].id;
+}
+
+function loadAITasksFromCache() {
+  const key = getAIStorageKey();
+  if (aiTasksCache[key]) return aiTasksCache[key];
+  const saved = localStorage.getItem(key);
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      aiTasksCache[key] = parsed;
+      return parsed;
+    } catch(e) { return null; }
+  }
+  return null;
+}
+
+function saveAITasksToCache(tasks) {
+  const key = getAIStorageKey();
+  aiTasksCache[key] = tasks;
+  localStorage.setItem(key, JSON.stringify(tasks));
+}
+
+async function startAIGeneration() {
+  aiTasks = null; // null = loading state
+  render();
+
+  const words = getWords();
+  const batchSize = 10;
+  const batches = [];
+  for (let i = 0; i < words.length; i += batchSize) {
+    batches.push(words.slice(i, i + batchSize));
+  }
+
+  try {
+    const results = await Promise.all(batches.map(batch => generateAITasks(batch)));
+    const allTasks = results.flat();
+    if (!allTasks.length) { aiTasks = []; render(); return; }
+    saveAITasksToCache(allTasks);
+    aiTasks = allTasks;
+    render();
+  } catch(e) {
+    console.error('AI generation failed', e);
+    aiTasks = [];
+    render();
+  }
+}
+
+async function loadAITasks() {
+  const cached = loadAITasksFromCache();
+  if (cached) {
+    aiTasks = cached;
+    render();
+    return;
+  }
+  aiTasks = [];
+  render();
+}
+
+function regenerateAI() {
+  const key = getAIStorageKey();
+  delete aiTasksCache[key];
+  localStorage.removeItem(key);
+  startAIGeneration();
+}
+
+function renderAIOptions(task) {
+  const container = document.getElementById("testOptions");
+  container.innerHTML = "";
+
+  task.options.forEach(opt => {
+    const btn = document.createElement("button");
+    btn.innerText = opt;
+    btn.onclick = () => selectAIOption(opt, task.correct);
+    container.appendChild(btn);
+  });
+}
+
+function selectAIOption(selected, correct) {
+  if (isAnswerCorrect) return;
+
+  const result = document.getElementById("result");
+
+  if (selected === correct) {
+    result.innerText = "Correct!";
+    result.style.color = "lightgreen";
+  } else {
+    result.innerText = `Wrong! (AI might be ambiguous)\nCorrect: ${correct}`;
+    result.style.color = "tomato";
+  }
+
+  isAnswerCorrect = true;
+  if (!autoPlay) setTimeout(() => nextWord(), 900);
 }
 
 loadData();
