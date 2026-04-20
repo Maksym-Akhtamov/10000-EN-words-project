@@ -602,7 +602,7 @@ if (bottomSettings) bottomSettings.style.display = (aiMode || audioMode || testM
   if (regenBtn) regenBtn.style.display = aiMode ? "block" : "none";
 
   const speakBtn = document.getElementById("speakBtn");
-  if (speakBtn) speakBtn.style.display = aiMode ? "none" : "";
+  if (speakBtn) speakBtn.style.display = (aiMode || testMode) ? "none" : "";
 
   const modeSelect = document.getElementById("modeSelect");
   if (modeSelect) {
