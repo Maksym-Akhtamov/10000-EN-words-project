@@ -7,7 +7,7 @@ export default async function handler(req, res) {
   // Basic origin check — replace with your actual Vercel domain
   const origin = req.headers.origin || "";
   const allowedOrigins = [
-    "https://yourpath10k.vercel.app/", // 🔴 замени на свой домен
+    "https://yourpath10k.vercel.app", // 🔴 замени на свой домен
   ];
 
   // Allow localhost for local dev
