@@ -1,655 +1,1028 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>English Cards</title>
-
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>WordFlow</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <style>
-/* ===== 1. БАЗОВЫЕ СТИЛИ И СЕТКА ===== */
-body {
-  margin: 0;
-  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  background: #121212;
-  color: #e0e0e0;
-  display: flex;
-  justify-content: center;
-  min-height: 100vh;
-  overflow-x: hidden;
-}
+    :root {
+      --bg:        #0c0f14;
+      --surface:   #141820;
+      --surface2:  #1c2230;
+      --border:    rgba(255,255,255,0.07);
+      --border2:   rgba(255,255,255,0.12);
+      --text:      #e8eaf0;
+      --muted:     #5a6278;
+      --accent:    #4f8ef7;
+      --accent2:   #6ee7c0;
+      --correct:   #4ade80;
+      --wrong:     #f87171;
+      --gold:      #fbbf24;
+      --radius:    18px;
+      --shadow:    0 20px 60px rgba(0,0,0,0.5);
+    }
 
-.app-grid {
-  display: grid;
-  grid-template-columns: 250px 1fr 200px; /* Сеты | Центр | Управление */
-  gap: 30px;
-  max-width: 1200px;
-  width: 100%;
-  padding: 40px 20px;
-  align-items: start;
-}
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* ===== 2. БОКОВЫЕ ПАНЕЛИ ===== */
-.sidebar-left, .sidebar-right {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
 
-#sets {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  background: #1e1e1e;
-  padding: 15px;
-  border-radius: 12px;
-  border: 1px solid #333;
-}
+    /* Ambient background blobs */
+    body::before, body::after {
+      content: '';
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    body::before {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(79,142,247,0.08) 0%, transparent 70%);
+      top: -100px; left: -100px;
+    }
+    body::after {
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(110,231,192,0.06) 0%, transparent 70%);
+      bottom: -80px; right: -80px;
+    }
 
-.side-controls {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  align-items: flex-start;
-  height: 280px; /* Высота совпадает с карточкой */
-  justify-content: center;
-  margin-top: 50px;
-}
+    /* ===== LAYOUT ===== */
+    .app {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: 260px 1fr 220px;
+      gap: 24px;
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 32px 20px;
+      align-items: start;
+    }
 
-/* ===== 3. ЦЕНТРАЛЬНЫЙ БЛОК И КАРТОЧКА ===== */
-.main-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20px;
-  width: 100%;
-}
+    /* ===== PANELS ===== */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
 
-#counter {
-  font-size: 14px;
-  color: #888;
-}
+    .panel-title {
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 14px;
+      font-weight: 600;
+    }
 
-.card-container {
-  width: 100%;
-  max-width: 500px;
-  position: relative;
-}
+    /* ===== SETS GRID ===== */
+    #sets {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+    }
 
-.card {
-  width: 100%;
-  height: 280px;
-  perspective: 1000px;
-  cursor: pointer;
-}
+    .set-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 7px 4px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: center;
+    }
+    .set-btn:hover { border-color: var(--accent); color: var(--text); background: rgba(79,142,247,0.1); }
+    .set-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .set-btn.done { border-color: var(--correct); color: var(--correct); }
+    .set-btn.done.active { background: var(--correct); color: #000; }
 
-.inner {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  transform-style: preserve-3d;
-  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-}
+    /* ===== CUSTOM SETS ===== */
+    #customSetsPanel { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
 
-.flipped { transform: rotateY(180deg); }
+    .custom-set-btn {
+      background: rgba(251,191,36,0.08);
+      border: 1px solid rgba(251,191,36,0.2);
+      color: var(--gold);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 10px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: left;
+    }
+    .custom-set-btn:hover { background: rgba(251,191,36,0.15); }
+    .custom-set-btn.active { background: rgba(251,191,36,0.2); border-color: var(--gold); }
 
-.side {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  background: #252525;
-  border-radius: 20px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 32px;
-  font-weight: 500;
-  padding: 30px;
-  box-sizing: border-box;
-  backface-visibility: hidden;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-  border: 1px solid #333;
-  text-align: center;
-}
+    /* ===== MODE DROPDOWN ===== */
+    .dropdown-wrap { position: relative; margin-top: 16px; }
 
-.back {
-  transform: rotateY(180deg);
-  background: #1b4d2e;
-  border-color: #2e7d32;
-}
+    .dropdown-trigger {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      padding: 12px 16px;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.2s;
+    }
+    .dropdown-trigger:hover { border-color: var(--accent); }
+    .dropdown-trigger .arrow { transition: transform 0.2s; font-size: 10px; color: var(--muted); }
+    .dropdown-wrap.open .arrow { transform: rotate(180deg); }
 
-.card-icon {
-  position: absolute;
-  top: 15px;
-  background: rgba(255,255,255,0.05);
-  border: none;
-  color: #888;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  cursor: pointer;
-  z-index: 10;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  transition: 0.2s;
-}
+    .dropdown-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0; right: 0;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 12px;
+      overflow: hidden;
+      z-index: 100;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-6px);
+      transition: all 0.18s cubic-bezier(0.4,0,0.2,1);
+    }
+    .dropdown-wrap.open .dropdown-menu {
+      opacity: 1; visibility: visible; transform: translateY(0);
+    }
 
-.card-icon:hover { background: rgba(255,255,255,0.15); color: #fff; }
-.star { right: 15px; font-size: 20px; }
-.audio { left: 15px; font-size: 20px; }
+    .dropdown-item {
+      padding: 11px 16px;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: background 0.1s;
+    }
+    .dropdown-item:hover { background: rgba(255,255,255,0.05); }
+    .dropdown-item .icon { font-size: 16px; width: 20px; }
 
-/* ===== 4. ПОЛЕ ВВОДА (INPUT GROUP) ===== */
-#inputArea {
-  width: 100%;
-  max-width: 500px;
-  display: none; /* Включается через JS (display: flex) */
-  justify-content: center;
-  margin-top: 10px;
-}
+    /* ===== LANG SETTING ===== */
+    .lang-setting { margin-top: 16px; }
+    .lang-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; font-weight: 600; }
+    .lang-btns { display: flex; gap: 6px; }
+    .lang-btn {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 8px 6px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: center;
+    }
+    .lang-btn:hover { color: var(--text); border-color: var(--border2); }
+    .lang-btn.active { background: rgba(79,142,247,0.15); border-color: var(--accent); color: var(--accent); }
 
-.input-group {
-  display: flex;
-  width: 100%;
-  gap: 10px;
-  align-items: center;
-}
+    /* ===== MAIN CONTENT ===== */
+    .main {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+    }
 
-#answerInput {
-  flex: 1;
-  background: #1e1e1e;
-  border: 1px solid #444;
-  color: white;
-  padding: 12px 20px;
-  border-radius: 12px;
-  font-size: 18px;
-  outline: none;
-  transition: border-color 0.3s;
-  text-align: center;
-}
+    /* ===== COUNTER ===== */
+    .counter {
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      font-weight: 500;
+    }
 
-#answerInput:focus { border-color: #1976d2; }
+    /* ===== CARD ===== */
+    .card-wrap {
+      width: 100%;
+      max-width: 520px;
+      perspective: 1200px;
+      position: relative;
+    }
 
-#checkBtn {
-  background: #1976d2;
-  color: white;
-  padding: 0 25px;
-  border-radius: 12px;
-  font-weight: bold;
-  height: 48px; /* Совпадает с инпутом */
-  border: none;
-  cursor: pointer;
-  transition: background 0.2s;
-}
+    .card {
+      width: 100%;
+      height: 300px;
+      cursor: pointer;
+      position: relative;
+    }
 
-#checkBtn:hover { background: #1565c0; }
+    .card-inner {
+      width: 100%; height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .card-inner.flipped { transform: rotateY(180deg); }
 
-/* ===== 5. КАСТОМНЫЕ ДРОПДАУНЫ ===== */
-.custom-dropdown {
-  position: relative;
-  width: 100%;
-  max-width: 300px;
-  user-select: none;
-}
+    .card-face {
+      position: absolute;
+      width: 100%; height: 100%;
+      border-radius: 24px;
+      backface-visibility: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 36px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
 
-.dropdown-selected {
-  background: #2c2c2c;
-  padding: 12px 20px;
-  border-radius: 12px;
-  border: 1px solid #444;
-  cursor: pointer;
-  position: relative;
-  transition: all 0.3s ease;
-}
+    .card-face::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 24px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.04) 0%, transparent 60%);
+      pointer-events: none;
+    }
 
-.dropdown-selected::after {
-  content: '▼';
-  position: absolute;
-  right: 15px;
-  font-size: 10px;
-  color: #888;
-  transition: transform 0.3s ease;
-}
+    .card-front {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+    }
 
-.custom-dropdown.open .dropdown-selected::after { transform: rotate(180deg); }
+    .card-back {
+      background: linear-gradient(135deg, #0d2b1e 0%, #0e2a2a 100%);
+      border: 1px solid rgba(110,231,192,0.2);
+      transform: rotateY(180deg);
+    }
 
-.dropdown-options {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
-  width: 100%;
-  background: #2c2c2c;
-  border-radius: 12px;
-  border: 1px solid #444;
-  overflow: hidden;
-  visibility: hidden;
-  opacity: 0;
-  transform: translateY(-10px) scale(0.98);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-  z-index: 2000;
-  pointer-events: none;
-}
+    .card-word {
+      font-family: 'DM Serif Display', serif;
+      font-size: 42px;
+      color: var(--text);
+      text-align: center;
+      line-height: 1.2;
+    }
 
-.custom-dropdown.open .dropdown-options {
-  visibility: visible;
-  opacity: 1;
-  transform: translateY(0) scale(1);
-  pointer-events: auto;
-}
+    /* Translation layout on back */
+    .trans-layout {
+      display: flex;
+      gap: 32px;
+      justify-content: center;
+      align-items: flex-start;
+      width: 100%;
+    }
 
-.option { padding: 12px 20px; cursor: pointer; }
-.option:hover { background: #3d3d3d; color: #fff; }
+    .trans-col {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: center;
+    }
 
-.auto-wrapper { display: flex; gap: 8px; width: 100%; position: relative; }
-#autoBtn { flex: 1; z-index: 1; }
-.custom-dropdown.mini { width: 75px; flex-shrink: 0; }
-.mini-selected { padding: 10px 5px !important; text-align: center; font-size: 13px !important; border-radius: 8px !important; }
-.mini-selected::after { right: 8px !important; }
+    .trans-lang-label {
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(110,231,192,0.5);
+      font-weight: 600;
+    }
 
-/* ===== 6. КНОПКИ И НАВИГАЦИЯ ===== */
-button {
-  background: #2c2c2c;
-  color: #bbb;
-  border: none;
-  padding: 10px 18px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: 0.2s;
-}
+    .trans-word {
+      font-family: 'DM Serif Display', serif;
+      font-size: 22px;
+      color: var(--accent2);
+      text-align: center;
+      line-height: 1.4;
+    }
 
-button:hover { background: #3d3d3d; color: #fff; }
-button.active { background: #1976d2; color: white; }
+    .trans-single {
+      font-family: 'DM Serif Display', serif;
+      font-size: 30px;
+      color: var(--accent2);
+      text-align: center;
+      line-height: 1.4;
+    }
 
-.nav-arrows { display: flex; gap: 20px; }
-.nav-btn { width: 60px; height: 60px; font-size: 24px; border-radius: 50%; }
+    .trans-divider {
+      width: 1px;
+      background: rgba(110,231,192,0.15);
+      align-self: stretch;
+      margin-top: 24px;
+    }
 
-.btn-clear {
-  background: #442222 !important;
-  color: #ffaaaa !important;
-  border: 1px solid #663333 !important;
-  width: 100% !important;
-  display: none;
-  margin-top: 10px;
-}
+    /* Card icons */
+    .card-icon {
+      position: absolute;
+      top: 16px;
+      z-index: 10;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 18px;
+      transition: all 0.2s;
+      backdrop-filter: blur(8px);
+    }
+    .card-icon:hover { background: rgba(255,255,255,0.12); color: var(--text); border-color: var(--border2); transform: scale(1.1); }
+    .star-btn { right: 16px; }
+    .audio-btn { left: 16px; }
+    .star-btn.starred { color: var(--gold); border-color: rgba(251,191,36,0.3); background: rgba(251,191,36,0.1); }
 
-#testOptions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  width: 100%;
-  max-width: 500px;
-}
+    /* ===== CHOICE OPTIONS ===== */
+    #testOptions {
+      display: none;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      width: 100%;
+      max-width: 520px;
+    }
 
-/* ===== 7. МОБИЛЬНАЯ АДАПТАЦИЯ ===== */
-@media (max-width: 900px) {
-  .app-grid {
-    grid-template-columns: 1fr;
-    padding: 15px;
-    gap: 20px;
-    overflow: visible;
-  }
+    .choice-btn {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 500;
+      padding: 14px 18px;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all 0.18s;
+      text-align: center;
+    }
+    .choice-btn:hover:not(.disabled) { background: rgba(79,142,247,0.1); border-color: var(--accent); color: var(--text); }
+    .choice-btn.correct-ans { background: rgba(74,222,128,0.12) !important; border-color: var(--correct) !important; color: var(--correct) !important; }
+    .choice-btn.wrong-ans  { background: rgba(248,113,113,0.12) !important; border-color: var(--wrong) !important; color: var(--wrong) !important; }
+    .choice-btn.disabled { opacity: 0.45; cursor: default; }
 
-  .main-content { order: 1; width: 100%; }
-  .sidebar-right { order: 2; width: 100%; margin-top: 0; height: auto; }
-  .sidebar-left { order: 3; width: 100%; }
+    /* ===== RESULT FEEDBACK ===== */
+    #result {
+      font-size: 15px;
+      font-weight: 600;
+      min-height: 24px;
+      text-align: center;
+      letter-spacing: 0.02em;
+      transition: all 0.2s;
+    }
+    #result.correct { color: var(--correct); }
+    #result.wrong   { color: var(--wrong); }
 
-  .custom-dropdown { max-width: 100%; }
-  
-  .input-group {
-    flex-direction: column; /* Поле ввода и кнопка Check друг под другом */
-    align-items: center;
-  }
-  
-  #answerInput { width: 100%; box-sizing: border-box; }
-  #checkBtn { width: 100%; }
+    /* ===== INPUT AREA ===== */
+    #inputArea {
+      display: none;
+      width: 100%;
+      max-width: 520px;
+    }
 
-  .side-controls {
-    flex-direction: row;
-    flex-wrap: wrap;
-    height: auto;
-    width: 100%;
-    gap: 10px;
-  }
+    .input-row {
+      display: flex;
+      gap: 10px;
+    }
 
-  #shuffleBtn { flex: 1; min-width: 140px; }
-  .auto-wrapper { flex: 1.5; min-width: 180px; }
-  
-  .card { height: 240px; }
-  .side { font-size: 26px; }
+    #answerInput {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 17px;
+      padding: 13px 20px;
+      border-radius: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+      text-align: center;
+    }
+    #answerInput:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,142,247,0.12); }
+    #answerInput.input-correct { border-color: var(--correct); }
+    #answerInput.input-wrong   { border-color: var(--wrong); animation: shake 0.3s; }
 
-  #sets { grid-template-columns: repeat(auto-fill, minmax(45px, 1fr)); }
-}
-</style>
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      75% { transform: translateX(6px); }
+    }
+
+    #checkBtn {
+      background: var(--accent);
+      color: #fff;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 13px 24px;
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    #checkBtn:hover { background: #3b7de8; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(79,142,247,0.3); }
+
+    /* ===== NAV ===== */
+    .nav-row {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .nav-btn {
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 22px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover { background: var(--surface2); border-color: var(--accent); color: var(--accent); transform: scale(1.08); }
+
+    /* ===== BOTTOM SETTINGS ===== */
+    .bottom-settings {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .setting-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 9px 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .setting-btn:hover { border-color: var(--border2); color: var(--text); }
+    .setting-btn.active { background: rgba(79,142,247,0.12); border-color: var(--accent); color: var(--accent); }
+
+    /* ===== RIGHT SIDEBAR ===== */
+    .sidebar-right {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .ctrl-btn {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 12px 16px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: center;
+    }
+    .ctrl-btn:hover { border-color: var(--border2); color: var(--text); }
+    .ctrl-btn.active { background: rgba(79,142,247,0.12); border-color: var(--accent); color: var(--accent); }
+
+    .auto-row { display: flex; gap: 8px; }
+    #autoBtn { flex: 1; }
+
+    .mini-dropdown { position: relative; width: 60px; flex-shrink: 0; }
+    .mini-trigger {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 12px 8px;
+      border-radius: 12px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+    .mini-trigger:hover { border-color: var(--border2); color: var(--text); }
+
+    .mini-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.5);
+      z-index: 50;
+      opacity: 0; visibility: hidden;
+      transform: translateY(6px);
+      transition: all 0.18s;
+    }
+    .mini-dropdown.open .mini-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+    .mini-option { padding: 9px 14px; font-size: 13px; cursor: pointer; }
+    .mini-option:hover { background: rgba(255,255,255,0.05); }
+
+    .btn-clear {
+      background: rgba(248,113,113,0.08) !important;
+      border-color: rgba(248,113,113,0.2) !important;
+      color: var(--wrong) !important;
+      display: none;
+    }
+    .btn-clear:hover { background: rgba(248,113,113,0.15) !important; }
+
+    #regenBtn { display: none; }
+
+    /* ===== PROGRESS BAR ===== */
+    .progress-bar-wrap {
+      width: 100%;
+      max-width: 520px;
+      height: 3px;
+      background: var(--surface2);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 2px;
+      transition: width 0.4s ease;
+    }
+
+    /* ===== ANIMATIONS ===== */
+    @keyframes popIn {
+      0% { transform: scale(0.92); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .card-wrap { animation: popIn 0.35s ease; }
+
+    @keyframes slideUp {
+      from { transform: translateY(12px); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+
+    /* Card flip animation enhancement */
+    .card-inner.animate-flip {
+      animation: none;
+    }
+
+    /* ===== MOBILE ===== */
+    @media (max-width: 960px) {
+      .app { grid-template-columns: 1fr; padding: 16px; gap: 16px; }
+      .main { order: 1; }
+      .sidebar-right { order: 2; flex-direction: row; flex-wrap: wrap; }
+      .sidebar-right > * { flex: 1 1 120px; }
+      .sidebar-left { order: 3; }
+      .card { height: 240px; }
+      .card-word { font-size: 32px; }
+      #sets { grid-template-columns: repeat(6, 1fr); }
+    }
+  </style>
 </head>
-
 <body>
 
-<div class="app-grid">
+<div class="app">
+
+  <!-- LEFT SIDEBAR -->
   <aside class="sidebar-left">
-    <button id="menuBtn" onclick="toggleMenu()">📚 Sets</button>
-    <div id="sets"></div>
-    
-    <div class="custom-dropdown" id="modeDropdown">
-  <div class="dropdown-selected" onclick="toggleDropdown()">Study Mode</div>
-  <div class="dropdown-options" id="dropdownOptions">
-    <div class="option" onclick="selectNewMode('study')">Study Mode</div>
-    <div class="option" onclick="selectNewMode('choice')">Choice Mode</div>
-    <div class="option" onclick="selectNewMode('audio')">Audio Mode</div>
-    <div class="option" onclick="selectNewMode('ai')">AI Mode</div>
-  </div>
-</div>
-    
-    <div id="customSetsPanel"></div>
+    <div class="panel">
+      <div class="panel-title">Sets</div>
+      <div id="sets"></div>
+      <div id="customSetsPanel"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Mode</div>
+      <div class="dropdown-wrap" id="modeDropdown">
+        <button class="dropdown-trigger" onclick="toggleModeDropdown()">
+          <span id="modeTriggerLabel">📖 Study</span>
+          <span class="arrow">▼</span>
+        </button>
+        <div class="dropdown-menu">
+          <div class="dropdown-item" onclick="selectMode('study')">  <span class="icon">📖</span> Study</div>
+          <div class="dropdown-item" onclick="selectMode('choice')"> <span class="icon">🎯</span> Choice</div>
+          <div class="dropdown-item" onclick="selectMode('audio')">  <span class="icon">🔊</span> Audio</div>
+          <div class="dropdown-item" onclick="selectMode('ai')">     <span class="icon">⚡</span> AI Mode</div>
+        </div>
+      </div>
+
+      <div class="lang-setting">
+        <div class="lang-label">Translation Language</div>
+        <div class="lang-btns">
+          <button class="lang-btn active" id="langBothBtn" onclick="setLang('both')">Both</button>
+          <button class="lang-btn" id="langUkBtn"   onclick="setLang('uk')">UK</button>
+          <button class="lang-btn" id="langRuBtn"   onclick="setLang('ru')">RU</button>
+        </div>
+      </div>
+    </div>
   </aside>
 
-  <main class="main-content">
-    <div id="counter" class="counter"></div>
+  <!-- MAIN -->
+  <main class="main">
+    <div class="counter" id="counter"></div>
 
-    <div class="card-container">
-      <div class="card" onclick="flipCard()">
-        <button id="starBtn" class="card-icon star" onclick="event.stopPropagation(); toggleCustomWord()">☆</button>
-        <button id="speakBtn" class="card-icon audio" onclick="event.stopPropagation(); speakCurrent()">🔊</button>
-        
-        <div id="cardInner" class="inner">
-          <div class="side" id="front"></div>
-          <div class="side back" id="back"></div>
+    <div class="card-wrap">
+      <div class="card" id="card" onclick="flipCard()">
+        <button class="card-icon star-btn" id="starBtn"
+                onclick="event.stopPropagation(); toggleStar()">☆</button>
+        <button class="card-icon audio-btn" id="audioBtn"
+                onclick="event.stopPropagation(); speakCurrent()">🔊</button>
+        <div class="card-inner" id="cardInner">
+          <div class="card-face card-front" id="front"></div>
+          <div class="card-face card-back"  id="back"></div>
         </div>
       </div>
     </div>
 
-    <div id="inputArea" style="display: none; width: 100%; max-width: 400px;">
-  <div class="input-group">
-    <input type="text" id="answerInput" placeholder="Type translation..." onkeydown="if(event.key==='Enter') checkAnswer()" />
-    <button id="checkBtn" onclick="checkAnswer()">Check</button>
-  </div>
-</div>
-    
-    <div id="testOptions" class="controls-group" style="display:none;"></div>
-    <div id="result" class="result"></div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progressFill"></div>
+    </div>
 
-    <div class="nav-arrows">
+    <div id="testOptions"></div>
+
+    <div id="result"></div>
+
+    <div id="inputArea">
+      <div class="input-row">
+        <input id="answerInput" type="text" placeholder="Type the English word…"
+               onkeydown="if(event.key==='Enter') handleEnter()"/>
+        <button id="checkBtn" onclick="checkAnswer()">Check</button>
+      </div>
+    </div>
+
+    <div class="nav-row">
       <button class="nav-btn" onclick="prevWord()">←</button>
       <button class="nav-btn" onclick="nextWord()">→</button>
     </div>
 
     <div class="bottom-settings" id="bottomSettings">
-      <button id="modeBtn" onclick="toggleMode()">Mode: EN</button>
-      <button id="keyboardBtn" onclick="toggleKeyboard()">⌨️ Keyboard OFF</button>
+      <button class="setting-btn" id="dirBtn" onclick="toggleDir()">EN → Translation</button>
+      <button class="setting-btn" id="kbBtn"  onclick="toggleKeyboard()">⌨ Keyboard</button>
     </div>
   </main>
 
+  <!-- RIGHT SIDEBAR -->
   <aside class="sidebar-right">
-  <div class="side-controls">
-    <button id="shuffleBtn" onclick="toggleShuffle()">🔀 Shuffle OFF</button>
-    
-    <div class="auto-wrapper">
-      <button id="autoBtn" onclick="toggleAutoPlay()">▶ Auto OFF</button>
-      <div class="custom-dropdown mini" id="autoDropdown">
-        <div class="dropdown-selected mini-selected" onclick="toggleAutoDropdown()">3s</div>
-        <div class="dropdown-options mini-options">
-          <div class="option" onclick="selectAutoTime(1)">1s</div>
-          <div class="option" onclick="selectAutoTime(2)">2s</div>
-          <div class="option" onclick="selectAutoTime(3)">3s</div>
-          <div class="option" onclick="selectAutoTime(5)">5s</div>
+    <button class="ctrl-btn" id="shuffleBtn" onclick="toggleShuffle()">🔀 Shuffle</button>
+
+    <div class="auto-row">
+      <button class="ctrl-btn" id="autoBtn" onclick="toggleAuto()">▶ Auto</button>
+      <div class="mini-dropdown" id="delayDropdown">
+        <button class="mini-trigger" id="delayTrigger" onclick="toggleDelayDropdown()">3s</button>
+        <div class="mini-menu">
+          <div class="mini-option" onclick="setDelay(1)">1s</div>
+          <div class="mini-option" onclick="setDelay(2)">2s</div>
+          <div class="mini-option" onclick="setDelay(3)">3s</div>
+          <div class="mini-option" onclick="setDelay(5)">5s</div>
         </div>
       </div>
     </div>
 
-    <button class="btn-clear" onclick="clearCustomSet()">🧹 Clear</button>
-    <button id="regenBtn" style="display:none;" onclick="regenerateAI()">🔄 Regenerate AI</button>
+    <button class="ctrl-btn btn-clear" id="clearBtn" onclick="clearCustomSet()">🗑 Clear Review</button>
+    <button class="ctrl-btn" id="regenBtn" onclick="regenerateAI()">🔄 Regen AI</button>
+  </aside>
 
-  </div>
-</aside>
-</div>
-
-<div id="progress" style="display:none;"></div>
-<div id="filterGroup" style="display:none;">
-  <button id="filterAll"></button>
-  <button id="filterNotDone"></button>
 </div>
 
 <script>
-// API key is stored securely on the server (Vercel env variable)
+// ===================== STATE =====================
 let sets = [];
 let currentSet = 0;
 let current = 0;
 let flipped = false;
-let shuffle = false;
+let shuffleOn = false;
 let order = [];
 let customSets = JSON.parse(localStorage.getItem("customSets") || "[]");
-let isAnswerCorrect = false;
+let isAnswerLocked = false;  // true only when correct
 let autoPlay = false;
-let autoPlayInterval = null;
-let autoPlayDelay = 3; // по умолчанию 3 секунды
-let testMode = false;
-let audioMode = false;
-let aiMode = false;
-let aiTasksCache = {};
+let autoTimer = null;
+let autoDelay = 3;
+let activeMode = "study"; // study | choice | audio | ai
+let direction = "en-ru";  // en-ru | ru-en
+let keyboardOn = false;
+let langMode = "both";     // both | uk | ru
+let completedSets = [];
+let filterMode = "all";
+let currentCustomSet = null;
 let aiTasks = [];
+let aiTasksCache = {};
+let frozenOrder = null;   // locked shuffle order — not changed by star actions
 
-
-async function loadData() {
+// ===================== INIT =====================
+async function init() {
+  loadCompletion();
   const res = await fetch("words.json");
   const data = await res.json();
-
-  let globalId = 1;
-
-  sets = data.sets.map(set => ({
-    ...set,
-    words: set.words.map(word => ({
-      ...word,
-      id: globalId++
-    }))
-  }));
-
-  loadProgress();
-
-  initOrder();         // 🔥 сначала логика
-  renderSets();        
-  render();
-
-  updateShuffleUI();
-  updateFilterUI();
+  let gid = 1;
+  sets = data.sets.map(s => ({ ...s, words: s.words.map(w => ({ ...w, id: gid++ })) }));
+  initOrder();
+  renderSets();
   renderCustomSets();
-  updateUIVisibility();
+  render();
+  updateAllUI();
 }
 
-function renderSets() {
-  const container = document.getElementById("sets");
+// ===================== ORDER =====================
+function initOrder(preserveOrder = false) {
+  const words = getWords();
+  if (preserveOrder && frozenOrder !== null) {
+    // Rebuild order from frozenOrder, keeping only valid indices
+    order = frozenOrder.filter(i => i < words.length);
+    return;
+  }
+  order = words.map((_, i) => i);
+  if (shuffleOn) {
+    for (let i = order.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [order[i], order[j]] = [order[j], order[i]];
+    }
+  }
+  frozenOrder = [...order];
+}
+
+// ===================== DATA =====================
+function getWords() {
+  if (filterMode === "custom" && currentCustomSet !== null && customSets[currentCustomSet]) {
+    const all = sets.flatMap(s => s.words);
+    return all.filter(w => customSets[currentCustomSet].words.includes(w.id));
+  }
+  return sets[currentSet]?.words || [];
+}
+
+function getTranslation(word) {
+  if (langMode === "uk") return word.uk;
+  if (langMode === "ru") return word.ru;
+  return null; // means "both"
+}
+
+// ===================== RENDER =====================
+function render() {
+  const words = getWords();
+
+  document.getElementById("counter").textContent =
+    words.length ? `${current + 1} / ${order.length}` : "";
+
+  // Progress bar
+  const pct = words.length ? ((current + 1) / order.length * 100) : 0;
+  document.getElementById("progressFill").style.width = pct + "%";
+
+  if (!words.length) {
+    document.getElementById("front").innerHTML = `<span style="color:var(--muted);font-size:18px">No words</span>`;
+    document.getElementById("back").innerHTML = "";
+    return;
+  }
+
+  const word = words[order[current]];
+  const inner = document.getElementById("cardInner");
+  inner.classList.remove("flipped");
+  flipped = false;
+
+  document.getElementById("result").textContent = "";
+  document.getElementById("result").className = "";
+  isAnswerLocked = false;
+
+  // Star
+  const starBtn = document.getElementById("starBtn");
+  const inCustom = isWordStarred(word.id);
+  starBtn.textContent = inCustom ? "⭐" : "☆";
+  starBtn.className = "card-icon star-btn" + (inCustom ? " starred" : "");
+
+  if (activeMode === "audio") {
+    renderAudioMode(word);
+  } else if (activeMode === "ai") {
+    renderAIMode(word);
+  } else if (activeMode === "choice") {
+    renderChoiceMode(word, words);
+  } else {
+    renderStudyMode(word);
+  }
+
+  updateAllUI();
+}
+
+function renderStudyMode(word) {
+  const front = document.getElementById("front");
+  const back  = document.getElementById("back");
+
+  if (direction === "en-ru") {
+    front.innerHTML = `<div class="card-word">${word.en}</div>`;
+    back.innerHTML  = buildTransHTML(word);
+  } else {
+    front.innerHTML = buildTransHTML(word);
+    back.innerHTML  = `<div class="card-word">${word.en}</div>`;
+  }
+}
+
+function buildTransHTML(word) {
+  if (langMode === "uk") {
+    return `<div class="trans-single">${word.uk}</div>`;
+  }
+  if (langMode === "ru") {
+    return `<div class="trans-single">${word.ru}</div>`;
+  }
+  // Both — two columns
+  return `
+    <div class="trans-layout">
+      <div class="trans-col">
+        <div class="trans-lang-label">UA</div>
+        <div class="trans-word">${word.uk}</div>
+      </div>
+      <div class="trans-divider"></div>
+      <div class="trans-col">
+        <div class="trans-lang-label">RU</div>
+        <div class="trans-word">${word.ru}</div>
+      </div>
+    </div>`;
+}
+
+function renderAudioMode(word) {
+  document.getElementById("front").innerHTML =
+    `<div style="font-size:52px;opacity:.7">🔊</div>`;
+  document.getElementById("back").innerHTML = buildTransHTML(word);
+  setTimeout(() => speak(word.en), 250);
+}
+
+function renderChoiceMode(word, words) {
+  const trans = langMode === "uk" ? word.uk : langMode === "ru" ? word.ru : `${word.uk} / ${word.ru}`;
+  document.getElementById("front").innerHTML = `<div class="card-word" style="font-size:30px">${trans}</div>`;
+  document.getElementById("back").innerHTML = "";
+  renderChoiceOptions(word, words);
+}
+
+function renderChoiceOptions(word, words) {
+  const container = document.getElementById("testOptions");
   container.innerHTML = "";
+  container.style.display = "grid";
 
-  sets.forEach((set, index) => {
-    const isDone = completedSets.includes(set.id);
-
-    // фильтр
-    if (filterMode === "notDone" && isDone) return;
-
+  const opts = generateOptions(word, words);
+  opts.forEach(opt => {
     const btn = document.createElement("button");
-    btn.innerText = set.id;
-
-    if (index === currentSet) {
-      btn.classList.add("active");
-    }
-
-    if (isDone) {
-      btn.classList.add("done");
-    }
-
-    btn.onclick = () => selectSet(index);
+    btn.className = "choice-btn";
+    btn.textContent = opt;
+    btn.dataset.val = opt;
+    btn.onclick = () => handleChoice(opt, word.en, container);
     container.appendChild(btn);
   });
 }
 
-function selectSet(index) {
-  currentSet = index;
-  current = 0;
-  flipped = false;
+function handleChoice(selected, correct, container) {
+  // Don't lock on wrong — allow retry, but show which was wrong
+  const allBtns = container.querySelectorAll(".choice-btn");
 
-  // 🔥 ВАЖНО — выходим из custom режима
-  filterMode = "all";
-  currentCustomSet = null;
-
-  // Load AI tasks for new set from cache (or reset to empty)
-  if (aiMode) {
-    const cached = loadAITasksFromCache();
-    aiTasks = cached || [];
-  }
-
-  initOrder();
-  renderSets();
-  render();
-  updateUIVisibility();
-
-  document.getElementById("sets").classList.remove("open");
-}
-
-function getWords() {
-  // 🔥 CUSTOM режим — собираем слова из ВСЕХ сетов
-   if (
-   filterMode === "custom" &&
-   currentCustomSet !== null &&
-   customSets[currentCustomSet]
- ) {
-   const allWords = sets.flatMap(set => set.words);
-
-   return allWords.filter(w =>
-     customSets[currentCustomSet].words.includes(w.id)
-   );
- }
-
-  return sets[currentSet].words;
-}
-
-function removeFromCustomSet(wordObj) {
-  const wordId = wordObj.id;
-
-  customSets[currentCustomSet].words =
-    customSets[currentCustomSet].words.filter(id => id !== wordId);
-
-  localStorage.setItem("customSets", JSON.stringify(customSets));
-
-  // если сет стал пустым — можно сразу обновить
-  if (customSets[currentCustomSet].words.length === 0) {
-    customSets.splice(currentCustomSet, 1);
-    currentCustomSet = null;
-    filterMode = "all";
-  }
-
-  initOrder();
-  render();
-  renderCustomSets();
-}
-
-function initOrder() {
-  const words = getWords();
-  order = words.map((_, i) => i);
-
-  if (shuffle) {
-    order.sort(() => Math.random() - 0.5);
-  }
-}
-
-function switchMode(selectedMode) {
-  testMode = false;
-  audioMode = false;
-  aiMode = false;
-  
-  if (selectedMode === "choice") {
-    testMode = true;
-  } else if (selectedMode === "audio") {
-    audioMode = true;
-  } else if (selectedMode === "ai") {
-    aiMode = true;
-    loadAITasks();
-  }
-  
-  if (selectedMode !== "study" || mode !== "ru-en") {
-    keyboardMode = false;
-    const kbBtn = document.getElementById("keyboardBtn");
-    if (kbBtn) kbBtn.innerText = "⌨️ Keyboard OFF";
-  }
-
-  // Обновляем видимость UI после смены мода
-  updateUIVisibility();
-  render();
-}
-
-function updateUIVisibility() {
-  const testOptions = document.getElementById("testOptions");
-  const inputArea = document.getElementById("inputArea");
-  const clearBtn = document.querySelector(".btn-clear");
-
-  if (testOptions) testOptions.style.display = (testMode || aiMode) ? "grid" : "none";
-  if (inputArea) inputArea.style.display = (audioMode || keyboardMode) ? "block" : "none";
-
-  // Кнопка Clear: показываем, если выбран кастомный сет (Review)
-  if (clearBtn) {
-    if (filterMode === "custom" || currentCustomSet !== null) {
-      clearBtn.style.display = "block";
-    } else {
-      clearBtn.style.display = "none";
+  allBtns.forEach(b => {
+    if (b.dataset.val === correct) {
+      b.classList.add("correct-ans");
+    } else if (b.dataset.val === selected && selected !== correct) {
+      b.classList.add("wrong-ans");
     }
-  }
+    if (b.dataset.val !== selected || selected === correct) {
+      // Only disable if answered correctly
+    }
+  });
 
-  if (aiMode) {
-    testOptions.style.display = "grid";
-  }
-
-  const bottomSettings = document.getElementById("bottomSettings");
-if (bottomSettings) bottomSettings.style.display = (aiMode || audioMode || testMode) ? "none" : "";
-
-  const regenBtn = document.getElementById("regenBtn");
-  if (regenBtn) regenBtn.style.display = aiMode ? "block" : "none";
-
-  const speakBtn = document.getElementById("speakBtn");
-  if (speakBtn) speakBtn.style.display = (aiMode || testMode) ? "none" : "";
-
-  const modeSelect = document.getElementById("modeSelect");
-  if (modeSelect) {
-    if (testMode) modeSelect.value = "choice";
-    else if (audioMode) modeSelect.value = "audio";
-    else modeSelect.value = "study";
+  if (selected === correct) {
+    showResult("✓ Correct!", "correct");
+    isAnswerLocked = true;
+    // Disable all after correct
+    allBtns.forEach(b => b.classList.add("disabled"));
+    allBtns.forEach(b => b.onclick = null);
+    if (!autoPlay) setTimeout(() => nextWord(), 700);
+  } else {
+    showResult(`✗ Try again`, "wrong");
+    // Remove wrong class after a moment to allow retry
+    setTimeout(() => {
+      allBtns.forEach(b => {
+        if (b.dataset.val === selected) b.classList.remove("wrong-ans");
+      });
+      showResult("", "");
+    }, 900);
   }
 }
 
-function clearCustomSet() {
-  if (currentCustomSet === null) return;
-
-  if (!confirm("Delete all words from this Review set?")) return;
-
-  customSets[currentCustomSet].words = [];
-  // Оставляем пустой сет или удаляем его - на твое усмотрение. 
-  // Если хочешь, чтобы он исчез совсем:
-  customSets = customSets.filter(set => set.words.length > 0);
-
-  currentCustomSet = null;
-  filterMode = "all";
-
-  localStorage.setItem("customSets", JSON.stringify(customSets));
-
-  initOrder();
-  render();
-  renderCustomSets();
-  updateUIVisibility(); 
+function generateOptions(correctWord, words) {
+  const pool = words
+    .map(w => w.en)
+    .filter(w => w !== correctWord.en);
+  // Shuffle pool
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  const opts = [correctWord.en, ...pool.slice(0, 3)];
+  // Shuffle opts
+  for (let i = opts.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [opts[i], opts[j]] = [opts[j], opts[i]];
+  }
+  return opts;
 }
 
-function flipCard() {
-  if (testMode) return;
+function renderAIMode(word) {
+  const front = document.getElementById("front");
+  const back  = document.getElementById("back");
+  const container = document.getElementById("testOptions");
 
-  flipped = !flipped;
-  document.getElementById("cardInner").classList.toggle("flipped");
+  if (aiTasks === null) {
+    front.innerHTML = `<div style="color:var(--muted);font-size:18px">⏳ Generating…</div>`;
+    back.innerHTML = ""; container.innerHTML = "";
+    return;
+  }
+
+  const task = aiTasks.find(t => t.word === word.en && t.setId === sets[currentSet].id);
+  if (!task) {
+    front.innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center">
+        <div style="color:var(--muted);font-size:17px">No AI tasks for this set</div>
+        <button onclick="event.stopPropagation();startAIGeneration()" 
+          style="background:var(--accent);color:#fff;padding:12px 24px;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;border:none;cursor:pointer">
+          ⚡ Generate AI
+        </button>
+      </div>`;
+    back.innerHTML = ""; container.innerHTML = "";
+    return;
+  }
+
+  front.innerHTML = `<div class="card-word" style="font-size:22px;line-height:1.5">${task.sentence}</div>`;
+  back.innerHTML = "";
+  container.innerHTML = "";
+  container.style.display = "grid";
+
+  const shuffled = [...task.options].sort(() => Math.random() - 0.5);
+  shuffled.forEach(opt => {
+    const btn = document.createElement("button");
+    btn.className = "choice-btn";
+    btn.textContent = opt;
+    btn.dataset.val = opt;
+    btn.onclick = () => handleAIChoice(opt, task.correct, container);
+    container.appendChild(btn);
+  });
 }
 
+function handleAIChoice(selected, correct, container) {
+  const allBtns = container.querySelectorAll(".choice-btn");
+  allBtns.forEach(b => {
+    if (b.dataset.val === correct) b.classList.add("correct-ans");
+    else if (b.dataset.val === selected && selected !== correct) b.classList.add("wrong-ans");
+  });
+
+  if (selected === correct) {
+    showResult("✓ Correct!", "correct");
+    isAnswerLocked = true;
+    allBtns.forEach(b => { b.classList.add("disabled"); b.onclick = null; });
+    if (!autoPlay) setTimeout(() => nextWord(), 700);
+  } else {
+    showResult("✗ Try again", "wrong");
+    setTimeout(() => {
+      allBtns.forEach(b => { if (b.dataset.val === selected) b.classList.remove("wrong-ans"); });
+      showResult("", "");
+    }, 900);
+  }
+}
+
+function showResult(text, cls) {
+  const el = document.getElementById("result");
+  el.textContent = text;
+  el.className = cls;
+}
+
+// ===================== NAVIGATION =====================
 function nextWord() {
   if (!order.length) return;
   current = (current + 1) % order.length;
   render();
-
-  const input = document.getElementById("answerInput");
-  if (input) {
-  input.value = "";
-  input.focus();
-}
+  if (keyboardOn) {
+    const inp = document.getElementById("answerInput");
+    inp.value = "";
+    inp.className = "";
+    inp.focus();
+  }
 }
 
 function prevWord() {
@@ -658,682 +1031,353 @@ function prevWord() {
   render();
 }
 
-function toggleShuffle() {
-  shuffle = !shuffle;
-  current = 0;
+// ===================== FLIP =====================
+function flipCard() {
+  if (activeMode === "choice" || activeMode === "ai" || activeMode === "audio") return;
+  flipped = !flipped;
+  document.getElementById("cardInner").classList.toggle("flipped", flipped);
+}
 
+// ===================== KEYBOARD =====================
+function handleEnter() {
+  if (!isAnswerLocked) checkAnswer();
+  else { nextWord(); }
+}
+
+function checkAnswer() {
+  const inp = document.getElementById("answerInput");
+  const val = inp.value.trim().toLowerCase();
+  const words = getWords();
+  const correct = words[order[current]].en.toLowerCase();
+
+  if (val === correct) {
+    inp.className = "input-correct";
+    showResult("✓ Correct!", "correct");
+    isAnswerLocked = true;
+    if (!autoPlay) setTimeout(() => {
+      nextWord();
+      inp.className = "";
+    }, 700);
+  } else {
+    inp.className = "input-wrong";
+    showResult(`✗  ${correct}`, "wrong");
+    setTimeout(() => { inp.className = ""; }, 400);
+  }
+}
+
+// ===================== MODES =====================
+function selectMode(m) {
+  activeMode = m;
+  document.getElementById("modeDropdown").classList.remove("open");
+  const labels = { study: "📖 Study", choice: "🎯 Choice", audio: "🔊 Audio", ai: "⚡ AI Mode" };
+  document.getElementById("modeTriggerLabel").textContent = labels[m];
+
+  if (m !== "study") { keyboardOn = false; }
+  if (m === "ai") loadAITasks();
+
+  current = 0;
   initOrder();
-  updateShuffleUI();
   render();
 }
 
-function updateShuffleUI() {
-  const btn = document.getElementById("shuffleBtn");
-
-  if (shuffle) {
-    btn.classList.add("active");
-    btn.innerText = "Shuffle ON";
-  } else {
-    btn.classList.remove("active");
-    btn.innerText = "Shuffle OFF";
-  }
+function toggleModeDropdown() {
+  document.getElementById("modeDropdown").classList.toggle("open");
 }
 
-// свайпы
-let startX = 0;
-
-document.addEventListener("touchstart", e => {
-  startX = e.touches[0].clientX;
-});
-
-document.addEventListener("touchend", e => {
-  let endX = e.changedTouches[0].clientX;
-
-  if (endX - startX > 50) prevWord();
-  else if (startX - endX > 50) nextWord();
-});
-
-let completedSets = [];
-
-function loadProgress() {
-  const saved = localStorage.getItem("completedSets");
-  if (saved) {
-    completedSets = JSON.parse(saved);
-  }
-}
-
-function saveProgress() {
-  localStorage.setItem("completedSets", JSON.stringify(completedSets));
-}
-
-function toggleDone() {
-  const setId = sets[currentSet].id;
-
-  if (completedSets.includes(setId)) {
-    completedSets = completedSets.filter(id => id !== setId);
-  } else {
-    completedSets.push(setId);
-  }
-
-  saveProgress();
-  renderSets();
-}
-
-let filterMode = "all";
-
-function setFilter(mode) {
-  filterMode = mode;
-  renderSets();
-  updateFilterUI();
-}
-
-function updateFilterUI() {
-  document.getElementById("filterAll").classList.toggle("active", filterMode === "all");
-  document.getElementById("filterNotDone").classList.toggle("active", filterMode === "notDone");
-}
-
-
-let mode = "en-ru"; // en-ru | ru-en
-let keyboardMode = false;
-
-function toggleMode() {
-  if (mode === "en-ru") mode = "ru-en";
-  else if (mode === "ru-en") mode = "en-ru";
-  else mode = "en-ru";
-
-  document.getElementById("modeBtn").innerText =
-    mode === "en-ru" ? "Mode: EN" :
-    mode === "ru-en" ? "Mode: Translations" :
-    "Mode: Test";
-
-  // выключаем клавиатуру в test режиме
-  if (mode !== "ru-en") {
-    keyboardMode = false;
-    document.getElementById("keyboardBtn").innerText = "⌨️ Keyboard OFF";
-    document.getElementById("inputArea").style.display = "none";
-  }
-
+function toggleDir() {
+  direction = direction === "en-ru" ? "ru-en" : "en-ru";
+  document.getElementById("dirBtn").textContent =
+    direction === "en-ru" ? "EN → Translation" : "Translation → EN";
+  document.getElementById("dirBtn").classList.toggle("active", direction === "ru-en");
   render();
 }
 
 function toggleKeyboard() {
-  if (mode !== "ru-en") {
-    alert("Switch to Mode: Translations for typing");
+  if (direction !== "ru-en" && activeMode === "study") {
+    alert("Switch direction to Translation → EN first");
     return;
   }
-
-  keyboardMode = !keyboardMode;
-
-  document.getElementById("keyboardBtn").innerText =
-    keyboardMode ? "⌨️ Keyboard ON" : "⌨️ Keyboard OFF";
-
-  document.getElementById("inputArea").style.display =
-    keyboardMode ? "block" : "none";
-
-  document.getElementById("result").innerText = "";
+  keyboardOn = !keyboardOn;
+  document.getElementById("kbBtn").classList.toggle("active", keyboardOn);
+  render();
 }
 
-function checkAnswer() {
-  const input = document.getElementById("answerInput").value.trim().toLowerCase();
-  const words = getWords();
-  const correct = words[order[current]].en.toLowerCase();
+function setLang(l) {
+  langMode = l;
+  document.querySelectorAll(".lang-btn").forEach(b => b.classList.remove("active"));
+  document.getElementById(`lang${l.charAt(0).toUpperCase()+l.slice(1)}Btn`).classList.add("active");
+  render();
+}
 
-  const result = document.getElementById("result");
+// ===================== SHUFFLE =====================
+function toggleShuffle() {
+  shuffleOn = !shuffleOn;
+  frozenOrder = null; // reset frozen
+  current = 0;
+  initOrder();
+  document.getElementById("shuffleBtn").classList.toggle("active", shuffleOn);
+  document.getElementById("shuffleBtn").textContent = shuffleOn ? "🔀 Shuffle ON" : "🔀 Shuffle";
+  render();
+}
 
-  if (input === correct) {
-    result.innerText = "✅ Correct!";
-    result.style.color = "lightgreen";
+// ===================== AUTO =====================
+function toggleAuto() {
+  autoPlay = !autoPlay;
+  autoPlay ? startAuto() : stopAuto();
+  document.getElementById("autoBtn").classList.toggle("active", autoPlay);
+  document.getElementById("autoBtn").textContent = autoPlay ? `▶ Auto ${autoDelay}s` : "▶ Auto";
+}
 
-    if (!autoPlay) setTimeout(() => {
-      nextWord();
-    }, 800); // ⬅️ чуть больше времени
+function startAuto() {
+  if (autoTimer) clearInterval(autoTimer);
+  autoTimer = setInterval(() => nextWord(), autoDelay * 1000);
+}
 
+function stopAuto() {
+  clearInterval(autoTimer);
+  autoTimer = null;
+}
+
+function setDelay(s) {
+  autoDelay = s;
+  document.getElementById("delayTrigger").textContent = s + "s";
+  document.getElementById("delayDropdown").classList.remove("open");
+  if (autoPlay) startAuto();
+  if (autoPlay) document.getElementById("autoBtn").textContent = `▶ Auto ${autoDelay}s`;
+}
+
+function toggleDelayDropdown() {
+  document.getElementById("delayDropdown").classList.toggle("open");
+}
+
+// ===================== SETS =====================
+function renderSets() {
+  const c = document.getElementById("sets");
+  c.innerHTML = "";
+  sets.forEach((set, idx) => {
+    if (filterMode === "notDone" && completedSets.includes(set.id)) return;
+    const btn = document.createElement("button");
+    btn.className = "set-btn" +
+      (idx === currentSet ? " active" : "") +
+      (completedSets.includes(set.id) ? " done" : "");
+    btn.textContent = set.id;
+    btn.onclick = () => selectSet(idx);
+    c.appendChild(btn);
+  });
+}
+
+function selectSet(idx) {
+  currentSet = idx;
+  current = 0;
+  filterMode = "all";
+  currentCustomSet = null;
+  frozenOrder = null;
+  if (activeMode === "ai") {
+    const cached = loadAICache();
+    aiTasks = cached || [];
+  }
+  initOrder();
+  renderSets();
+  render();
+}
+
+// ===================== STAR / CUSTOM =====================
+function isWordStarred(id) {
+  return customSets.some(s => s.words.includes(id));
+}
+
+function toggleStar() {
+  const word = getWords()[order[current]];
+  if (!word) return;
+  const id = word.id;
+
+  if (isWordStarred(id)) {
+    customSets.forEach(s => { s.words = s.words.filter(x => x !== id); });
+    customSets = customSets.filter(s => s.words.length > 0);
   } else {
-    result.innerText = `❌ ${correct}`;
-    result.style.color = "tomato";
+    if (!customSets.length) customSets.push({ id: 1, words: [] });
+    let target = customSets.find(s => s.words.length < 50);
+    if (!target) { target = { id: customSets.length + 1, words: [] }; customSets.push(target); }
+    target.words.push(id);
   }
-}
-
-function toggleMenu() {
-  document.getElementById("sets").classList.toggle("open");
-}
-
-function renderCustomSets() {
-  const container = document.getElementById("customSetsPanel");
-  container.innerHTML = "";
-
-  customSets.forEach((set, index) => {
-  const btn = document.createElement("button");
-
-  btn.textContent = `⭐ Review ${index + 1} (${set.words.length})`;
-
-  if (index === currentCustomSet && filterMode === "custom") {
-    btn.classList.add("active");
-  }
-
-  btn.onclick = () => {
-  filterMode = "custom";
-  currentCustomSet = index;
-
-  current = 0;
-  initOrder();
-
-  render();
-  renderCustomSets();
-  updateUIVisibility();
-
-  window.scrollTo({ top: 0, behavior: "smooth" });
-};
-
-  container.appendChild(btn);
-});
-}
-
-let currentCustomSet = null;
-
-function openCustomSet(index) {
-  currentCustomSet = index;
-  filterMode = "custom";
-  current = 0;
-
-  initOrder();
-  renderSets(); // ← добавить
-  render();
-}
-
-function isWordInCustom(wordId) {
-  return customSets.some(set =>
-    set.words.includes(wordId)
-  );
-}
-
-function toggleCustomWord() {
-  const wordObj = getWords()[order[current]];
-  const wordId = wordObj.id;
-
-  if (isWordInCustom(wordId)) {
-    customSets.forEach(set => {
-      set.words = set.words.filter(id => id !== wordId);
-    });
-
-    customSets = customSets.filter(set => set.words.length > 0);
-
-    localStorage.setItem("customSets", JSON.stringify(customSets));
-
-    initOrder();
-    render();
-    renderCustomSets();
-    return;
-  }
-
-  if (customSets.length === 0) {
-    customSets.push({ id: 1, words: [] });
-  }
-
-  let targetSet = customSets.find(set => set.words.length < 50);
-
-  if (!targetSet) {
-    targetSet = {
-      id: customSets.length + 1,
-      words: []
-    };
-    customSets.push(targetSet);
-  }
-
-  targetSet.words.push(wordId);
 
   localStorage.setItem("customSets", JSON.stringify(customSets));
   renderCustomSets();
-  render();
+
+  // Update star WITHOUT re-initialising order
+  const starBtn = document.getElementById("starBtn");
+  const nowStarred = isWordStarred(id);
+  starBtn.textContent = nowStarred ? "⭐" : "☆";
+  starBtn.className = "card-icon star-btn" + (nowStarred ? " starred" : "");
 }
 
-function startAutoPlay() {
-  if (autoPlayInterval) clearInterval(autoPlayInterval);
-
-  autoPlayInterval = setInterval(() => {
-    nextWord();
-  }, autoPlayDelay * 1000);
-}
-
-function stopAutoPlay() {
-  clearInterval(autoPlayInterval);
-  autoPlayInterval = null;
-}
-
-function toggleAutoPlay() {
-  autoPlay = !autoPlay;
-
-  if (autoPlay) {
-    startAutoPlay();   // ▶ запускаем таймер
-  } else {
-    stopAutoPlay();    // ⏹ останавливаем
-  }
-
-  updateAutoBtn();     // 🔄 обновляем текст кнопки
-}
-
-function changeAutoDelay(value) {
-  autoPlayDelay = Number(value);
-
-  if (autoPlay) {
-    startAutoPlay(); // перезапускаем с новым временем
-  }
-
-  const btn = document.getElementById("autoBtn");
-  if (autoPlay) {
-    btn.innerText = `▶ Auto ${autoPlayDelay}s`;
-  }
-}
-
-function renderAutoMenu() {
-  const menu = document.getElementById("autoMenu");
-  menu.innerHTML = "";
-
-  // 🔴 КНОПКА OFF
-  const offBtn = document.createElement("button");
-  offBtn.innerText = "OFF";
-
-  offBtn.onclick = () => {
-    autoPlay = false;
-    stopAutoPlay();
-    updateAutoBtn();
-    menu.classList.add("hidden");
-  };
-
-  menu.appendChild(offBtn);
-
-  // КНОПКИ 1–10
-  for (let i = 1; i <= 10; i++) {
+function renderCustomSets() {
+  const c = document.getElementById("customSetsPanel");
+  c.innerHTML = "";
+  customSets.forEach((set, idx) => {
     const btn = document.createElement("button");
-    btn.innerText = `${i}s`;
-
-    btn.onclick = () => {
-      autoPlay = true;
-      autoPlayDelay = i;
-      startAutoPlay();
-      updateAutoBtn();
-      menu.classList.add("hidden");
-    };
-
-    menu.appendChild(btn);
-  }
+    btn.className = "custom-set-btn" + (idx === currentCustomSet && filterMode === "custom" ? " active" : "");
+    btn.textContent = `⭐ Review ${idx + 1} (${set.words.length})`;
+    btn.onclick = () => openCustomSet(idx);
+    c.appendChild(btn);
+  });
 }
 
-function toggleAutoMenu() {
-  const menu = document.getElementById("autoMenu");
-  menu.classList.toggle("hidden");
+function openCustomSet(idx) {
+  currentCustomSet = idx;
+  filterMode = "custom";
+  current = 0;
+  frozenOrder = null;
+  initOrder();
+  render();
+  renderCustomSets();
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-function updateAutoBtn() {
-  const btn = document.getElementById("autoBtn");
-
-  if (autoPlay) {
-    btn.innerText = `▶ Auto ${autoPlayDelay}s`;
-    btn.classList.add("active");
-  } else {
-    btn.innerText = "▶ Auto OFF";
-    btn.classList.remove("active");
-  }
+function clearCustomSet() {
+  if (currentCustomSet === null || !confirm("Clear this Review set?")) return;
+  customSets.splice(currentCustomSet, 1);
+  currentCustomSet = null;
+  filterMode = "all";
+  localStorage.setItem("customSets", JSON.stringify(customSets));
+  initOrder(); render(); renderCustomSets(); updateAllUI();
 }
 
-function generateOptions(correctWord, words) {
-  const pool = words.map(w => w.en).filter(w => w !== correctWord.en);
-
-  const shuffled = pool.sort(() => Math.random() - 0.5);
-
-  const options = [correctWord.en, ...shuffled.slice(0, 3)];
-
-  return options.sort(() => Math.random() - 0.5);
+// ===================== COMPLETION =====================
+function loadCompletion() {
+  const s = localStorage.getItem("completedSets");
+  if (s) completedSets = JSON.parse(s);
 }
 
-function selectOption(selected, correct) {
-  if (isAnswerCorrect) return; // 🚫 блок повторных кликов
-
-  const result = document.getElementById("result");
-
-  if (selected === correct) {
-    result.innerText = "Correct!";
-    result.className = "result correct";
-    isAnswerCorrect = true;
-
-    if (!autoPlay) setTimeout(() => nextWord(), 600);
-  } else {
-    result.innerText = `Wrong! Correct: ${correct}`;
-    result.className = "result wrong";
-    isAnswerCorrect = true; // 👈 тоже блокируем
-  }
-}
-
+// ===================== SPEAK =====================
 function speak(text) {
-  const utterance = new SpeechSynthesisUtterance(text);
-
-  utterance.lang = "en-US"; // можно en-GB
-  utterance.rate = 0.9;
-
-  speechSynthesis.cancel(); // стоп предыдущего
-  speechSynthesis.speak(utterance);
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "en-US"; u.rate = 0.9;
+  speechSynthesis.speak(u);
 }
 
 function speakCurrent() {
   const words = getWords();
-  const word = words[order[current]];
-
-  speak(word.en);
+  if (!words.length) return;
+  speak(words[order[current]].en);
 }
 
-function render() {
+// ===================== AI =====================
+function getAIKey() { return `aiTasks_set_${sets[currentSet].id}`; }
 
-  document.getElementById("result").innerText = "";
-  isAnswerCorrect = false;
-
-  const words = getWords();
-  if (!words.length) {
-    document.getElementById("front").innerText = "No words";
-    document.getElementById("back").innerText = "";
-    return;
-  }
-
-  const word = words[order[current]];
-
-  // Логика Audio Mode
-  if (audioMode) {
-    document.getElementById("front").innerText = "🔊 Listen...";
-    document.getElementById("back").innerText = "";
-    setTimeout(() => speak(word.en), 300);
-
-    } else if (aiMode) {
-
-  const front = document.getElementById("front");
-  const back = document.getElementById("back");
-  const aiContainer = document.getElementById("testOptions");
-
-  // null = loading; [] = no cache yet
-  if (aiTasks === null) {
-    front.innerText = '\u23f3 Generating...';
-    back.innerHTML = '';
-    aiContainer.innerHTML = '';
-    return;
-  }
-  if (aiTasks.length === 0) {
-    front.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;gap:16px"><div style="color:#aaa;font-size:18px">No AI tasks for this set</div><button onclick="event.stopPropagation();startAIGeneration()" style="background:#1976d2;color:white;padding:12px 28px;border-radius:12px;font-size:16px;font-weight:bold;border:none;cursor:pointer;">\u26a1 Generate AI</button></div>';
-    back.innerHTML = '';
-    aiContainer.innerHTML = '';
-    return;
-  }
-
-  const wordEn = getWords()[order[current]].en;
-  const setId = sets[currentSet].id;
-  const task = aiTasks.find(t => t.word === wordEn && t.setId === setId);
-
-  if (!task) {
-    front.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;gap:16px"><div style="color:#aaa;font-size:18px">No AI tasks for this set</div><button onclick="event.stopPropagation();startAIGeneration()" style="background:#1976d2;color:white;padding:12px 28px;border-radius:12px;font-size:16px;font-weight:bold;border:none;cursor:pointer;">&#x26A1; Generate AI</button></div>';
-    back.innerHTML = '';
-    aiContainer.innerHTML = '';
-    return;
-  }
-
-  front.innerText = task.sentence;
-  back.innerHTML = "";
-
-  aiContainer.innerHTML = "";
-  aiContainer.style.display = "grid";
-  const shuffledOpts = [...task.options].sort(() => Math.random() - 0.5);
-  shuffledOpts.forEach(opt => {
-    const btn = document.createElement("button");
-    btn.textContent = opt;
-    btn.onclick = () => selectAIOption(opt, task.correct);
-    aiContainer.appendChild(btn);
-  });
-} else if (testMode) {
-    // Логика Choice Mode
-    document.getElementById("front").innerText = word.ru + " / " + word.uk;
-    document.getElementById("back").innerText = "";
-    renderChoiceOptions(word, words); // вынесем это в подфункцию для чистоты
-  } else {
-    // Обычный режим
-    if (mode === "en-ru") {
-      document.getElementById("front").innerText = word.en;
-      document.getElementById("back").innerText = word.ru + " / " + word.uk;
-    } else {
-      document.getElementById("front").innerText = word.ru + " / " + word.uk;
-      document.getElementById("back").innerText = word.en;
-    }
-  }
-
-  // Обновляем звезду
-  const starBtn = document.getElementById("starBtn");
-  starBtn.innerText = isWordInCustom(word.id) ? "⭐" : "☆";
-  
-  // Счетчик и очистка состояния
-  document.getElementById("cardInner").classList.remove("flipped");
-  flipped = false;
-  document.getElementById("counter").innerText = `Карточка ${current + 1} / ${order.length}`;
-  document.getElementById("result").innerText = "";
-  if (!isTypingActive()) document.getElementById("answerInput").value = "";
-  isAnswerCorrect = false;
-
-  updateUIVisibility();
+function loadAICache() {
+  const key = getAIKey();
+  if (aiTasksCache[key]) return aiTasksCache[key];
+  const s = localStorage.getItem(key);
+  if (s) { try { const p = JSON.parse(s); aiTasksCache[key] = p; return p; } catch(e){} }
+  return null;
 }
 
-// Вспомогательная функция для Choice Mode
-function renderChoiceOptions(word, words) {
-  const container = document.getElementById("testOptions");
-  container.innerHTML = "";
-  const options = generateOptions(word, words);
-  options.forEach(opt => {
-    const btn = document.createElement("button");
-    btn.innerText = opt;
-    btn.onclick = () => selectOption(opt, word.en);
-    container.appendChild(btn);
-  });
+function saveAICache(tasks) {
+  const key = getAIKey();
+  aiTasksCache[key] = tasks;
+  localStorage.setItem(key, JSON.stringify(tasks));
 }
 
-function isTypingActive() {
-  return document.activeElement === document.getElementById("answerInput");
+async function loadAITasks() {
+  const cached = loadAICache();
+  if (cached) { aiTasks = cached; render(); return; }
+  aiTasks = []; render();
 }
 
-function toggleDropdown() {
-  document.getElementById("modeDropdown").classList.toggle("open");
-}
-
-function selectNewMode(modeKey) {
-  // Закрываем список
-  document.getElementById("modeDropdown").classList.remove("open");
-  
-  // Обновляем текст в шапке дропдауна
-  const displayNames = {
-    'study': 'Study Mode',
-    'choice': 'Choice Mode',
-    'audio': 'Audio Mode',
-    'ai': 'AI Mode'
-  };
-  document.querySelector(".dropdown-selected").innerText = displayNames[modeKey];
-  
-  // Вызываем твою существующую логику переключения
-  switchMode(modeKey);
-}
-
-// Закрытие дропдаунов, если кликнули мимо них
-
-function toggleAutoDropdown() {
-  document.getElementById("autoDropdown").classList.toggle("open");
-}
-
-function selectAutoTime(seconds) {
-  autoPlayDelay = seconds;
-  document.querySelector(".mini-selected").innerText = seconds + "s";
-  document.getElementById("autoDropdown").classList.remove("open");
-
-  if (autoPlay) {
-    startAutoPlay(); // перезапуск с новым временем
-  }
-
-  updateAutoBtn();
-}
-
-// Обновим функцию закрытия при клике мимо, чтобы она закрывала оба дропдауна
-window.onclick = function(event) {
-  if (!event.target.closest('.custom-dropdown')) {
-    document.querySelectorAll('.custom-dropdown').forEach(d => d.classList.remove('open'));
-  }
-}
-
-async function generateAITasks(words) {
+async function generateAIBatch(words) {
   const res = await fetch("/api/generate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ words: words.map(w => w.en) })
   });
-
-  if (!res.ok) {
-    console.error("Server error:", res.status);
-    alert("Server error " + res.status + ". Check console.");
-    return [];
-  }
-
-  try {
-    const parsed = await res.json();
-    const setId = sets[currentSet].id;
-    return parsed.map(t => ({ ...t, setId }));
-  } catch (e) {
-    console.error("Parse error:", e);
-    alert("Failed to parse server response.");
-    return [];
-  }
-}
-function getAIStorageKey() {
-  return 'aiTasks_set_' + sets[currentSet].id;
-}
-
-function loadAITasksFromCache() {
-  const key = getAIStorageKey();
-  if (aiTasksCache[key]) return aiTasksCache[key];
-  const saved = localStorage.getItem(key);
-  if (saved) {
-    try {
-      const parsed = JSON.parse(saved);
-      aiTasksCache[key] = parsed;
-      return parsed;
-    } catch(e) { return null; }
-  }
-  return null;
-}
-
-function saveAITasksToCache(tasks) {
-  const key = getAIStorageKey();
-  aiTasksCache[key] = tasks;
-  localStorage.setItem(key, JSON.stringify(tasks));
+  if (!res.ok) throw new Error("Server " + res.status);
+  return res.json();
 }
 
 async function startAIGeneration() {
-  aiTasks = null; // null = loading state
-  render();
-
+  aiTasks = null; render();
   const words = getWords();
-  const batchSize = 10;
   const batches = [];
-  for (let i = 0; i < words.length; i += batchSize) {
-    batches.push(words.slice(i, i + batchSize));
-  }
-
+  for (let i = 0; i < words.length; i += 10) batches.push(words.slice(i, i + 10));
   try {
-    const results = await Promise.all(batches.map(batch => generateAITasks(batch)));
-    const allTasks = results.flat();
-    if (!allTasks.length) { aiTasks = []; render(); return; }
-    saveAITasksToCache(allTasks);
-    aiTasks = allTasks;
+    const results = await Promise.all(batches.map(b => generateAIBatch(b)));
+    const all = results.flat();
+    if (!all.length) { aiTasks = []; render(); return; }
+    const setId = sets[currentSet].id;
+    aiTasks = all.map(t => ({ ...t, setId }));
+    saveAICache(aiTasks);
     render();
   } catch(e) {
-    console.error('AI generation failed', e);
-    aiTasks = [];
-    render();
+    console.error(e);
+    aiTasks = []; render();
   }
-}
-
-async function loadAITasks() {
-  const cached = loadAITasksFromCache();
-  if (cached) {
-    aiTasks = cached;
-    render();
-    return;
-  }
-  aiTasks = [];
-  render();
 }
 
 function regenerateAI() {
-  const key = getAIStorageKey();
-  delete aiTasksCache[key];
-  localStorage.removeItem(key);
+  localStorage.removeItem(getAIKey());
+  delete aiTasksCache[getAIKey()];
   startAIGeneration();
 }
 
-function renderAIOptions(task) {
-  const container = document.getElementById("testOptions");
-  container.innerHTML = "";
+// ===================== UI STATE =====================
+function updateAllUI() {
+  const isTest = activeMode === "choice" || activeMode === "ai";
+  const isAudio = activeMode === "audio";
 
-  task.options.forEach(opt => {
-    const btn = document.createElement("button");
-    btn.innerText = opt;
-    btn.onclick = () => selectAIOption(opt, task.correct);
-    container.appendChild(btn);
-  });
+  // testOptions visibility
+  const to = document.getElementById("testOptions");
+  if (!isTest) { to.style.display = "none"; to.innerHTML = ""; }
+
+  // input area
+  document.getElementById("inputArea").style.display =
+    (keyboardOn || isAudio) ? "flex" : "none";
+
+  // speak btn - hide in keyboard mode and choice/ai
+  document.getElementById("audioBtn").style.display =
+    (keyboardOn || isTest) ? "none" : "";
+
+  // bottom settings - hide in test/audio/ai
+  document.getElementById("bottomSettings").style.display =
+    (isTest || isAudio) ? "none" : "";
+
+  // clear btn
+  document.getElementById("clearBtn").style.display =
+    (filterMode === "custom") ? "block" : "none";
+
+  // regen btn
+  document.getElementById("regenBtn").style.display =
+    activeMode === "ai" ? "block" : "none";
 }
 
-function selectAIOption(selected, correct) {
-  if (isAnswerCorrect) return;
+// ===================== KEYBOARD SHORTCUTS =====================
+document.addEventListener("keydown", e => {
+  const tag = document.activeElement.tagName;
+  const typing = tag === "INPUT" || tag === "TEXTAREA" || document.activeElement.isContentEditable;
 
-  const result = document.getElementById("result");
-
-  if (selected === correct) {
-    result.innerText = "Correct!";
-    result.style.color = "lightgreen";
-  } else {
-    result.innerText = `Wrong! (AI might be ambiguous)\nCorrect: ${correct}`;
-    result.style.color = "tomato";
-  }
-
-  isAnswerCorrect = true;
-  if (!autoPlay) setTimeout(() => nextWord(), 900);
-}
-
-loadData();
-updateShuffleUI();
-
-document.addEventListener("keydown", (e) => {
-  const activeEl = document.activeElement;
-  const tag = activeEl.tagName;
-
-  const isTyping =
-    tag === "INPUT" ||
-    tag === "TEXTAREA" ||
-    activeEl.isContentEditable;
-
-  // ← →
-  if (e.code === "ArrowRight") nextWord();
-  if (e.code === "ArrowLeft") prevWord();
-
-  // ПРОБЕЛ
-  if (e.code === "Space" && !isTyping) {
-    e.preventDefault();
-    flipCard();
-  }
-
-  // ENTER
-  if (e.code === "Enter") {
-    if (!isTyping) return;
-
-    e.preventDefault();
-
-    if (!isAnswerCorrect) {
-      checkAnswer();
-    } else {
-      nextWord();
-      isAnswerCorrect = false;
-    }
-  }
+  if (e.code === "ArrowRight") { e.preventDefault(); nextWord(); }
+  if (e.code === "ArrowLeft")  { e.preventDefault(); prevWord(); }
+  if (e.code === "Space" && !typing) { e.preventDefault(); flipCard(); }
+  if (e.code === "Enter" && typing) { e.preventDefault(); handleEnter(); }
 });
-</script>
 
+// ===================== CLOSE DROPDOWNS =====================
+document.addEventListener("click", e => {
+  if (!e.target.closest("#modeDropdown"))   document.getElementById("modeDropdown").classList.remove("open");
+  if (!e.target.closest("#delayDropdown"))  document.getElementById("delayDropdown").classList.remove("open");
+});
+
+// Touch swipe
+let touchStartX = 0;
+document.addEventListener("touchstart", e => { touchStartX = e.touches[0].clientX; });
+document.addEventListener("touchend",   e => {
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  if (dx >  50) prevWord();
+  if (dx < -50) nextWord();
+});
+
+init();
+</script>
 </body>
 </html>
