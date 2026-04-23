@@ -1050,18 +1050,28 @@ function checkAnswer() {
   const correct = words[order[current]].en.toLowerCase();
 
   if (val === correct) {
-    inp.className = "input-correct";
-    showResult("✓ Correct!", "correct");
-    isAnswerLocked = true;
-    if (!autoPlay) setTimeout(() => {
-      nextWord();
-      inp.className = "";
-    }, 700);
-  } else {
-    inp.className = "input-wrong";
-    showResult(`✗  ${correct}`, "wrong");
-    setTimeout(() => { inp.className = ""; }, 400);
-  }
+  inp.className = "input-correct";
+  showResult("✓ Correct!", "correct");
+  isAnswerLocked = true;
+
+  setTimeout(() => {
+    inp.value = "";        // ✅ очистка
+    inp.className = "";
+  }, 700);
+
+  if (!autoPlay) setTimeout(() => {
+    nextWord();
+  }, 700);
+
+} else {
+  inp.className = "input-wrong";
+  showResult(`✗  ${correct}`, "wrong");
+
+  setTimeout(() => {
+    inp.value = "";        // ✅ очистка
+    inp.className = "";
+  }, 700);
+}
 }
 
 // ===================== MODES =====================
