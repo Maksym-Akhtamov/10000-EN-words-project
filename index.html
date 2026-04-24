@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>YourPath10k</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
       --bg:        #0c0f14;
@@ -862,8 +863,102 @@
     <button class="ctrl-btn" id="regenBtn" onclick="regenerateAI()" style="display:none">🔄 Regen AI</button>
     <button class="ctrl-btn" id="regenMemoryBtn" onclick="regenerateMemory()" style="display:none">🔄 Regen Memory</button>
     <button class="ctrl-btn" id="helpBtn" onclick="openHelp()" style="margin-top:auto">❓ Help</button>
+    <button class="ctrl-btn" id="authBtn" onclick="openAuth()">👤 Sign In</button>
   </aside>
 
+</div>
+
+<!-- ===================== AUTH MODAL ===================== -->
+<div id="authOverlay" onclick="closeAuth()" style="
+  display:none; position:fixed; inset:0; z-index:2000;
+  background:rgba(0,0,0,0.75); backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+"></div>
+
+<div id="authModal" style="
+  display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+  z-index:2001; width:min(420px, 92vw);
+  background:#141820; border:1px solid rgba(255,255,255,0.1);
+  border-radius:22px; overflow:hidden;
+  box-shadow:0 32px 80px rgba(0,0,0,0.8);
+">
+<style>
+  @keyframes authIn {
+    from { opacity:0; transform:translate(-50%,-47%) scale(0.96); }
+    to   { opacity:1; transform:translate(-50%,-50%) scale(1); }
+  }
+  #authModal { animation: authIn 0.25s cubic-bezier(0.34,1.1,0.64,1); }
+  .auth-header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:22px 24px 18px; border-bottom:1px solid rgba(255,255,255,0.07);
+  }
+  .auth-title { font-family:'DM Serif Display',serif; font-size:22px; color:#e8eaf0; }
+  .auth-close {
+    width:32px; height:32px; background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.1); border-radius:8px;
+    cursor:pointer; font-size:16px; color:#5a6278;
+    display:grid; place-items:center; transition:all 0.15s;
+  }
+  .auth-close:hover { background:rgba(255,255,255,0.1); color:#e8eaf0; }
+  .auth-body { padding:24px; display:flex; flex-direction:column; gap:14px; }
+  .auth-tabs {
+    display:flex; gap:0; background:rgba(255,255,255,0.04);
+    border-radius:10px; padding:3px;
+  }
+  .auth-tab {
+    flex:1; padding:8px; border-radius:8px; font-family:'DM Sans',sans-serif;
+    font-size:13px; font-weight:600; cursor:pointer; border:none;
+    background:transparent; color:#5a6278; transition:all 0.18s;
+  }
+  .auth-tab.active { background:#1c2230; color:#e8eaf0; box-shadow:0 2px 8px rgba(0,0,0,0.3); }
+  .auth-input {
+    width:100%; background:#1c2230; border:1px solid rgba(255,255,255,0.1);
+    color:#e8eaf0; font-family:'DM Sans',sans-serif; font-size:15px;
+    padding:13px 16px; border-radius:12px; outline:none; transition:border-color 0.2s;
+    box-sizing:border-box;
+  }
+  .auth-input:focus { border-color:#4f8ef7; box-shadow:0 0 0 3px rgba(79,142,247,0.12); }
+  .auth-input::placeholder { color:#3a4258; }
+  .auth-submit {
+    width:100%; background:#4f8ef7; color:#fff; font-family:'DM Sans',sans-serif;
+    font-size:15px; font-weight:600; padding:14px; border:none; border-radius:12px;
+    cursor:pointer; transition:all 0.2s;
+  }
+  .auth-submit:hover { background:#3b7de8; transform:translateY(-1px); box-shadow:0 6px 20px rgba(79,142,247,0.3); }
+  .auth-submit:disabled { opacity:0.5; cursor:default; transform:none; box-shadow:none; }
+  .auth-msg { font-size:13px; text-align:center; min-height:18px; }
+  .auth-msg.error { color:#f87171; }
+  .auth-msg.success { color:#4ade80; }
+  .auth-divider { display:flex; align-items:center; gap:12px; }
+  .auth-divider::before, .auth-divider::after {
+    content:''; flex:1; height:1px; background:rgba(255,255,255,0.07);
+  }
+  .auth-divider span { font-size:11px; color:#3a4258; }
+  .auth-user-info {
+    display:flex; flex-direction:column; align-items:center; gap:12px;
+    padding:8px 0 4px;
+  }
+  .auth-avatar {
+    width:52px; height:52px; border-radius:50%;
+    background:linear-gradient(135deg,#4f8ef7,#6ee7c0);
+    display:grid; place-items:center; font-size:20px; font-weight:700; color:#fff;
+  }
+  .auth-user-email { font-size:14px; color:#8a93a8; }
+  .auth-signout {
+    width:100%; background:rgba(248,113,113,0.08); border:1px solid rgba(248,113,113,0.2);
+    color:#f87171; font-family:'DM Sans',sans-serif; font-size:14px; font-weight:600;
+    padding:12px; border-radius:12px; cursor:pointer; transition:all 0.15s;
+  }
+  .auth-signout:hover { background:rgba(248,113,113,0.15); }
+  .auth-sync-info {
+    font-size:12px; color:#4a5268; text-align:center; line-height:1.5;
+  }
+</style>
+  <div class="auth-header">
+    <div class="auth-title" id="authModalTitle">Account</div>
+    <button class="auth-close" onclick="closeAuth()">✕</button>
+  </div>
+  <div class="auth-body" id="authBody"></div>
 </div>
 
 <!-- ===================== HELP MODAL ===================== -->
@@ -2238,6 +2333,7 @@ function toggleStar() {
   }
 
   localStorage.setItem("customSets", JSON.stringify(customSets));
+  scheduleSyncToCloud();
   renderCustomSets();
 
   // Update star WITHOUT re-initialising order
@@ -2282,6 +2378,7 @@ function clearCustomSet() {
   currentCustomSet = null;
   filterMode = "all";
   localStorage.setItem("customSets", JSON.stringify(customSets));
+  scheduleSyncToCloud();
   initOrder(); render(); renderCustomSets(); updateAllUI();
 }
 
@@ -2534,6 +2631,220 @@ document.addEventListener("touchend",   e => {
   if (dx < -50) nextWord();
 });
 
+// ===================== SUPABASE =====================
+const SUPABASE_URL = "https://hbhxekdesbjcxycdqvrl.supabase.co";
+const SUPABASE_KEY = "sb_publishable_-0ePOM4q5yxKQX4lEoTCWA_CQtYUJYI";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentUser = null;
+let syncTimeout = null;
+
+// ---- Auth state listener ----
+sb.auth.onAuthStateChange(async (event, session) => {
+  currentUser = session?.user || null;
+  updateAuthBtn();
+  if (currentUser) {
+    await loadProgressFromCloud();
+  }
+});
+
+// ---- Cloud sync ----
+async function loadProgressFromCloud() {
+  if (!currentUser) return;
+  try {
+    const { data, error } = await sb
+      .from("user_progress")
+      .select("completed_sets, custom_sets")
+      .eq("user_id", currentUser.id)
+      .single();
+
+    if (error && error.code !== "PGRST116") { // PGRST116 = no rows
+      console.error("Load error:", error);
+      return;
+    }
+
+    if (data) {
+      // Merge: cloud wins for completedSets, union for customSets words
+      if (data.completed_sets?.length) {
+        completedSets = data.completed_sets;
+        localStorage.setItem("completedSets", JSON.stringify(completedSets));
+      }
+      if (data.custom_sets?.length) {
+        // Merge local and cloud custom sets by union of word ids
+        const cloudWords = data.custom_sets.flatMap(s => s.words);
+        const localWords = customSets.flatMap(s => s.words);
+        const allWords = [...new Set([...cloudWords, ...localWords])];
+        if (allWords.length) {
+          // Rebuild into chunks of 50
+          customSets = [];
+          for (let i = 0; i < allWords.length; i += 50) {
+            customSets.push({ id: customSets.length + 1, words: allWords.slice(i, i + 50) });
+          }
+        } else {
+          customSets = data.custom_sets;
+        }
+        localStorage.setItem("customSets", JSON.stringify(customSets));
+      }
+      renderSets();
+      renderCustomSets();
+    }
+  } catch(e) {
+    console.error("Cloud load failed:", e);
+  }
+}
+
+function scheduleSyncToCloud() {
+  if (!currentUser) return;
+  clearTimeout(syncTimeout);
+  syncTimeout = setTimeout(syncToCloud, 1500); // debounce 1.5s
+}
+
+async function syncToCloud() {
+  if (!currentUser) return;
+  try {
+    await sb.from("user_progress").upsert({
+      user_id: currentUser.id,
+      completed_sets: completedSets,
+      custom_sets: customSets,
+      updated_at: new Date().toISOString()
+    }, { onConflict: "user_id" });
+  } catch(e) {
+    console.error("Cloud sync failed:", e);
+  }
+}
+
+// ---- Auth UI ----
+let authTab = "signin"; // signin | signup
+
+function openAuth() {
+  document.getElementById("authOverlay").style.display = "block";
+  document.getElementById("authModal").style.display = "block";
+  renderAuthModal();
+}
+
+function closeAuth() {
+  document.getElementById("authOverlay").style.display = "none";
+  document.getElementById("authModal").style.display = "none";
+}
+
+function renderAuthModal() {
+  const body = document.getElementById("authBody");
+
+  if (currentUser) {
+    const email = currentUser.email || "";
+    const letter = email[0]?.toUpperCase() || "?";
+    body.innerHTML = `
+      <div class="auth-user-info">
+        <div class="auth-avatar">${letter}</div>
+        <div style="font-size:15px;font-weight:600;color:#e8eaf0">${email}</div>
+        <div class="auth-user-email">Signed in — progress syncs automatically</div>
+      </div>
+      <div class="auth-sync-info">
+        Your completed sets and starred words are saved to the cloud<br>and available on any device.
+      </div>
+      <button class="auth-signout" onclick="signOut()">Sign Out</button>
+    `;
+    return;
+  }
+
+  body.innerHTML = `
+    <div class="auth-tabs">
+      <button class="auth-tab ${authTab === "signin" ? "active" : ""}" onclick="switchAuthTab('signin')">Sign In</button>
+      <button class="auth-tab ${authTab === "signup" ? "active" : ""}" onclick="switchAuthTab('signup')">Create Account</button>
+    </div>
+    <input class="auth-input" id="authEmail" type="email" placeholder="Email" autocomplete="email" />
+    <input class="auth-input" id="authPassword" type="password" placeholder="Password (min 6 chars)" autocomplete="${authTab === "signin" ? "current-password" : "new-password"}" />
+    <div class="auth-msg" id="authMsg"></div>
+    <button class="auth-submit" id="authSubmitBtn" onclick="handleAuthSubmit()">
+      ${authTab === "signin" ? "Sign In" : "Create Account"}
+    </button>
+    <div class="auth-sync-info">
+      Your progress (completed sets &amp; starred words) will sync<br>across all your devices automatically.
+    </div>
+  `;
+
+  // Allow Enter key
+  ["authEmail","authPassword"].forEach(id => {
+    document.getElementById(id)?.addEventListener("keydown", e => {
+      if (e.key === "Enter") handleAuthSubmit();
+    });
+  });
+}
+
+function switchAuthTab(tab) {
+  authTab = tab;
+  renderAuthModal();
+}
+
+async function handleAuthSubmit() {
+  const email = document.getElementById("authEmail")?.value?.trim();
+  const password = document.getElementById("authPassword")?.value;
+  const msg = document.getElementById("authMsg");
+  const btn = document.getElementById("authSubmitBtn");
+
+  if (!email || !password) {
+    msg.className = "auth-msg error";
+    msg.textContent = "Please fill in both fields.";
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Please wait…";
+  msg.className = "auth-msg";
+  msg.textContent = "";
+
+  try {
+    let result;
+    if (authTab === "signin") {
+      result = await sb.auth.signInWithPassword({ email, password });
+    } else {
+      result = await sb.auth.signUp({ email, password });
+    }
+
+    if (result.error) {
+      msg.className = "auth-msg error";
+      msg.textContent = result.error.message;
+      btn.disabled = false;
+      btn.textContent = authTab === "signin" ? "Sign In" : "Create Account";
+      return;
+    }
+
+    if (authTab === "signup" && !result.data?.session) {
+      msg.className = "auth-msg success";
+      msg.textContent = "✓ Check your email to confirm your account.";
+      btn.disabled = false;
+      btn.textContent = "Create Account";
+      return;
+    }
+
+    // Success — onAuthStateChange will fire and update everything
+    closeAuth();
+  } catch(e) {
+    msg.className = "auth-msg error";
+    msg.textContent = "Something went wrong. Try again.";
+    btn.disabled = false;
+    btn.textContent = authTab === "signin" ? "Sign In" : "Create Account";
+  }
+}
+
+async function signOut() {
+  await sb.auth.signOut();
+  closeAuth();
+}
+
+function updateAuthBtn() {
+  const btn = document.getElementById("authBtn");
+  if (!btn) return;
+  if (currentUser) {
+    const letter = currentUser.email?.[0]?.toUpperCase() || "?";
+    btn.textContent = `${letter} Account`;
+    btn.classList.add("active");
+  } else {
+    btn.textContent = "👤 Sign In";
+    btn.classList.remove("active");
+  }
+}
+
 // ===================== HELP =====================
 let helpLang = "en";
 
@@ -2687,7 +2998,7 @@ function renderHelp() {
 
 // Close on Escape
 document.addEventListener("keydown", e => {
-  if (e.key === "Escape") closeHelp();
+  if (e.key === "Escape") { closeHelp(); closeAuth(); }
 });
 
 init();
