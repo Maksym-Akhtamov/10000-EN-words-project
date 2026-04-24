@@ -335,23 +335,38 @@
       position: absolute;
       top: 16px;
       z-index: 10;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid var(--border);
+      background: transparent;
+      border: none;
       color: var(--muted);
-      width: 38px; height: 38px;
-      border-radius: 50%;
+      width: 34px; height: 34px;
       cursor: pointer;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 18px;
+      display: grid;
+      place-items: center;
       transition: all 0.2s;
-      backdrop-filter: blur(8px);
+      border-radius: 10px;
     }
-    .card-icon:hover { background: rgba(255,255,255,0.12); color: var(--text); border-color: var(--border2); transform: scale(1.1); }
+    .card-icon:hover { background: rgba(255,255,255,0.06); color: var(--text); transform: translateY(-1px); }
+    .card-icon svg {
+      width: 22px;
+      height: 22px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
     .star-btn { right: 16px; }
     .audio-btn { left: 16px; }
-    .star-btn.starred { color: var(--gold); border-color: rgba(251,191,36,0.3); background: rgba(251,191,36,0.1); }
+    .star-btn.starred {
+      color: var(--gold);
+      background: rgba(251,191,36,0.08);
+      filter: drop-shadow(0 0 8px rgba(251,191,36,0.22));
+    }
+    .star-btn.starred svg {
+      fill: currentColor;
+      stroke: rgba(255,224,130,0.95);
+      stroke-width: 1.2;
+    }
 
     /* ===== CHOICE OPTIONS ===== */
     #testOptions {
@@ -450,20 +465,67 @@
     }
 
     .nav-btn {
-      width: 52px; height: 52px;
-      border-radius: 50%;
-      background: var(--surface);
-      border: 1px solid var(--border2);
-      color: var(--text);
+      min-width: 46px; height: 44px;
+      border-radius: 12px;
+      background: transparent;
+      border: 1px solid transparent;
+      color: rgba(232,234,240,0.75);
       font-family: 'DM Sans', sans-serif;
-      font-size: 22px;
+      font-size: 34px;
+      line-height: 1;
+      padding: 0 10px 2px;
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: grid;
+      place-items: center;
       transition: all 0.2s;
     }
-    .nav-btn:hover { background: var(--surface2); border-color: var(--accent); color: var(--accent); transform: scale(1.08); }
+    .nav-btn:hover {
+      background: rgba(255,255,255,0.04);
+      border-color: var(--border2);
+      color: var(--accent);
+      transform: translateY(-1px);
+    }
+
+    .choice-setting {
+      margin-top: 14px;
+      display: none;
+    }
+
+    .matches-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      width: 100%;
+      max-width: 520px;
+    }
+
+    .match-col {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .match-col-title {
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-align: center;
+      margin-bottom: 2px;
+      font-weight: 600;
+    }
+
+    .choice-btn.match-selected {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(79,142,247,0.2);
+    }
+
+    .choice-btn.match-done {
+      background: rgba(74,222,128,0.12);
+      border-color: var(--correct);
+      color: var(--correct);
+      cursor: default;
+    }
 
     /* ===== BOTTOM SETTINGS ===== */
     .bottom-settings {
@@ -629,11 +691,13 @@
           <div class="dropdown-item" onclick="selectMode('study')">  <span class="icon">📖</span> Study</div>
           <div class="dropdown-item" onclick="selectMode('choice')"> <span class="icon">🎯</span> Choice</div>
           <div class="dropdown-item" onclick="selectMode('audio')">  <span class="icon">🔊</span> Audio</div>
+          <div class="dropdown-item" onclick="selectMode('truefalse')"> <span class="icon">✅</span> True / False</div>
+          <div class="dropdown-item" onclick="selectMode('matches')"> <span class="icon">🧩</span> Matches</div>
           <div class="dropdown-item" onclick="selectMode('ai')">     <span class="icon">⚡</span> AI Mode</div>
         </div>
       </div>
 
-      <div class="lang-setting">
+        <div class="lang-setting">
         <div class="lang-label">Translation Language</div>
         <div class="lang-btns">
           <button class="lang-btn active" id="langBothBtn" onclick="setLang('both')">Both</button>
@@ -641,6 +705,14 @@
           <button class="lang-btn" id="langRuBtn"   onclick="setLang('ru')">RU</button>
         </div>
       </div>
+
+        <div class="choice-setting" id="choiceSetting">
+          <div class="lang-label">Choice Direction</div>
+          <div class="lang-btns">
+            <button class="lang-btn active" id="choiceTransBtn" onclick="setChoiceDirection('trans-en')">Trans → EN</button>
+            <button class="lang-btn" id="choiceEnBtn" onclick="setChoiceDirection('en-trans')">EN → Trans</button>
+          </div>
+        </div>
     </div>
   </aside>
 
@@ -650,10 +722,20 @@
 
     <div class="card-wrap">
       <div class="card" id="card" onclick="flipCard()">
-        <button class="card-icon star-btn" id="starBtn"
-                onclick="event.stopPropagation(); toggleStar()">☆</button>
-        <button class="card-icon audio-btn" id="audioBtn"
-                onclick="event.stopPropagation(); speakCurrent()">🔊</button>
+        <button class="card-icon star-btn" id="starBtn" aria-label="Toggle favorite"
+                onclick="event.stopPropagation(); toggleStar()">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3.4l2.7 5.5 6.1.9-4.4 4.3 1 6.1L12 17.3 6.6 20.2l1-6.1L3.2 9.8l6.1-.9L12 3.4z"></path>
+          </svg>
+        </button>
+        <button class="card-icon audio-btn" id="audioBtn" aria-label="Play pronunciation"
+                onclick="event.stopPropagation(); speakCurrent()">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 10v4h4l5 4V6l-5 4H5z"></path>
+            <path d="M17 9a5 5 0 0 1 0 6"></path>
+            <path d="M19.8 6.5a9 9 0 0 1 0 11"></path>
+          </svg>
+        </button>
         <div class="card-inner" id="cardInner">
           <div class="card-face card-front" id="front"></div>
           <div class="card-face card-back"  id="back"></div>
@@ -677,8 +759,8 @@
     </div>
 
     <div class="nav-row">
-      <button class="nav-btn" onclick="prevWord()">←</button>
-      <button class="nav-btn" onclick="nextWord()">→</button>
+      <button class="nav-btn" onclick="prevWord()" aria-label="Previous word">‹</button>
+      <button class="nav-btn" onclick="nextWord()" aria-label="Next word">›</button>
     </div>
 
     <div class="bottom-settings" id="bottomSettings">
@@ -690,6 +772,7 @@
   <!-- RIGHT SIDEBAR -->
   <aside class="sidebar-right">
     <button class="ctrl-btn" id="shuffleBtn" onclick="toggleShuffle()">🔀 Shuffle</button>
+    <button class="ctrl-btn" id="tutorBtn" onclick="toggleTutor()">🧠 Tutor</button>
 
     <div class="auto-row">
       <button class="ctrl-btn" id="autoBtn" onclick="toggleAuto()">▶ Auto</button>
@@ -723,10 +806,20 @@ let isAnswerLocked = false;  // true only when correct
 let autoPlay = false;
 let autoTimer = null;
 let autoDelay = 3;
-let activeMode = "study"; // study | choice | audio | ai
+let activeMode = "study"; // study | choice | truefalse | matches | audio | ai
 let direction = "en-ru";  // en-ru | ru-en
 let keyboardOn = false;
 let langMode = "both";     // both | uk | ru
+let choiceDirection = "trans-en"; // trans-en | en-trans
+let tfPrompt = null; // current true/false statement for retries
+let matchesState = null;
+let matchesRound = 0;
+const MATCHES_SIZE = 8;
+let tutorMode = false;
+let tutorQueue = []; // { wordId, dueIn, stage }
+let tutorReviewWordId = null;
+let tutorReviewStage = null;
+let tutorReviewsShown = 0;
 let completedSets = [];
 let filterMode = "all";
 let currentCustomSet = null;
@@ -784,13 +877,19 @@ function getTranslation(word) {
 // ===================== RENDER =====================
 function render() {
   const words = getWords();
+  const matchesTotalRounds = getMatchesTotalRounds();
+  const counterValue = activeMode === "matches"
+    ? (matchesTotalRounds ? `${matchesRound + 1} / ${matchesTotalRounds}` : "")
+    : (words.length ? `${current + 1} / ${order.length}` : "");
+  const progressPct = activeMode === "matches"
+    ? (matchesTotalRounds ? ((matchesRound + 1) / matchesTotalRounds * 100) : 0)
+    : (words.length ? ((current + 1) / order.length * 100) : 0);
 
-  document.getElementById("counter").textContent =
-    words.length ? `${current + 1} / ${order.length}` : "";
+  const extraCounter = tutorMode ? ` · reviews ${tutorReviewsShown}` : "";
+  document.getElementById("counter").textContent = counterValue + extraCounter;
 
   // Progress bar
-  const pct = words.length ? ((current + 1) / order.length * 100) : 0;
-  document.getElementById("progressFill").style.width = pct + "%";
+  document.getElementById("progressFill").style.width = progressPct + "%";
 
   if (!words.length) {
     document.getElementById("front").innerHTML = `<span style="color:var(--muted);font-size:18px">No words</span>`;
@@ -798,7 +897,7 @@ function render() {
     return;
   }
 
-  const word = words[order[current]];
+  const word = getCurrentWord(words);
   const inner = document.getElementById("cardInner");
   inner.classList.remove("flipped");
   flipped = false;
@@ -810,13 +909,17 @@ function render() {
   // Star
   const starBtn = document.getElementById("starBtn");
   const inCustom = isWordStarred(word.id);
-  starBtn.textContent = inCustom ? "⭐" : "☆";
+  starBtn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.4l2.7 5.5 6.1.9-4.4 4.3 1 6.1L12 17.3 6.6 20.2l1-6.1L3.2 9.8l6.1-.9L12 3.4z"></path></svg>`;
   starBtn.className = "card-icon star-btn" + (inCustom ? " starred" : "");
 
   if (activeMode === "audio") {
     renderAudioMode(word);
   } else if (activeMode === "ai") {
     renderAIMode(word);
+  } else if (activeMode === "matches") {
+    renderMatchesMode(word, words);
+  } else if (activeMode === "truefalse") {
+    renderTrueFalseMode(word, words);
   } else if (activeMode === "choice") {
     renderChoiceMode(word, words);
   } else {
@@ -868,9 +971,241 @@ function renderAudioMode(word) {
   setTimeout(() => speak(word.en), 250);
 }
 
+function renderTrueFalseMode(word, words) {
+  if (!tfPrompt || tfPrompt.wordId !== word.id) {
+    tfPrompt = buildTrueFalsePrompt(word, words);
+  }
+  document.getElementById("front").innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center">
+      <div class="card-word" style="font-size:30px">${word.en}</div>
+      <div style="font-size:14px;color:var(--muted);letter-spacing:0.04em;text-transform:uppercase">matches translation?</div>
+      <div class="card-word" style="font-size:28px;color:var(--accent2)">${tfPrompt.translation}</div>
+    </div>`;
+  document.getElementById("back").innerHTML = "";
+  renderTrueFalseOptions(tfPrompt.isCorrect);
+}
+
+function buildTrueFalsePrompt(word, words) {
+  const correctTranslation = getTranslationLabel(word);
+  const useCorrect = Math.random() >= 0.5;
+  if (useCorrect || words.length < 2) {
+    return { wordId: word.id, translation: correctTranslation, isCorrect: true };
+  }
+
+  const wrongCandidates = words
+    .filter(w => w.id !== word.id)
+    .map(w => getTranslationLabel(w))
+    .filter(t => t !== correctTranslation);
+
+  if (!wrongCandidates.length) {
+    return { wordId: word.id, translation: correctTranslation, isCorrect: true };
+  }
+
+  const wrongTranslation = wrongCandidates[Math.floor(Math.random() * wrongCandidates.length)];
+  return { wordId: word.id, translation: wrongTranslation, isCorrect: false };
+}
+
+function renderTrueFalseOptions(isCorrect) {
+  const container = document.getElementById("testOptions");
+  container.innerHTML = "";
+  container.style.display = "grid";
+
+  [
+    { label: "✅ True", value: "true" },
+    { label: "❌ False", value: "false" }
+  ].forEach(item => {
+    const btn = document.createElement("button");
+    btn.className = "choice-btn";
+    btn.textContent = item.label;
+    btn.dataset.val = item.value;
+    btn.onclick = () => handleTrueFalse(item.value, isCorrect, container);
+    container.appendChild(btn);
+  });
+}
+
+function handleTrueFalse(selected, isCorrect, container) {
+  const correct = isCorrect ? "true" : "false";
+  const words = getWords();
+  const word = getCurrentWord(words);
+  handleChoice(selected, correct, container, word ? word.id : null);
+}
+
+function renderMatchesMode(word, words) {
+  const roundWords = getMatchesRoundWords(words);
+  const roundSig = roundWords.map(w => w.id).join(",");
+  if (!matchesState || matchesState.roundSig !== roundSig) {
+    matchesState = buildMatchesState(roundWords);
+  }
+
+  document.getElementById("front").innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center">
+      <div class="card-word" style="font-size:30px">Match pairs</div>
+      <div style="font-size:14px;color:var(--muted)">Pick EN word and matching translation</div>
+    </div>`;
+  document.getElementById("back").innerHTML = "";
+  renderMatchesBoard();
+}
+
+function buildMatchesState(roundWords) {
+  const pairs = [...roundWords];
+  const right = [...pairs].sort(() => Math.random() - 0.5);
+  return {
+    roundSig: pairs.map(w => w.id).join(","),
+    pairs,
+    right,
+    selectedLeft: null,
+    selectedRight: null,
+    matchedIds: []
+  };
+}
+
+function renderMatchesBoard() {
+  const container = document.getElementById("testOptions");
+  container.style.display = "block";
+  container.innerHTML = "";
+
+  if (!matchesState || !matchesState.pairs.length) return;
+
+  const grid = document.createElement("div");
+  grid.className = "matches-grid";
+
+  const leftCol = document.createElement("div");
+  leftCol.className = "match-col";
+  leftCol.innerHTML = `<div class="match-col-title">English</div>`;
+
+  const rightCol = document.createElement("div");
+  rightCol.className = "match-col";
+  rightCol.innerHTML = `<div class="match-col-title">Translation</div>`;
+
+  matchesState.pairs.forEach(w => {
+    const btn = document.createElement("button");
+    btn.className = "choice-btn";
+    if (matchesState.selectedLeft === w.id) btn.classList.add("match-selected");
+    if (matchesState.matchedIds.includes(w.id)) btn.classList.add("match-done", "disabled");
+    btn.textContent = w.en;
+    btn.onclick = () => handleMatchPick("left", w.id);
+    leftCol.appendChild(btn);
+  });
+
+  matchesState.right.forEach(w => {
+    const btn = document.createElement("button");
+    btn.className = "choice-btn";
+    if (matchesState.selectedRight === w.id) btn.classList.add("match-selected");
+    if (matchesState.matchedIds.includes(w.id)) btn.classList.add("match-done", "disabled");
+    btn.textContent = getTranslationLabel(w);
+    btn.onclick = () => handleMatchPick("right", w.id);
+    rightCol.appendChild(btn);
+  });
+
+  grid.appendChild(leftCol);
+  grid.appendChild(rightCol);
+  container.appendChild(grid);
+}
+
+function handleMatchPick(side, id) {
+  if (!matchesState || matchesState.matchedIds.includes(id)) return;
+
+  if (side === "left") matchesState.selectedLeft = id;
+  else matchesState.selectedRight = id;
+
+  renderMatchesBoard();
+
+  if (matchesState.selectedLeft === null || matchesState.selectedRight === null) return;
+
+  if (matchesState.selectedLeft === matchesState.selectedRight) {
+    const matchedId = matchesState.selectedLeft;
+    matchesState.matchedIds.push(matchedId);
+    matchesState.selectedLeft = null;
+    matchesState.selectedRight = null;
+    showResult("✓ Match!", "correct");
+    renderMatchesBoard();
+
+    if (matchesState.matchedIds.length === matchesState.pairs.length) {
+      showResult("✓ Great! All pairs matched", "correct");
+      isAnswerLocked = true;
+      if (!autoPlay) setTimeout(() => nextWord(), 800);
+    }
+    return;
+  }
+
+  showResult("✗ Not a match", "wrong");
+  scheduleTutorReview(matchesState.selectedLeft);
+  const prevLeft = matchesState.selectedLeft;
+  const prevRight = matchesState.selectedRight;
+  setTimeout(() => {
+    if (matchesState.selectedLeft === prevLeft) matchesState.selectedLeft = null;
+    if (matchesState.selectedRight === prevRight) matchesState.selectedRight = null;
+    showResult("", "");
+    renderMatchesBoard();
+  }, 550);
+}
+
+function getMatchesTotalRounds() {
+  if (activeMode !== "matches") return 0;
+  return Math.max(1, Math.ceil(order.length / MATCHES_SIZE));
+}
+
+function getMatchesRoundWords(words) {
+  if (!words.length) return [];
+  const totalRounds = Math.max(1, Math.ceil(order.length / MATCHES_SIZE));
+  const safeRound = Math.min(Math.max(matchesRound, 0), totalRounds - 1);
+  const start = safeRound * MATCHES_SIZE;
+  const end = Math.min(start + MATCHES_SIZE, order.length);
+  return order.slice(start, end).map(i => words[i]).filter(Boolean);
+}
+
+function resetMatchesProgress() {
+  matchesRound = 0;
+  matchesState = null;
+}
+
+function toggleTutor() {
+  tutorMode = !tutorMode;
+  if (!tutorMode) {
+    tutorQueue = [];
+    tutorReviewWordId = null;
+    tutorReviewStage = null;
+    tutorReviewsShown = 0;
+  }
+  const btn = document.getElementById("tutorBtn");
+  btn.classList.toggle("active", tutorMode);
+  btn.textContent = tutorMode ? "🧠 Tutor ON" : "🧠 Tutor";
+  render();
+}
+
+function scheduleTutorReview(wordId) {
+  if (!tutorMode || !wordId) return;
+  // Reset this word to the initial tutor step: +1 card, then +3, then +5.
+  tutorQueue = tutorQueue.filter(item => item.wordId !== wordId);
+  tutorQueue.push({ wordId, dueIn: 1, stage: 0 });
+}
+
+function getDueTutorReview() {
+  if (!tutorMode || !tutorQueue.length) return null;
+  const idx = tutorQueue.findIndex(item => item.dueIn <= 0);
+  if (idx === -1) return null;
+  return tutorQueue.splice(idx, 1)[0];
+}
+
+function tickTutorQueue() {
+  if (!tutorMode || !tutorQueue.length) return;
+  tutorQueue.forEach(item => { item.dueIn -= 1; });
+}
+
+function getCurrentWord(words) {
+  if (tutorReviewWordId !== null) {
+    const byId = words.find(w => w.id === tutorReviewWordId);
+    if (byId) return byId;
+    tutorReviewWordId = null;
+  }
+  return words[order[current]];
+}
+
 function renderChoiceMode(word, words) {
-  const trans = langMode === "uk" ? word.uk : langMode === "ru" ? word.ru : `${word.uk} / ${word.ru}`;
-  document.getElementById("front").innerHTML = `<div class="card-word" style="font-size:30px">${trans}</div>`;
+  const prompt = choiceDirection === "trans-en"
+    ? getTranslationLabel(word)
+    : word.en;
+  document.getElementById("front").innerHTML = `<div class="card-word" style="font-size:30px">${prompt}</div>`;
   document.getElementById("back").innerHTML = "";
   renderChoiceOptions(word, words);
 }
@@ -886,12 +1221,12 @@ function renderChoiceOptions(word, words) {
     btn.className = "choice-btn";
     btn.textContent = opt;
     btn.dataset.val = opt;
-    btn.onclick = () => handleChoice(opt, word.en, container);
+    btn.onclick = () => handleChoice(opt, getChoiceCorrect(word), container, word.id);
     container.appendChild(btn);
   });
 }
 
-function handleChoice(selected, correct, container) {
+function handleChoice(selected, correct, container, wordId = null) {
   // Don't lock on wrong — allow retry, but show which was wrong
   const allBtns = container.querySelectorAll(".choice-btn");
 
@@ -915,6 +1250,7 @@ function handleChoice(selected, correct, container) {
     if (!autoPlay) setTimeout(() => nextWord(), 700);
   } else {
     showResult(`✗ Try again`, "wrong");
+    scheduleTutorReview(wordId);
     // Remove wrong class after a moment to allow retry
     setTimeout(() => {
       allBtns.forEach(b => {
@@ -926,21 +1262,30 @@ function handleChoice(selected, correct, container) {
 }
 
 function generateOptions(correctWord, words) {
+  const correct = getChoiceCorrect(correctWord);
   const pool = words
-    .map(w => w.en)
-    .filter(w => w !== correctWord.en);
+    .map(w => getChoiceCorrect(w))
+    .filter(w => w !== correct);
   // Shuffle pool
   for (let i = pool.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
-  const opts = [correctWord.en, ...pool.slice(0, 3)];
+  const opts = [correct, ...pool.slice(0, 3)];
   // Shuffle opts
   for (let i = opts.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [opts[i], opts[j]] = [opts[j], opts[i]];
   }
   return opts;
+}
+
+function getTranslationLabel(word) {
+  return langMode === "uk" ? word.uk : langMode === "ru" ? word.ru : `${word.uk} / ${word.ru}`;
+}
+
+function getChoiceCorrect(word) {
+  return choiceDirection === "trans-en" ? word.en : getTranslationLabel(word);
 }
 
 function renderAIMode(word) {
@@ -998,6 +1343,9 @@ function handleAIChoice(selected, correct, container) {
     if (!autoPlay) setTimeout(() => nextWord(), 700);
   } else {
     showResult("✗ Try again", "wrong");
+    const words = getWords();
+    const word = getCurrentWord(words);
+    scheduleTutorReview(word ? word.id : null);
     setTimeout(() => {
       allBtns.forEach(b => { if (b.dataset.val === selected) b.classList.remove("wrong-ans"); });
       showResult("", "");
@@ -1014,7 +1362,45 @@ function showResult(text, cls) {
 // ===================== NAVIGATION =====================
 function nextWord() {
   if (!order.length) return;
+
+  if (tutorMode && tutorReviewWordId !== null) {
+    const justReviewedWordId = tutorReviewWordId;
+    const justReviewedStage = tutorReviewStage;
+    tutorReviewWordId = null;
+    tutorReviewStage = null;
+    if (justReviewedStage !== null && justReviewedStage < 2) {
+      const nextGap = [1, 3, 5][justReviewedStage + 1];
+      tutorQueue = tutorQueue.filter(item => item.wordId !== justReviewedWordId);
+      tutorQueue.push({ wordId: justReviewedWordId, dueIn: nextGap, stage: justReviewedStage + 1 });
+    }
+  }
+
+  const dueReview = getDueTutorReview();
+  if (dueReview) {
+    tutorReviewWordId = dueReview.wordId;
+    tutorReviewStage = dueReview.stage;
+    tutorReviewsShown++;
+    tfPrompt = null;
+    matchesState = null;
+    render();
+    return;
+  }
+
+  tutorReviewWordId = null;
+  tutorReviewStage = null;
+  if (activeMode === "matches") {
+    const totalRounds = getMatchesTotalRounds();
+    matchesRound = (matchesRound + 1) % totalRounds;
+    matchesState = null;
+    tfPrompt = null;
+    tickTutorQueue();
+    render();
+    return;
+  }
   current = (current + 1) % order.length;
+  tfPrompt = null;
+  matchesState = null;
+  tickTutorQueue();
   render();
   if (keyboardOn) {
     const inp = document.getElementById("answerInput");
@@ -1026,13 +1412,25 @@ function nextWord() {
 
 function prevWord() {
   if (!order.length) return;
+  tutorReviewWordId = null;
+  tutorReviewStage = null;
+  if (activeMode === "matches") {
+    const totalRounds = getMatchesTotalRounds();
+    matchesRound = (matchesRound - 1 + totalRounds) % totalRounds;
+    matchesState = null;
+    tfPrompt = null;
+    render();
+    return;
+  }
   current = (current - 1 + order.length) % order.length;
+  tfPrompt = null;
+  matchesState = null;
   render();
 }
 
 // ===================== FLIP =====================
 function flipCard() {
-  if (activeMode === "choice" || activeMode === "ai" || activeMode === "audio") return;
+  if (activeMode === "choice" || activeMode === "truefalse" || activeMode === "matches" || activeMode === "ai" || activeMode === "audio") return;
   flipped = !flipped;
   document.getElementById("cardInner").classList.toggle("flipped", flipped);
 }
@@ -1047,7 +1445,8 @@ function checkAnswer() {
   const inp = document.getElementById("answerInput");
   const val = inp.value.trim().toLowerCase();
   const words = getWords();
-  const correct = words[order[current]].en.toLowerCase();
+  const activeWord = getCurrentWord(words);
+  const correct = activeWord.en.toLowerCase();
 
   if (val === correct) {
   inp.className = "input-correct";
@@ -1066,6 +1465,7 @@ function checkAnswer() {
 } else {
   inp.className = "input-wrong";
   showResult(`✗  ${correct}`, "wrong");
+  scheduleTutorReview(activeWord.id);
 
   setTimeout(() => {
     inp.value = "";        // ✅ очистка
@@ -1077,8 +1477,19 @@ function checkAnswer() {
 // ===================== MODES =====================
 function selectMode(m) {
   activeMode = m;
+  tfPrompt = null;
+  resetMatchesProgress();
+  tutorReviewWordId = null;
+  tutorReviewStage = null;
   document.getElementById("modeDropdown").classList.remove("open");
-  const labels = { study: "📖 Study", choice: "🎯 Choice", audio: "🔊 Audio", ai: "⚡ AI Mode" };
+  const labels = {
+    study: "📖 Study",
+    choice: "🎯 Choice",
+    truefalse: "✅ True / False",
+    matches: "🧩 Matches",
+    audio: "🔊 Audio",
+    ai: "⚡ AI Mode"
+  };
   document.getElementById("modeTriggerLabel").textContent = labels[m];
 
   if (m !== "study") { keyboardOn = false; }
@@ -1113,8 +1524,17 @@ function toggleKeyboard() {
 
 function setLang(l) {
   langMode = l;
+  tfPrompt = null;
+  if (activeMode !== "matches") matchesState = null;
   document.querySelectorAll(".lang-btn").forEach(b => b.classList.remove("active"));
   document.getElementById(`lang${l.charAt(0).toUpperCase()+l.slice(1)}Btn`).classList.add("active");
+  render();
+}
+
+function setChoiceDirection(dir) {
+  choiceDirection = dir;
+  document.getElementById("choiceTransBtn").classList.toggle("active", dir === "trans-en");
+  document.getElementById("choiceEnBtn").classList.toggle("active", dir === "en-trans");
   render();
 }
 
@@ -1123,6 +1543,11 @@ function toggleShuffle() {
   shuffleOn = !shuffleOn;
   frozenOrder = null; // reset frozen
   current = 0;
+  resetMatchesProgress();
+  tutorQueue = [];
+  tutorReviewWordId = null;
+  tutorReviewStage = null;
+  tutorReviewsShown = 0;
   initOrder();
   document.getElementById("shuffleBtn").classList.toggle("active", shuffleOn);
   document.getElementById("shuffleBtn").textContent = shuffleOn ? "🔀 Shuffle ON" : "🔀 Shuffle";
@@ -1181,6 +1606,12 @@ function selectSet(idx) {
   filterMode = "all";
   currentCustomSet = null;
   frozenOrder = null;
+  tfPrompt = null;
+  resetMatchesProgress();
+  tutorQueue = [];
+  tutorReviewWordId = null;
+  tutorReviewStage = null;
+  tutorReviewsShown = 0;
   if (activeMode === "ai") {
     const cached = loadAICache();
     aiTasks = cached || [];
@@ -1196,7 +1627,7 @@ function isWordStarred(id) {
 }
 
 function toggleStar() {
-  const word = getWords()[order[current]];
+  const word = getCurrentWord(getWords());
   if (!word) return;
   const id = word.id;
 
@@ -1216,7 +1647,7 @@ function toggleStar() {
   // Update star WITHOUT re-initialising order
   const starBtn = document.getElementById("starBtn");
   const nowStarred = isWordStarred(id);
-  starBtn.textContent = nowStarred ? "⭐" : "☆";
+  starBtn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.4l2.7 5.5 6.1.9-4.4 4.3 1 6.1L12 17.3 6.6 20.2l1-6.1L3.2 9.8l6.1-.9L12 3.4z"></path></svg>`;
   starBtn.className = "card-icon star-btn" + (nowStarred ? " starred" : "");
 }
 
@@ -1237,6 +1668,12 @@ function openCustomSet(idx) {
   filterMode = "custom";
   current = 0;
   frozenOrder = null;
+  tfPrompt = null;
+  resetMatchesProgress();
+  tutorQueue = [];
+  tutorReviewWordId = null;
+  tutorReviewStage = null;
+  tutorReviewsShown = 0;
   initOrder();
   render();
   renderCustomSets();
@@ -1269,7 +1706,9 @@ function speak(text) {
 function speakCurrent() {
   const words = getWords();
   if (!words.length) return;
-  speak(words[order[current]].en);
+  const w = getCurrentWord(words);
+  if (!w) return;
+  speak(w.en);
 }
 
 // ===================== AI =====================
@@ -1332,7 +1771,7 @@ function regenerateAI() {
 
 // ===================== UI STATE =====================
 function updateAllUI() {
-  const isTest = activeMode === "choice" || activeMode === "ai";
+  const isTest = activeMode === "choice" || activeMode === "truefalse" || activeMode === "matches" || activeMode === "ai";
   const isAudio = activeMode === "audio";
 
   // testOptions visibility
@@ -1358,6 +1797,10 @@ function updateAllUI() {
   // regen btn
   document.getElementById("regenBtn").style.display =
     activeMode === "ai" ? "block" : "none";
+
+  // choice direction controls
+  document.getElementById("choiceSetting").style.display =
+    activeMode === "choice" ? "block" : "none";
 }
 
 // ===================== KEYBOARD SHORTCUTS =====================
