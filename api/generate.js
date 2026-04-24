@@ -17,7 +17,7 @@ export default async function handler(req, res) {
     return res.status(403).json({ error: "Forbidden" });
   }
 
-  const { words } = req.body;
+  const { words, difficulty = "medium", type = "ai" } = req.body;
 
   if (!words || !Array.isArray(words) || words.length === 0) {
     return res.status(400).json({ error: "Invalid words array" });
@@ -27,7 +27,27 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Too many words per request (max 15)" });
   }
 
-  const prompt = `You create English fill-in-the-blank exercises.
+  const prompt = type === "memory" ? 
+    `You create logical word pairs for memory training.
+
+For EACH word in the list below:
+1. Create ONE logical association pair
+2. The pair should be: [word] - [associated_word]
+3. Make associations meaningful and memorable
+4. Use different types: synonyms, antonyms, categories, concepts, idioms, etc.
+
+EXAMPLES:
+- time - flies (idiom)
+- car - wheels (parts)
+- give - receive (opposites in action)
+- clear - transparent (similar meaning)
+- heavy - light (opposites)
+
+Output ONLY a raw JSON array of objects: [{"word": "time", "pair": "flies"}, ...]
+
+Words:
+${JSON.stringify(words)}` :
+    `You create English fill-in-the-blank exercises.
 
 For EACH word in the list below:
 1. Write ONE sentence (8-15 words) using that word
@@ -35,10 +55,12 @@ For EACH word in the list below:
 3. Provide 4 options: 1 correct + 3 wrong that clearly don't fit
 
 RULES FOR SENTENCES:
-- Use varied grammar: mix Past Simple, Present Perfect, Conditional, passive voice
-- Use varied contexts: science, emotions, travel, history, business, relationships
-- Make sentences specific and vivid, NOT generic (avoid: 'I always check the ___', 'every ___')
-- Sentences should feel like real, natural English
+${difficulty === "easy" ? 
+  "- Use simple grammar: Present Simple, Past Simple, basic structures\n- Use common contexts: daily life, basic emotions, simple travel\n- Keep sentences short and straightforward, avoid complex vocabulary\n- Sentences should be easy for beginners" :
+difficulty === "hard" ?
+  "- Use advanced grammar: Perfect tenses, Conditionals, passive voice, complex structures\n- Use varied and sophisticated contexts: science, philosophy, business, literature\n- Make sentences longer and more intricate, use advanced vocabulary\n- Sentences should challenge advanced learners" :
+  "- Use varied grammar: mix Past Simple, Present Perfect, Conditional, passive voice\n- Use varied contexts: science, emotions, travel, history, business, relationships\n- Make sentences specific and vivid, NOT generic (avoid: 'I always check the ___', 'every ___')\n- Sentences should feel like real, natural English"
+}
 - Only ONE word can correctly fill the blank
 - Wrong options must clearly not fit the sentence meaning
 

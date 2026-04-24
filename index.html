@@ -694,6 +694,7 @@
           <div class="dropdown-item" onclick="selectMode('truefalse')"> <span class="icon">✅</span> True / False</div>
           <div class="dropdown-item" onclick="selectMode('matches')"> <span class="icon">🧩</span> Matches</div>
           <div class="dropdown-item" onclick="selectMode('ai')">     <span class="icon">⚡</span> AI Mode</div>
+          <div class="dropdown-item" onclick="selectMode('memory')"> <span class="icon">🧠</span> Memory</div>
         </div>
       </div>
 
@@ -711,6 +712,15 @@
           <div class="lang-btns">
             <button class="lang-btn active" id="choiceTransBtn" onclick="setChoiceDirection('trans-en')">Trans → EN</button>
             <button class="lang-btn" id="choiceEnBtn" onclick="setChoiceDirection('en-trans')">EN → Trans</button>
+          </div>
+        </div>
+
+        <div class="choice-setting" id="aiDifficultySetting">
+          <div class="lang-label">AI Difficulty</div>
+          <div class="lang-btns">
+            <button class="lang-btn active" id="aiEasyBtn" onclick="setAIDifficulty('easy')">Easy</button>
+            <button class="lang-btn" id="aiMediumBtn" onclick="setAIDifficulty('medium')">Medium</button>
+            <button class="lang-btn" id="aiHardBtn" onclick="setAIDifficulty('hard')">Hard</button>
           </div>
         </div>
     </div>
@@ -787,8 +797,21 @@
       </div>
     </div>
 
+    <div class="auto-row" id="memorySettings" style="display:none">
+      <div class="mini-dropdown" id="memoryTimeDropdown">
+        <button class="mini-trigger" id="memoryTimeTrigger" onclick="toggleMemoryTimeDropdown()">2s</button>
+        <div class="mini-menu">
+          <div class="mini-option" onclick="setMemoryTime(1)">1s</div>
+          <div class="mini-option" onclick="setMemoryTime(2)">2s</div>
+          <div class="mini-option" onclick="setMemoryTime(3)">3s</div>
+          <div class="mini-option" onclick="setMemoryTime(5)">5s</div>
+        </div>
+      </div>
+    </div>
+
     <button class="ctrl-btn btn-clear" id="clearBtn" onclick="clearCustomSet()">🗑 Clear Review</button>
     <button class="ctrl-btn" id="regenBtn" onclick="regenerateAI()">🔄 Regen AI</button>
+    <button class="ctrl-btn" id="regenMemoryBtn" onclick="regenerateMemory()">🔄 Regen Memory</button>
   </aside>
 
 </div>
@@ -806,7 +829,7 @@ let isAnswerLocked = false;  // true only when correct
 let autoPlay = false;
 let autoTimer = null;
 let autoDelay = 3;
-let activeMode = "study"; // study | choice | truefalse | matches | audio | ai
+let activeMode = "study"; // study | choice | truefalse | matches | audio | ai | memory
 let direction = "en-ru";  // en-ru | ru-en
 let keyboardOn = false;
 let langMode = "both";     // both | uk | ru
@@ -825,6 +848,13 @@ let filterMode = "all";
 let currentCustomSet = null;
 let aiTasks = [];
 let aiTasksCache = {};
+let aiDifficulty = "medium"; // easy | medium | hard
+let memoryState = null;
+let lastTapTime = 0;
+let lastSpaceTime = 0;
+let memoryShowTime = 2; // seconds
+let memoryTasks = [];
+let memoryTasksCache = {};
 let frozenOrder = null;   // locked shuffle order — not changed by star actions
 
 // ===================== INIT =====================
@@ -839,6 +869,8 @@ async function init() {
   renderCustomSets();
   render();
   updateAllUI();
+  // Init AI difficulty buttons
+  document.getElementById("aiMediumBtn").classList.add("active");
 }
 
 // ===================== ORDER =====================
@@ -880,9 +912,13 @@ function render() {
   const matchesTotalRounds = getMatchesTotalRounds();
   const counterValue = activeMode === "matches"
     ? (matchesTotalRounds ? `${matchesRound + 1} / ${matchesTotalRounds}` : "")
+    : activeMode === "memory"
+    ? "Memory Challenge"
     : (words.length ? `${current + 1} / ${order.length}` : "");
   const progressPct = activeMode === "matches"
     ? (matchesTotalRounds ? ((matchesRound + 1) / matchesTotalRounds * 100) : 0)
+    : activeMode === "memory"
+    ? (memoryState ? (memoryState.matchedIds.length / memoryState.pairs.length * 100) : 0)
     : (words.length ? ((current + 1) / order.length * 100) : 0);
 
   const extraCounter = tutorMode ? ` · reviews ${tutorReviewsShown}` : "";
@@ -918,6 +954,8 @@ function render() {
     renderAIMode(word);
   } else if (activeMode === "matches") {
     renderMatchesMode(word, words);
+  } else if (activeMode === "memory") {
+    renderMemoryMode(word, words);
   } else if (activeMode === "truefalse") {
     renderTrueFalseMode(word, words);
   } else if (activeMode === "choice") {
@@ -1159,6 +1197,219 @@ function resetMatchesProgress() {
   matchesState = null;
 }
 
+function renderMemoryMode(word, words) {
+  const roundWords = getMemoryRoundWords(words);
+  const roundSig = roundWords.map(w => w.id).join(",");
+  if (!memoryState || memoryState.roundSig !== roundSig) {
+    memoryState = buildMemoryState(roundWords);
+  }
+
+  // Check if we have AI-generated pairs for this set
+  const hasMemoryTasks = memoryTasks.some(t => t.setId === sets[currentSet].id);
+
+  if (!hasMemoryTasks) {
+    document.getElementById("front").innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center">
+        <div style="color:var(--muted);font-size:17px">No memory pairs for this set</div>
+        <button onclick="event.stopPropagation();startMemoryGeneration()" 
+          style="background:var(--accent);color:#fff;padding:12px 24px;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;border:none;cursor:pointer">
+          ⚡ Generate Memory Pairs
+        </button>
+      </div>`;
+    document.getElementById("back").innerHTML = "";
+    const container = document.getElementById("testOptions");
+    container.innerHTML = "";
+    container.style.display = "none";
+    return;
+  }
+
+  document.getElementById("front").innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center">
+      <div class="card-word" style="font-size:30px">Memory Challenge</div>
+      <div style="font-size:14px;color:var(--muted)">Memorize pairs, then match them</div>
+    </div>`;
+  document.getElementById("back").innerHTML = "";
+  renderMemoryBoard();
+}
+
+function buildMemoryState(roundWords) {
+  // Use AI-generated pairs or fallback to static
+  const pairs = [];
+  roundWords.forEach(word => {
+    const aiPair = memoryTasks.find(t => t.word === word.en && t.setId === sets[currentSet].id);
+    if (aiPair) {
+      pairs.push({ en: word.en, pair: aiPair.pair, id: word.id });
+    } else {
+      // Fallback to static associations
+      const staticPair = generateMemoryPair(word.en);
+      pairs.push({ en: word.en, pair: staticPair, id: word.id });
+    }
+  });
+  
+  return {
+    roundSig: roundWords.map(w => w.id).join(","),
+    pairs,
+    phase: "show", // show | hide | select
+    showTime: memoryShowTime * 1000, // convert to ms
+    selectedLeft: null,
+    selectedRight: null,
+    matchedIds: [],
+    startTime: Date.now()
+  };
+}
+
+function generateMemoryPair(word) {
+  // Logical associations for memory training
+  const associations = {
+    time: "flies", car: "wheels", give: "receive", dad: "son", clear: "transparent",
+    five: "fingers", for: "against", human: "being", large: "small", he: "she",
+    video: "screen", position: "place", problem: "solution", final: "first", smell: "taste",
+    with: "without", heavy: "light", wait: "hurry", mistake: "correct", sun: "moon",
+    service: "customer", put: "take", end: "beginning", worry: "calm", football: "basketball",
+    when: "where", neighbour: "friend", bus: "train", middle: "edge", feel: "touch",
+    kitchen: "bathroom", class: "lesson", computer: "phone", dear: "cheap", again: "never",
+    general: "specific", doubt: "certainty", sick: "healthy", base: "top", catch: "throw",
+    afford: "expensive", bottom: "top", holiday: "workday", guess: "know", hardly: "easily"
+  };
+  return associations[word] || "concept"; // fallback
+}
+
+function renderMemoryBoard() {
+  const container = document.getElementById("testOptions");
+  container.style.display = "block";
+  container.innerHTML = "";
+
+  if (!memoryState || !memoryState.pairs.length) return;
+
+  if (memoryState.phase === "show") {
+    // Show pairs for memorization
+    const pairsList = document.createElement("div");
+    pairsList.style.display = "grid";
+    pairsList.style.gridTemplateColumns = "1fr 1fr";
+    pairsList.style.gap = "12px";
+    pairsList.style.width = "100%";
+    pairsList.style.maxWidth = "520px";
+
+    memoryState.pairs.forEach(pair => {
+      const pairDiv = document.createElement("div");
+      pairDiv.style.display = "flex";
+      pairDiv.style.justifyContent = "space-between";
+      pairDiv.style.alignItems = "center";
+      pairDiv.style.padding = "12px";
+      pairDiv.style.background = "var(--surface)";
+      pairDiv.style.border = "1px solid var(--border2)";
+      pairDiv.style.borderRadius = "12px";
+      pairDiv.style.fontSize = "16px";
+      pairDiv.innerHTML = `<span>${pair.en}</span> <span style="color:var(--accent)">→</span> <span>${pair.pair}</span>`;
+      pairsList.appendChild(pairDiv);
+    });
+
+    container.appendChild(pairsList);
+
+    // Auto-hide after showTime
+    setTimeout(() => {
+      memoryState.phase = "hide";
+      renderMemoryBoard();
+    }, memoryState.showTime);
+
+  } else if (memoryState.phase === "hide") {
+    // Hide pairs, show selection board
+    memoryState.phase = "select";
+    renderMemorySelectionBoard();
+
+  } else if (memoryState.phase === "select") {
+    renderMemorySelectionBoard();
+  }
+}
+
+function renderMemorySelectionBoard() {
+  const container = document.getElementById("testOptions");
+  container.innerHTML = "";
+
+  const grid = document.createElement("div");
+  grid.className = "matches-grid";
+
+  const leftCol = document.createElement("div");
+  leftCol.className = "match-col";
+  leftCol.innerHTML = `<div class="match-col-title">English</div>`;
+
+  const rightCol = document.createElement("div");
+  rightCol.className = "match-col";
+  rightCol.innerHTML = `<div class="match-col-title">Pair</div>`;
+
+  // Shuffle right side
+  const rightItems = [...memoryState.pairs].sort(() => Math.random() - 0.5);
+
+  memoryState.pairs.forEach(pair => {
+    const btn = document.createElement("button");
+    btn.className = "choice-btn";
+    if (memoryState.selectedLeft === pair.id) btn.classList.add("match-selected");
+    if (memoryState.matchedIds.includes(pair.id)) btn.classList.add("match-done", "disabled");
+    btn.textContent = pair.en;
+    btn.onclick = () => handleMemoryPick("left", pair.id);
+    leftCol.appendChild(btn);
+  });
+
+  rightItems.forEach(pair => {
+    const btn = document.createElement("button");
+    btn.className = "choice-btn";
+    if (memoryState.selectedRight === pair.id) btn.classList.add("match-selected");
+    if (memoryState.matchedIds.includes(pair.id)) btn.classList.add("match-done", "disabled");
+    btn.textContent = pair.pair;
+    btn.onclick = () => handleMemoryPick("right", pair.id);
+    rightCol.appendChild(btn);
+  });
+
+  grid.appendChild(leftCol);
+  grid.appendChild(rightCol);
+  container.appendChild(grid);
+}
+
+function handleMemoryPick(side, id) {
+  if (!memoryState || memoryState.matchedIds.includes(id)) return;
+
+  if (side === "left") memoryState.selectedLeft = id;
+  else memoryState.selectedRight = id;
+
+  renderMemorySelectionBoard();
+
+  if (memoryState.selectedLeft === null || memoryState.selectedRight === null) return;
+
+  if (memoryState.selectedLeft === memoryState.selectedRight) {
+    const matchedId = memoryState.selectedLeft;
+    memoryState.matchedIds.push(matchedId);
+    memoryState.selectedLeft = null;
+    memoryState.selectedRight = null;
+    showResult("✓ Match!", "correct");
+    renderMemorySelectionBoard();
+
+    if (memoryState.matchedIds.length === memoryState.pairs.length) {
+      showResult("✓ Great! All pairs matched", "correct");
+      isAnswerLocked = true;
+      if (!autoPlay) setTimeout(() => nextWord(), 800);
+    }
+    return;
+  }
+
+  showResult("✗ Not a match", "wrong");
+  const prevLeft = memoryState.selectedLeft;
+  const prevRight = memoryState.selectedRight;
+  setTimeout(() => {
+    if (memoryState.selectedLeft === prevLeft) memoryState.selectedLeft = null;
+    if (memoryState.selectedRight === prevRight) memoryState.selectedRight = null;
+    showResult("", "");
+    renderMemorySelectionBoard();
+  }, 550);
+}
+
+function getMemoryRoundWords(words) {
+  if (!words.length) return [];
+  // Use 4 pairs for memory mode
+  const start = 0;
+  const end = Math.min(4, words.length);
+  return words.slice(start, end);
+}
+
 function toggleTutor() {
   tutorMode = !tutorMode;
   if (!tutorMode) {
@@ -1397,6 +1648,13 @@ function nextWord() {
     render();
     return;
   }
+  if (activeMode === "memory") {
+    memoryState = null;
+    tfPrompt = null;
+    tickTutorQueue();
+    render();
+    return;
+  }
   current = (current + 1) % order.length;
   tfPrompt = null;
   matchesState = null;
@@ -1418,6 +1676,12 @@ function prevWord() {
     const totalRounds = getMatchesTotalRounds();
     matchesRound = (matchesRound - 1 + totalRounds) % totalRounds;
     matchesState = null;
+    tfPrompt = null;
+    render();
+    return;
+  }
+  if (activeMode === "memory") {
+    memoryState = null;
     tfPrompt = null;
     render();
     return;
@@ -1479,6 +1743,7 @@ function selectMode(m) {
   activeMode = m;
   tfPrompt = null;
   resetMatchesProgress();
+  memoryState = null;
   tutorReviewWordId = null;
   tutorReviewStage = null;
   document.getElementById("modeDropdown").classList.remove("open");
@@ -1488,12 +1753,14 @@ function selectMode(m) {
     truefalse: "✅ True / False",
     matches: "🧩 Matches",
     audio: "🔊 Audio",
-    ai: "⚡ AI Mode"
+    ai: "⚡ AI Mode",
+    memory: "🧠 Memory"
   };
   document.getElementById("modeTriggerLabel").textContent = labels[m];
 
   if (m !== "study") { keyboardOn = false; }
   if (m === "ai") loadAITasks();
+  if (m === "memory") loadMemoryTasks();
 
   current = 0;
   initOrder();
@@ -1536,6 +1803,19 @@ function setChoiceDirection(dir) {
   document.getElementById("choiceTransBtn").classList.toggle("active", dir === "trans-en");
   document.getElementById("choiceEnBtn").classList.toggle("active", dir === "en-trans");
   render();
+}
+
+function setAIDifficulty(diff) {
+  aiDifficulty = diff;
+  document.getElementById("aiEasyBtn").classList.toggle("active", diff === "easy");
+  document.getElementById("aiMediumBtn").classList.toggle("active", diff === "medium");
+  document.getElementById("aiHardBtn").classList.toggle("active", diff === "hard");
+  // Regenerate AI tasks if needed
+  if (activeMode === "ai") {
+    localStorage.removeItem(getAIKey());
+    delete aiTasksCache[getAIKey()];
+    loadAITasks();
+  }
 }
 
 // ===================== SHUFFLE =====================
@@ -1584,6 +1864,16 @@ function toggleDelayDropdown() {
   document.getElementById("delayDropdown").classList.toggle("open");
 }
 
+function toggleMemoryTimeDropdown() {
+  document.getElementById("memoryTimeDropdown").classList.toggle("open");
+}
+
+function setMemoryTime(s) {
+  memoryShowTime = s;
+  document.getElementById("memoryTimeTrigger").textContent = s + "s";
+  document.getElementById("memoryTimeDropdown").classList.remove("open");
+}
+
 // ===================== SETS =====================
 function renderSets() {
   const c = document.getElementById("sets");
@@ -1615,6 +1905,10 @@ function selectSet(idx) {
   if (activeMode === "ai") {
     const cached = loadAICache();
     aiTasks = cached || [];
+  }
+  if (activeMode === "memory") {
+    const cached = loadMemoryCache();
+    memoryTasks = cached || [];
   }
   initOrder();
   renderSets();
@@ -1712,7 +2006,7 @@ function speakCurrent() {
 }
 
 // ===================== AI =====================
-function getAIKey() { return `aiTasks_set_${sets[currentSet].id}`; }
+function getAIKey() { return `aiTasks_set_${sets[currentSet].id}_diff_${aiDifficulty}`; }
 
 function loadAICache() {
   const key = getAIKey();
@@ -1738,7 +2032,7 @@ async function generateAIBatch(words) {
   const res = await fetch("/api/generate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ words: words.map(w => w.en) })
+    body: JSON.stringify({ words: words.map(w => w.en), difficulty: aiDifficulty })
   });
   if (!res.ok) throw new Error("Server " + res.status);
   return res.json();
@@ -1769,9 +2063,67 @@ function regenerateAI() {
   startAIGeneration();
 }
 
+// ===================== MEMORY =====================
+function getMemoryKey() { return `memoryTasks_set_${sets[currentSet].id}`; }
+
+function loadMemoryCache() {
+  const key = getMemoryKey();
+  if (memoryTasksCache[key]) return memoryTasksCache[key];
+  const s = localStorage.getItem(key);
+  if (s) { try { const p = JSON.parse(s); memoryTasksCache[key] = p; return p; } catch(e){} }
+  return null;
+}
+
+function saveMemoryCache(tasks) {
+  const key = getMemoryKey();
+  memoryTasksCache[key] = tasks;
+  localStorage.setItem(key, JSON.stringify(tasks));
+}
+
+async function loadMemoryTasks() {
+  const cached = loadMemoryCache();
+  if (cached) { memoryTasks = cached; render(); return; }
+  memoryTasks = []; render();
+}
+
+async function generateMemoryBatch(words) {
+  const res = await fetch("/api/generate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ words: words.map(w => w.en), type: "memory" })
+  });
+  if (!res.ok) throw new Error("Server " + res.status);
+  return res.json();
+}
+
+async function startMemoryGeneration() {
+  memoryTasks = null; render();
+  const words = getWords();
+  const batches = [];
+  for (let i = 0; i < words.length; i += 10) batches.push(words.slice(i, i + 10));
+  try {
+    const results = await Promise.all(batches.map(b => generateMemoryBatch(b)));
+    const all = results.flat();
+    if (!all.length) { memoryTasks = []; render(); return; }
+    const setId = sets[currentSet].id;
+    memoryTasks = all.map(t => ({ ...t, setId }));
+    saveMemoryCache(memoryTasks);
+    render();
+  } catch(e) {
+    console.error(e);
+    memoryTasks = []; render();
+  }
+}
+
+function regenerateMemory() {
+  localStorage.removeItem(getMemoryKey());
+  delete memoryTasksCache[getMemoryKey()];
+  startMemoryGeneration();
+}
+
 // ===================== UI STATE =====================
 function updateAllUI() {
-  const isTest = activeMode === "choice" || activeMode === "truefalse" || activeMode === "matches" || activeMode === "ai";
+  const isTest = activeMode === "choice" || activeMode === "truefalse" || activeMode === "matches" || activeMode === "ai" || activeMode === "memory";
   const isAudio = activeMode === "audio";
 
   // testOptions visibility
@@ -1798,9 +2150,21 @@ function updateAllUI() {
   document.getElementById("regenBtn").style.display =
     activeMode === "ai" ? "block" : "none";
 
+  // regen memory btn
+  document.getElementById("regenMemoryBtn").style.display =
+    activeMode === "memory" ? "block" : "none";
+
+  // memory time settings
+  document.getElementById("memorySettings").style.display =
+    activeMode === "memory" ? "flex" : "none";
+
   // choice direction controls
   document.getElementById("choiceSetting").style.display =
     activeMode === "choice" ? "block" : "none";
+
+  // ai difficulty controls
+  document.getElementById("aiDifficultySetting").style.display =
+    activeMode === "ai" ? "block" : "none";
 }
 
 // ===================== KEYBOARD SHORTCUTS =====================
@@ -1810,8 +2174,32 @@ document.addEventListener("keydown", e => {
 
   if (e.code === "ArrowRight") { e.preventDefault(); nextWord(); }
   if (e.code === "ArrowLeft")  { e.preventDefault(); prevWord(); }
-  if (e.code === "Space" && !typing) { e.preventDefault(); flipCard(); }
+  if (e.code === "Space" && !typing) { 
+    e.preventDefault(); 
+    const now = Date.now();
+    if (now - lastSpaceTime < 500) { // double space
+      toggleStar();
+    } else {
+      flipCard(); 
+    }
+    lastSpaceTime = now;
+  }
   if (e.code === "Enter" && typing) { e.preventDefault(); handleEnter(); }
+});
+
+// Double click for desktop
+document.getElementById("card").addEventListener("dblclick", e => {
+  e.preventDefault();
+  toggleStar();
+});
+
+// Double tap for mobile
+document.addEventListener("touchend", e => {
+  const now = Date.now();
+  if (now - lastTapTime < 300) { // double tap
+    toggleStar();
+  }
+  lastTapTime = now;
 });
 
 // ===================== CLOSE DROPDOWNS =====================
