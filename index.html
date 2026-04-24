@@ -467,6 +467,23 @@
     #answerInput.input-correct { border-color: var(--correct); }
     #answerInput.input-wrong   { border-color: var(--wrong); animation: shake 0.3s; }
 
+    .memory-input {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 17px;
+      padding: 13px 20px;
+      border-radius: 14px;
+      outline: none;
+      text-align: center;
+      transition: border-color 0.2s;
+    }
+    .memory-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,142,247,0.12); }
+    .memory-input.input-correct { border-color: var(--correct); }
+    .memory-input.input-wrong   { border-color: var(--wrong); animation: shake 0.3s; }
+
     input.input-correct { border-color: var(--correct); }
     input.input-wrong   { border-color: var(--wrong); animation: shake 0.3s; }
 
@@ -809,7 +826,7 @@
 
     <div id="inputArea">
       <div class="input-row">
-        <input id="answerInput" type="text" placeholder="Type the English word…"/>
+        <input id="answerInput" type="text" placeholder="Type the English word…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
         <button id="checkBtn" onclick="checkAnswer()">Check</button>
       </div>
     </div>
@@ -1241,15 +1258,13 @@ function resetMatchesProgress() {
 }
 
 function renderMemoryMode(word, words) {
-  // Check if we have AI-generated pairs for this set
   const hasMemoryTasks = Array.isArray(memoryTasks) && memoryTasks.some(t => t.setId === sets[currentSet].id);
 
   if (memoryTasks === null) {
     document.getElementById("front").innerHTML = `<div style="color:var(--muted);font-size:18px">⏳ Generating…</div>`;
     document.getElementById("back").innerHTML = "";
-    const container = document.getElementById("testOptions");
-    container.innerHTML = "";
-    container.style.display = "none";
+    document.getElementById("testOptions").innerHTML = "";
+    document.getElementById("testOptions").style.display = "none";
     return;
   }
 
@@ -1258,16 +1273,15 @@ function renderMemoryMode(word, words) {
     memoryState = null;
     document.getElementById("front").innerHTML = `
       <div style="display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center">
-        <div style="color:var(--muted);font-size:17px">No memory pairs for this set</div>
+        <div style="color:var(--muted);font-size:17px">No memory associations for this set</div>
         <button onclick="event.stopPropagation();startMemoryGeneration()" 
           style="background:var(--accent);color:#fff;padding:12px 24px;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;border:none;cursor:pointer">
           ⚡ Generate Memory Associations
         </button>
       </div>`;
     document.getElementById("back").innerHTML = "";
-    const container = document.getElementById("testOptions");
-    container.innerHTML = "";
-    container.style.display = "none";
+    document.getElementById("testOptions").innerHTML = "";
+    document.getElementById("testOptions").style.display = "none";
     return;
   }
 
@@ -1282,9 +1296,8 @@ function renderMemoryMode(word, words) {
         </button>
       </div>`;
     document.getElementById("back").innerHTML = "";
-    const container = document.getElementById("testOptions");
-    container.innerHTML = "";
-    container.style.display = "none";
+    document.getElementById("testOptions").innerHTML = "";
+    document.getElementById("testOptions").style.display = "none";
     return;
   }
 
@@ -1294,38 +1307,57 @@ function renderMemoryMode(word, words) {
     memoryState = buildMemoryState(roundWords);
   }
 
-  document.getElementById("front").innerHTML = `
-    <div style="display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center">
-      <div class="card-word" style="font-size:30px">${memoryState.word}</div>
-      <div style="font-size:14px;color:var(--muted)">Memory Associations</div>
-    </div>`;
+  renderMemoryCard();
   document.getElementById("back").innerHTML = "";
   renderMemoryBoard();
 }
 
 function buildMemoryState(roundWords) {
-  // Use AI-generated chains
-  const word = roundWords[0];
-  const aiChain = Array.isArray(memoryTasks) && memoryTasks.find(t => t.word === word.en && t.setId === sets[currentSet].id);
-  let chain = "";
-  if (aiChain) {
-    chain = aiChain.chain;
-  } else {
-    // Fallback
-    chain = generateMemoryChain(word.en);
-  }
-  const parts = chain.split(" -> ");
+  const chains = roundWords.map(word => {
+    const aiChain = Array.isArray(memoryTasks) && memoryTasks.find(t => t.word === word.en && t.setId === sets[currentSet].id);
+    const chain = aiChain ? aiChain.chain : generateMemoryChain(word.en);
+    return {
+      word: word.en,
+      chain,
+      parts: chain.split(" -> ")
+    };
+  });
+
   return {
     roundSig: roundWords.map(w => w.id).join(","),
-    word: word.en,
-    chain,
-    parts,
+    chains,
     phase: "show", // show | delay | input
     showTime: memoryShowTime * 1000,
     delayTime: memoryDelayTime * 1000,
-    inputs: ["", ""],
+    inputs: new Array(chains.length * 2).fill(""),
     startTime: Date.now()
   };
+}
+
+function renderMemoryCard() {
+  const front = document.getElementById("front");
+  if (!memoryState) {
+    front.innerHTML = "";
+    return;
+  }
+
+  let title = "Memory Associations";
+  if (memoryState.phase === "show") title = "Memorize the chains";
+  if (memoryState.phase === "delay") title = "Remember the first words";
+  if (memoryState.phase === "input") title = "Type the associations";
+
+  const lines = memoryState.chains.map(chain => {
+    if (memoryState.phase === "show") {
+      return `<div class="card-word" style="font-size:24px;line-height:1.2;margin:12px 0">${chain.chain.replace(/ -> /g, " → ")}</div>`;
+    }
+    return `<div class="card-word" style="font-size:24px;line-height:1.2;margin:12px 0">${chain.parts[0]} → ___ → ___</div>`;
+  }).join("");
+
+  front.innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center">
+      <div style="font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:0.12em">${title}</div>
+      ${lines}
+    </div>`;
 }
 
 function generateMemoryPair(word) {
@@ -1358,99 +1390,119 @@ function generateMemoryChain(word) {
 
 function renderMemoryBoard() {
   const container = document.getElementById("testOptions");
-  container.style.display = "block";
   container.innerHTML = "";
+  if (!memoryState) {
+    container.style.display = "none";
+    return;
+  }
 
-  if (!memoryState) return;
+  if (memoryState.phase === "show" || memoryState.phase === "delay") {
+    container.style.display = "none";
+  }
 
   if (memoryState.phase === "show") {
-    // Show full chain
-    const chainDiv = document.createElement("div");
-    chainDiv.style.textAlign = "center";
-    chainDiv.style.fontSize = "24px";
-    chainDiv.style.padding = "20px";
-    chainDiv.innerHTML = memoryState.chain.replace(" -> ", " → ");
-    container.appendChild(chainDiv);
-
-    // Auto-transition to delay after showTime
     setTimeout(() => {
       memoryState.phase = "delay";
+      renderMemoryCard();
       renderMemoryBoard();
     }, memoryState.showTime);
+    return;
+  }
 
-  } else if (memoryState.phase === "delay") {
-    // Show first word and blanks
-    const inputDiv = document.createElement("div");
-    inputDiv.style.textAlign = "center";
-    inputDiv.style.fontSize = "24px";
-    inputDiv.style.padding = "20px";
-    inputDiv.innerHTML = `${memoryState.parts[0]} → ___ → ___`;
-    container.appendChild(inputDiv);
-
-    // Auto-transition to input after delayTime
+  if (memoryState.phase === "delay") {
     setTimeout(() => {
       memoryState.phase = "input";
+      renderMemoryCard();
       renderMemoryBoard();
     }, memoryState.delayTime);
+    return;
+  }
 
-  } else if (memoryState.phase === "input") {
-    // Show input fields
+  if (memoryState.phase === "input") {
+    container.style.display = "block";
     const form = document.createElement("div");
     form.style.display = "flex";
     form.style.flexDirection = "column";
     form.style.alignItems = "center";
-    form.style.gap = "16px";
+    form.style.gap = "18px";
     form.style.padding = "20px";
 
-    const chainDisplay = document.createElement("div");
-    chainDisplay.style.fontSize = "20px";
-    chainDisplay.style.marginBottom = "10px";
-    chainDisplay.textContent = `${memoryState.parts[0]} →`;
-    form.appendChild(chainDisplay);
+    memoryState.chains.forEach((chain, idx) => {
+      const row = document.createElement("div");
+      row.style.display = "flex";
+      row.style.flexDirection = "column";
+      row.style.alignItems = "center";
+      row.style.gap = "10px";
+      row.style.width = "100%";
+      row.style.maxWidth = "520px";
 
-    const inputsDiv = document.createElement("div");
-    inputsDiv.style.display = "flex";
-    inputsDiv.style.gap = "12px";
-    inputsDiv.style.alignItems = "center";
+      const title = document.createElement("div");
+      title.textContent = `${chain.parts[0]} →`;
+      title.style.fontSize = "18px";
+      title.style.color = "var(--text)";
+      row.appendChild(title);
 
-    const input1 = document.createElement("input");
-    input1.type = "text";
-    input1.placeholder = "association 1";
-    input1.value = memoryState.inputs[0];
-    input1.style.padding = "8px 12px";
-    input1.style.border = "1px solid var(--border)";
-    input1.style.borderRadius = "8px";
-    input1.style.fontSize = "16px";
-    input1.oninput = (e) => { memoryState.inputs[0] = e.target.value; };
+      const inputsDiv = document.createElement("div");
+      inputsDiv.style.display = "flex";
+      inputsDiv.style.gap = "12px";
+      inputsDiv.style.alignItems = "center";
+      inputsDiv.style.width = "100%";
 
-    const arrow = document.createElement("span");
-    arrow.textContent = "→";
-    arrow.style.fontSize = "20px";
+      const input1 = document.createElement("input");
+      input1.type = "text";
+      input1.placeholder = "association 1";
+      input1.autocomplete = "off";
+      input1.autocorrect = "off";
+      input1.autocapitalize = "off";
+      input1.spellcheck = false;
+      input1.value = memoryState.inputs[idx * 2] || "";
+      input1.className = "memory-input";
+      input1.oninput = (e) => {
+        memoryState.inputs[idx * 2] = e.target.value;
+      };
+      input1.onkeydown = (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          checkMemoryAnswer();
+        }
+      };
 
-    const input2 = document.createElement("input");
-    input2.type = "text";
-    input2.placeholder = "association 2";
-    input2.value = memoryState.inputs[1];
-    input2.style.padding = "8px 12px";
-    input2.style.border = "1px solid var(--border)";
-    input2.style.borderRadius = "8px";
-    input2.style.fontSize = "16px";
-    input2.oninput = (e) => { memoryState.inputs[1] = e.target.value; };
+      const arrow = document.createElement("span");
+      arrow.textContent = "→";
+      arrow.style.fontSize = "20px";
+      arrow.style.color = "var(--muted)";
 
-    inputsDiv.appendChild(input1);
-    inputsDiv.appendChild(arrow);
-    inputsDiv.appendChild(input2);
-    form.appendChild(inputsDiv);
+      const input2 = document.createElement("input");
+      input2.type = "text";
+      input2.placeholder = "association 2";
+      input2.autocomplete = "off";
+      input2.autocorrect = "off";
+      input2.autocapitalize = "off";
+      input2.spellcheck = false;
+      input2.value = memoryState.inputs[idx * 2 + 1] || "";
+      input2.className = "memory-input";
+      input2.oninput = (e) => {
+        memoryState.inputs[idx * 2 + 1] = e.target.value;
+      };
+      input2.onkeydown = (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          checkMemoryAnswer();
+        }
+      };
+
+      inputsDiv.appendChild(input1);
+      inputsDiv.appendChild(arrow);
+      inputsDiv.appendChild(input2);
+      row.appendChild(inputsDiv);
+      form.appendChild(row);
+    });
 
     const checkBtn = document.createElement("button");
     checkBtn.textContent = "Check";
-    checkBtn.style.background = "var(--accent)";
-    checkBtn.style.color = "#fff";
-    checkBtn.style.padding = "10px 20px";
-    checkBtn.style.border = "none";
-    checkBtn.style.borderRadius = "8px";
-    checkBtn.style.fontSize = "16px";
-    checkBtn.style.cursor = "pointer";
+    checkBtn.className = "choice-btn";
+    checkBtn.style.width = "auto";
+    checkBtn.style.padding = "12px 24px";
     checkBtn.onclick = checkMemoryAnswer;
     form.appendChild(checkBtn);
 
@@ -1537,16 +1589,23 @@ function handleMemoryPick(side, id) {
   }, 550);
 }
 
+function getMemorySize() {
+  if (memoryDifficulty === "hard") return 3;
+  if (memoryDifficulty === "medium") return 2;
+  return 1;
+}
+
 function getMemoryTotalRounds() {
-  return Math.max(1, Math.ceil(order.length / MEMORY_SIZE));
+  return Math.max(1, Math.ceil(order.length / getMemorySize()));
 }
 
 function getMemoryRoundWords(words) {
   if (!words.length) return [];
+  const size = getMemorySize();
   const totalRounds = getMemoryTotalRounds();
   const safeRound = Math.min(Math.max(memoryRound, 0), totalRounds - 1);
-  const start = safeRound * MEMORY_SIZE;
-  const end = Math.min(start + MEMORY_SIZE, words.length);
+  const start = safeRound * size;
+  const end = Math.min(start + size, words.length);
   return order.slice(start, end).map(i => words[i]).filter(Boolean);
 }
 
@@ -1847,44 +1906,74 @@ function flipCard() {
 
 // ===================== KEYBOARD =====================
 function handleEnter() {
-  if (!isAnswerLocked) checkAnswer();
-  else { nextWord(); }
+  if (activeMode === "memory" && memoryState && memoryState.phase === "input") {
+    checkMemoryAnswer();
+  } else if (!isAnswerLocked) {
+    checkAnswer();
+  } else {
+    nextWord();
+  }
+}
+
+function checkAnswer() {
+  const inp = document.getElementById("answerInput");
+  const val = inp.value.trim().toLowerCase();
+  const words = getWords();
+  const activeWord = getCurrentWord(words);
+  const correct = activeWord.en.toLowerCase();
+
+  if (val === correct) {
+    inp.className = "input-correct";
+    showResult("✓ Correct!", "correct");
+    isAnswerLocked = true;
+
+    setTimeout(() => {
+      inp.value = "";
+      inp.className = "";
+    }, 700);
+
+    if (!autoPlay) setTimeout(() => {
+      nextWord();
+    }, 700);
+  } else {
+    inp.className = "input-wrong";
+    showResult(`✗  ${correct}`, "wrong");
+    scheduleTutorReview(activeWord.id);
+
+    setTimeout(() => {
+      inp.value = "";
+      inp.className = "";
+    }, 700);
+  }
 }
 
 function checkMemoryAnswer() {
-  const correct1 = memoryState.parts[1].toLowerCase();
-  const correct2 = memoryState.parts[2].toLowerCase();
-  const user1 = memoryState.inputs[0].trim().toLowerCase();
-  const user2 = memoryState.inputs[1].trim().toLowerCase();
-
-  const input1 = document.querySelector('input[placeholder="association 1"]');
-  const input2 = document.querySelector('input[placeholder="association 2"]');
+  if (!memoryState || memoryState.phase !== "input") return;
+  const inputs = Array.from(document.querySelectorAll(".memory-input"));
+  const answers = memoryState.chains.flatMap(chain => [chain.parts[1].toLowerCase(), chain.parts[2].toLowerCase()]);
 
   let allCorrect = true;
-
-  if (user1 === correct1) {
-    input1.className = "input-correct";
-  } else {
-    input1.className = "input-wrong";
-    allCorrect = false;
-  }
-
-  if (user2 === correct2) {
-    input2.className = "input-correct";
-  } else {
-    input2.className = "input-wrong";
-    allCorrect = false;
-  }
+  inputs.forEach((input, idx) => {
+    const value = input.value.trim().toLowerCase();
+    input.classList.remove("input-correct", "input-wrong");
+    if (value === answers[idx]) {
+      input.classList.add("input-correct");
+    } else {
+      input.classList.add("input-wrong");
+      allCorrect = false;
+    }
+  });
 
   if (allCorrect) {
     showResult("✓ Correct!", "correct");
     setTimeout(() => {
       nextWord();
     }, 1000);
-  } else {
-    showResult(`✗ Correct: ${memoryState.parts[1]} → ${memoryState.parts[2]}`, "wrong");
-    // Allow retry
+    return;
   }
+
+  const correctText = memoryState.chains.map(chain => chain.parts.slice(1).join(" → ")).join("  |  ");
+  showResult(`✗ Correct: ${correctText}`, "wrong");
 }
 
 // ===================== MODES =====================
