@@ -1314,11 +1314,47 @@ function renderMemoryMode(word, words) {
 
 function buildMemoryState(roundWords) {
   const chains = roundWords.map(word => {
-    const aiChain = memoryTasks.find(t => 
-  t.word.toLowerCase().trim() === word.en.toLowerCase().trim()
-);
-    const chain = aiChain ? aiChain.chain : generateMemoryChain(word.en);
-    const parts = chain.split(" -> ");
+    // ищем цепочку от AI
+    const aiChain = memoryTasks.find(t =>
+      t.word.toLowerCase().trim() === word.en.toLowerCase().trim()
+    );
+
+    let chain = aiChain ? aiChain.chain : generateMemoryChain(word.en);
+
+    // нормализация
+    chain = (chain || "").trim();
+
+    // ✅ гарантируем, что цепочка начинается с слова из сета
+    if (!chain.toLowerCase().startsWith(word.en.toLowerCase())) {
+      chain = word.en + " -> " + chain;
+    }
+
+    // разбиваем и чистим
+    let parts = chain.split(" -> ").map(p => p.trim()).filter(Boolean);
+
+    // ✅ защита: убираем дубликат первого слова
+    if (parts.length > 1 && parts[0].toLowerCase() === parts[1].toLowerCase()) {
+      parts.splice(1, 1);
+    }
+
+    // ✅ контроль длины (под difficulty)
+    const expectedLength =
+      memoryDifficulty === "easy" ? 3 :
+      memoryDifficulty === "medium" ? 4 : 5;
+
+    // если мало слов — добиваем fallback-ассоциациями
+    while (parts.length < expectedLength) {
+      parts.push(generateMemoryPair(parts[parts.length - 1]));
+    }
+
+    // если слишком много — обрезаем
+    if (parts.length > expectedLength) {
+      parts = parts.slice(0, expectedLength);
+    }
+
+    // финальная строка
+    chain = parts.join(" -> ");
+
     return {
       word: word.en,
       chain,
@@ -1333,7 +1369,9 @@ function buildMemoryState(roundWords) {
     phase: "show",
     showTime: memoryShowTime * 1000,
     delayTime: memoryDelayTime * 1000,
-    inputs: new Array(chains.length * (chains[0]?.parts.length - 1 || 2)).fill(""),
+    inputs: new Array(
+      chains.length * (chains[0]?.parts.length - 1 || 2)
+    ).fill(""),
     startTime: Date.now()
   };
 }
