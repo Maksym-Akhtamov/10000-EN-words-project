@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>WordFlow</title>
+  <title>YourPath10k</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <style>
     :root {
@@ -861,8 +861,114 @@
     <button class="ctrl-btn btn-clear" id="clearBtn" onclick="clearCustomSet()">🗑 Clear Review</button>
     <button class="ctrl-btn" id="regenBtn" onclick="regenerateAI()" style="display:none">🔄 Regen AI</button>
     <button class="ctrl-btn" id="regenMemoryBtn" onclick="regenerateMemory()" style="display:none">🔄 Regen Memory</button>
+    <button class="ctrl-btn" id="helpBtn" onclick="openHelp()" style="margin-top:auto">❓ Help</button>
   </aside>
 
+</div>
+
+<!-- ===================== HELP MODAL ===================== -->
+<div id="helpOverlay" onclick="closeHelp()" style="
+  display:none; position:fixed; inset:0; z-index:1000;
+  background:rgba(0,0,0,0.7); backdrop-filter:blur(6px);
+  -webkit-backdrop-filter:blur(6px);
+"></div>
+
+<div id="helpModal" style="
+  display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+  z-index:1001; width:min(680px, 94vw); max-height:85vh;
+  background:#141820; border:1px solid rgba(255,255,255,0.1);
+  border-radius:22px; overflow:hidden;
+  box-shadow:0 32px 80px rgba(0,0,0,0.7);
+  animation: helpIn 0.28s cubic-bezier(0.34,1.2,0.64,1);
+">
+  <style>
+    @keyframes helpIn {
+      from { opacity:0; transform:translate(-50%,-48%) scale(0.95); }
+      to   { opacity:1; transform:translate(-50%,-50%) scale(1); }
+    }
+    .help-header {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:20px 24px 16px; border-bottom:1px solid rgba(255,255,255,0.07);
+      position:sticky; top:0; background:#141820; z-index:2;
+    }
+    .help-title { font-family:'DM Serif Display',serif; font-size:22px; color:#e8eaf0; }
+    .help-subtitle { font-size:12px; color:#5a6278; letter-spacing:0.08em; margin-top:2px; }
+    .help-close {
+      width:32px; height:32px; background:rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.1); border-radius:8px;
+      cursor:pointer; font-size:16px; color:#5a6278; display:grid;
+      place-items:center; transition:all 0.15s; flex-shrink:0;
+    }
+    .help-close:hover { background:rgba(255,255,255,0.1); color:#e8eaf0; }
+    .help-lang-row {
+      display:flex; gap:6px; padding:14px 24px 0; align-items:center;
+    }
+    .help-lang-btn {
+      font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600;
+      padding:5px 12px; border-radius:6px; cursor:pointer;
+      border:1px solid rgba(255,255,255,0.1); background:transparent;
+      color:#5a6278; transition:all 0.15s; letter-spacing:0.06em;
+      text-transform:uppercase;
+    }
+    .help-lang-btn:hover { color:#e8eaf0; border-color:rgba(255,255,255,0.2); }
+    .help-lang-btn.active {
+      background:rgba(79,142,247,0.15); border-color:#4f8ef7; color:#4f8ef7;
+    }
+    .help-body { padding:20px 24px 28px; overflow-y:auto; max-height:calc(85vh - 120px); }
+    .help-hero {
+      background:linear-gradient(135deg,rgba(79,142,247,0.08),rgba(110,231,192,0.06));
+      border:1px solid rgba(79,142,247,0.15); border-radius:14px;
+      padding:18px 20px; margin-bottom:22px;
+    }
+    .help-hero-title { font-family:'DM Serif Display',serif; font-size:17px; color:#e8eaf0; margin-bottom:6px; }
+    .help-hero-text { font-size:13.5px; color:#8a93a8; line-height:1.6; }
+    .help-hero-text strong { color:#6ee7c0; font-weight:600; }
+    .help-section { margin-bottom:22px; }
+    .help-section-title {
+      font-size:10.5px; font-weight:700; letter-spacing:0.14em;
+      text-transform:uppercase; color:#4f8ef7; margin-bottom:10px;
+    }
+    .help-mode {
+      display:flex; gap:12px; align-items:flex-start;
+      padding:11px 14px; border-radius:12px;
+      background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05);
+      margin-bottom:8px; transition:background 0.15s;
+    }
+    .help-mode:hover { background:rgba(255,255,255,0.04); }
+    .help-mode-icon { font-size:20px; flex-shrink:0; margin-top:1px; }
+    .help-mode-name { font-size:13.5px; font-weight:600; color:#e8eaf0; margin-bottom:3px; }
+    .help-mode-desc { font-size:12.5px; color:#6b7590; line-height:1.55; }
+    .help-tip-list { display:flex; flex-direction:column; gap:7px; }
+    .help-tip {
+      display:flex; gap:10px; align-items:flex-start;
+      font-size:12.5px; color:#6b7590; line-height:1.55;
+    }
+    .help-tip-dot {
+      width:5px; height:5px; border-radius:50%;
+      background:#4f8ef7; flex-shrink:0; margin-top:6px;
+    }
+    kbd {
+      font-family:monospace; font-size:11px; font-weight:600;
+      background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);
+      border-radius:5px; padding:1px 6px; color:#c0c8d8;
+    }
+  </style>
+
+  <div class="help-header">
+    <div>
+      <div class="help-title" id="helpTitle">YourPath10k — Help</div>
+      <div class="help-subtitle" id="helpSubtitle">Your guide to learning 10,000 words</div>
+    </div>
+    <button class="help-close" onclick="closeHelp()">✕</button>
+  </div>
+
+  <div class="help-lang-row">
+    <button class="help-lang-btn active" onclick="setHelpLang('en')">EN</button>
+    <button class="help-lang-btn" onclick="setHelpLang('uk')">УКР</button>
+    <button class="help-lang-btn" onclick="setHelpLang('ru')">РУС</button>
+  </div>
+
+  <div class="help-body" id="helpBody"></div>
 </div>
 
 <script>
@@ -2050,9 +2156,9 @@ function setMemoryTime(s) {
 function setMemoryDifficulty(diff) {
   memoryDifficulty = diff;
   const times = {
-    easy: { show: 4, delay: 2 },
-    medium: { show: 3, delay: 3 },
-    hard: { show: 4, delay: 4 }
+    easy: { show: 2, delay: 3 },
+    medium: { show: 5, delay: 5 },
+    hard: { show: 7, delay: 5 }
   };
   memoryShowTime = times[diff].show;
   memoryDelayTime = times[diff].delay;
@@ -2426,6 +2532,162 @@ document.addEventListener("touchend",   e => {
   const dx = e.changedTouches[0].clientX - touchStartX;
   if (dx >  50) prevWord();
   if (dx < -50) nextWord();
+});
+
+// ===================== HELP =====================
+let helpLang = "en";
+
+const HELP_CONTENT = {
+  en: {
+    title: "YourPath10k — Help",
+    subtitle: "Your guide to learning 10,000 words",
+    hero: {
+      title: "🎯 Goal: Master 10,000 English Words",
+      text: `YourPath10k guides you through <strong>100 sets of 100 words</strong> each. Switch between 7 learning modes to reinforce vocabulary in different ways — from simple flashcards to AI-generated fill-in-the-blank exercises and memory association chains.`
+    },
+    modesTitle: "Learning Modes",
+    modes: [
+      { icon: "📖", name: "Study", desc: "Classic flashcard mode. Tap the card to flip and reveal the translation. Best for first exposure to new words." },
+      { icon: "🎯", name: "Choice", desc: "Multiple choice test. Choose the correct translation from 4 options. Great for consolidating vocabulary." },
+      { icon: "🔊", name: "Audio", desc: "Listen and type. Hear the word spoken aloud and type it correctly. Perfect for pronunciation and spelling." },
+      { icon: "✅", name: "True / False", desc: "See a word paired with a translation — decide if it's correct or not. Fast-paced and effective." },
+      { icon: "🧩", name: "Matches", desc: "Match English words with their translations. Works in rounds — 8 pairs at a time." },
+      { icon: "⚡", name: "AI Mode", desc: "AI-generated fill-in-the-blank sentences. Real context makes words stick. Choose Easy / Medium / Hard difficulty." },
+      { icon: "🧠", name: "Memory Associations", desc: "AI builds creative word chains (e.g. dog → loyalty → knight). Memorize the chain, then recall it. Trains deep memory." },
+    ],
+    featuresTitle: "Features & Tips",
+    tips: [
+      { text: "⭐ <b>Star</b> (double-tap or double-click the card) to add it to your personal Review set. Great for words you keep forgetting." },
+      { text: "🧠 <b>Tutor mode</b> tracks words you got wrong and shows them again after 1, 3, and 5 cards — spaced repetition built in." },
+      { text: "🔀 <b>Shuffle</b> randomizes the word order so you're not just memorizing sequences." },
+      { text: "▶ <b>Auto mode</b> advances cards automatically — useful for passive review. Set the delay (1–5 sec)." },
+      { text: "🌐 <b>Translation language:</b> choose UK (Ukrainian), RU (Russian), or Both for card backs." },
+      { text: "⌨ <b>Keyboard mode</b> (Study): flip to Translation → EN and type the English word from memory." },
+      { text: "🔄 <b>Regen AI / Regen Memory</b> — regenerate fresh tasks for the current set and difficulty." },
+      { text: `<b>Keyboard shortcuts:</b> <kbd>→</kbd> next word, <kbd>←</kbd> previous, <kbd>Space</kbd> flip card, double <kbd>Space</kbd> star a word.` },
+    ]
+  },
+  uk: {
+    title: "YourPath10k — Довідка",
+    subtitle: "Твій путівник у світ 10,000 слів",
+    hero: {
+      title: "🎯 Мета: вивчити 10,000 англійських слів",
+      text: `YourPath10k веде тебе через <strong>100 сетів по 100 слів</strong> у кожному. Перемикайся між 7 режимами навчання, щоб закріпити словниковий запас різними способами — від простих карток до AI-вправ та ланцюжків асоціацій.`
+    },
+    modesTitle: "Режими навчання",
+    modes: [
+      { icon: "📖", name: "Study", desc: "Класичні флеш-картки. Натисни на картку, щоб перегорнути та побачити переклад. Ідеально для першого знайомства з новими словами." },
+      { icon: "🎯", name: "Choice", desc: "Тест з вибором відповіді. Вибери правильний переклад із 4 варіантів. Чудово для закріплення словника." },
+      { icon: "🔊", name: "Audio", desc: "Слухай та пиши. Почуй слово вголос і надрукуй його правильно. Ідеально для вимови та правопису." },
+      { icon: "✅", name: "True / False", desc: "Бачиш слово з перекладом — визнач, правильно чи ні. Швидкий та ефективний режим." },
+      { icon: "🧩", name: "Matches", desc: "Знайди відповідні пари: слово з перекладом. Працює раундами по 8 пар за раз." },
+      { icon: "⚡", name: "AI Mode", desc: "AI генерує речення з пропущеним словом. Реальний контекст допомагає словам запам'ятовуватися. Вибери складність: Easy / Medium / Hard." },
+      { icon: "🧠", name: "Memory Associations", desc: "AI будує творчі ланцюжки слів (наприклад: dog → loyalty → knight). Запам'ятай ланцюжок, а потім відтвори його. Тренує глибинну пам'ять." },
+    ],
+    featuresTitle: "Функції та поради",
+    tips: [
+      { text: "⭐ <b>Зірочка</b> (подвійний тап або подвійний клік по картці) — додає його до особистого набору для повторення." },
+      { text: "🧠 <b>Режим Tutor</b> запам'ятовує слова, де ти помилився, і показує їх знову через 1, 3 і 5 карток — інтервальне повторення." },
+      { text: "🔀 <b>Shuffle</b> змішує порядок слів, щоб ти не запам'ятовував лише послідовність." },
+      { text: "▶ <b>Auto режим</b> автоматично перегортає картки — зручно для пасивного повторення. Налаштуй затримку (1–5 сек)." },
+      { text: "🌐 <b>Translation language:</b> вибери UK (українська), RU (російська) або обидві для зворотного боку картки." },
+      { text: "⌨ <b>Keyboard mode</b> (Study): переключи напрямок на Translation → EN і друкуй англійське слово з пам'яті." },
+      { text: "🔄 <b>Regen AI / Regen Memory</b> — згенерує нові завдання для поточного сету та рівня складності." },
+      { text: `<b>Гарячі клавіші:</b> <kbd>→</kbd> наступне слово, <kbd>←</kbd> попереднє, <kbd>Space</kbd> перегорнути, подвійний <kbd>Space</kbd> — додати зірочку.` },
+    ]
+  },
+  ru: {
+    title: "YourPath10k — Справка",
+    subtitle: "Твой путеводитель в мир 10,000 слов",
+    hero: {
+      title: "🎯 Цель: выучить 10,000 английских слов",
+      text: `YourPath10k проведёт тебя через <strong>100 сетов по 100 слов</strong> в каждом. Переключайся между 7 режимами обучения, чтобы закрепить словарный запас разными способами — от простых карточек до AI-упражнений и цепочек ассоциаций.`
+    },
+    modesTitle: "Режимы обучения",
+    modes: [
+      { icon: "📖", name: "Study", desc: "Классические флеш-карточки. Нажми на карточку, чтобы перевернуть и увидеть перевод. Идеально для первого знакомства с новыми словами." },
+      { icon: "🎯", name: "Choice", desc: "Тест с выбором ответа. Выбери правильный перевод из 4 вариантов. Отлично для закрепления словаря." },
+      { icon: "🔊", name: "Audio", desc: "Слушай и печатай. Услышь слово вслух и напечатай его правильно. Идеально для произношения и правописания." },
+      { icon: "✅", name: "True / False", desc: "Видишь слово с переводом — определи, правильно или нет. Быстрый и эффективный режим." },
+      { icon: "🧩", name: "Matches", desc: "Найди подходящие пары: слово с переводом. Работает раундами по 8 пар за раз." },
+      { icon: "⚡", name: "AI Mode", desc: "AI генерирует предложения с пропущенным словом. Реальный контекст помогает словам запомниться. Выбери сложность: Easy / Medium / Hard." },
+      { icon: "🧠", name: "Memory Associations", desc: "AI строит творческие цепочки слов (например: dog → loyalty → knight). Запомни цепочку, потом воспроизведи. Тренирует глубинную память." },
+    ],
+    featuresTitle: "Функции и советы",
+    tips: [
+      { text: "⭐ <b>Звёздочка</b> (дабл тап или дабл клик по карточке) — добавляет его в личный набор для повторения." },
+      { text: "🧠 <b>Режим Tutor</b> запоминает слова, где ты ошибся, и показывает их снова через 1, 3 и 5 карточек — интервальное повторение." },
+      { text: "🔀 <b>Shuffle</b> перемешивает порядок слов, чтобы ты не запоминал только последовательность." },
+      { text: "▶ <b>Auto режим</b> автоматически листает карточки — удобно для пассивного повторения. Настрой задержку (1–5 сек)." },
+      { text: "🌐 <b>Translation language:</b> выбери UK (украинский), RU (русский) или оба для обратной стороны карточки." },
+      { text: "⌨ <b>Keyboard mode</b> (Study): переключи направление на Translation → EN и печатай английское слово по памяти." },
+      { text: "🔄 <b>Regen AI / Regen Memory</b> — сгенерирует новые задания для текущего сета и уровня сложности." },
+      { text: `<b>Горячие клавиши:</b> <kbd>→</kbd> следующее слово, <kbd>←</kbd> предыдущее, <kbd>Space</kbd> перевернуть, двойной <kbd>Space</kbd> — добавить звёздочку.` },
+    ]
+  }
+};
+
+function openHelp() {
+  document.getElementById("helpOverlay").style.display = "block";
+  document.getElementById("helpModal").style.display = "block";
+  renderHelp();
+}
+
+function closeHelp() {
+  document.getElementById("helpOverlay").style.display = "none";
+  document.getElementById("helpModal").style.display = "none";
+}
+
+function setHelpLang(lang) {
+  helpLang = lang;
+  document.querySelectorAll(".help-lang-btn").forEach((b, i) => {
+    b.classList.toggle("active", ["en","uk","ru"][i] === lang);
+  });
+  renderHelp();
+}
+
+function renderHelp() {
+  const c = HELP_CONTENT[helpLang];
+  document.getElementById("helpTitle").textContent = c.title;
+  document.getElementById("helpSubtitle").textContent = c.subtitle;
+
+  const body = document.getElementById("helpBody");
+  body.innerHTML = `
+    <div class="help-hero">
+      <div class="help-hero-title">${c.hero.title}</div>
+      <div class="help-hero-text">${c.hero.text}</div>
+    </div>
+
+    <div class="help-section">
+      <div class="help-section-title">${c.modesTitle}</div>
+      ${c.modes.map(m => `
+        <div class="help-mode">
+          <div class="help-mode-icon">${m.icon}</div>
+          <div>
+            <div class="help-mode-name">${m.name}</div>
+            <div class="help-mode-desc">${m.desc}</div>
+          </div>
+        </div>
+      `).join("")}
+    </div>
+
+    <div class="help-section">
+      <div class="help-section-title">${c.featuresTitle}</div>
+      <div class="help-tip-list">
+        ${c.tips.map(t => `
+          <div class="help-tip">
+            <div class="help-tip-dot"></div>
+            <div>${t.text}</div>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
+// Close on Escape
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") closeHelp();
 });
 
 init();
