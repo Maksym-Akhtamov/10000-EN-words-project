@@ -1314,52 +1314,49 @@ function renderMemoryMode(word, words) {
 
 function buildMemoryState(roundWords) {
   const chains = roundWords.map(word => {
+    const baseWord = word.en.toLowerCase().trim();
+
     // ищем цепочку от AI
     const aiChain = memoryTasks.find(t =>
-      t.word.toLowerCase().trim() === word.en.toLowerCase().trim()
+      t.word.toLowerCase().trim() === baseWord
     );
 
-    let chain = aiChain ? aiChain.chain : generateMemoryChain(word.en);
+    let rawChain = aiChain ? aiChain.chain : generateMemoryChain(word.en);
 
-    // нормализация
-    chain = (chain || "").trim();
+    // нормализация строки
+    rawChain = (rawChain || "").trim().toLowerCase();
 
-    // ✅ гарантируем, что цепочка начинается с слова из сета
-    if (!chain.toLowerCase().startsWith(word.en.toLowerCase())) {
-      chain = word.en + " -> " + chain;
+    // разбиваем
+    let parts = rawChain
+      .split("->")
+      .map(p => p.trim())
+      .filter(Boolean);
+
+    // ✅ гарантируем, что первое слово — это слово из сета
+    if (parts[0] !== baseWord) {
+      parts.unshift(baseWord);
     }
 
-    // разбиваем и чистим
-    let parts = chain.split(" -> ").map(p => p.trim()).filter(Boolean);
+    // ✅ убираем дубли подряд
+    parts = parts.filter((p, i) => i === 0 || p !== parts[i - 1]);
 
-    // ✅ защита: убираем дубликат первого слова
-    if (parts.length > 1 && parts[0].toLowerCase() === parts[1].toLowerCase()) {
-      parts.splice(1, 1);
-    }
-
-    // ✅ контроль длины (под difficulty)
+    // ✅ длина под новую систему
     const expectedLength =
-      memoryDifficulty === "easy" ? 3 :
-      memoryDifficulty === "medium" ? 4 : 5;
+      memoryDifficulty === "hard" ? 4 : 3;
 
-    // если мало слов — добиваем fallback-ассоциациями
-    while (parts.length < expectedLength) {
-      parts.push(generateMemoryPair(parts[parts.length - 1]));
-    }
+    // ❗ если длина не совпадает — заменяем полностью
+    if (parts.length !== expectedLength) {
+  console.warn("Invalid chain length, skipping:", parts);
+  return null;
+}
 
-    // если слишком много — обрезаем
-    if (parts.length > expectedLength) {
-      parts = parts.slice(0, expectedLength);
-    }
-
-    // финальная строка
-    chain = parts.join(" -> ");
+    const chain = parts.join(" -> ");
 
     return {
       word: word.en,
       chain,
       parts,
-      correct: parts.slice(1).map(p => p.toLowerCase())
+      correct: parts.slice(1) // уже lowercase
     };
   });
 

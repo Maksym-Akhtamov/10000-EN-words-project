@@ -31,66 +31,96 @@ export default async function handler(req, res) {
 `You are an expert in cognitive psychology and memory training.
 
 TASK:
-Create fun and memorable association chains for vocabulary learning.
+Create HIGH-QUALITY, memorable association chains for vocabulary learning.
 
+CORE IDEA:
+Difficulty is NOT about length — it is about HOW OBVIOUS or CREATIVE the associations are.
+
+--------------------------------
 DIFFICULTY LEVELS:
-- easy: chains of 3 words (word + 2 associations)
-- medium: chains of 4 words (word + 3 associations)
-- hard: chains of 5 words (word + 4 associations)
 
-FOR EACH word - Create EXACTLY ONE association chain:
-1. First word is the TARGET WORD (from the list)
-2. Following words are FUN and SIMPLE associations
-3. CRITICAL:
-The chain MUST start with the original word.
+EASY:
+- Total: 3 words (word + 2 associations)
+- Associations are DIRECT and OBVIOUS
+- Instantly understandable
 
 Example:
-dog -> bone -> happy
-time -> flies -> airport
+dog -> bone -> hungry
 
-Never omit the first word.
-4. Associations MUST be:
-   - FUN and PLAYFUL (not serious or boring)
-   - SIMPLE (easy to understand and remember)
-   - VISUAL (easy to imagine and picture)
-   - CONNECTED logically in a chain
+MEDIUM:
+- Total: 3 words (word + 2 associations)
+- Associations are LESS OBVIOUS
+- Require a small mental step
 
-FUN CHAIN EXAMPLES:
-- dog -> bone -> happy (dog loves bone, bone makes you happy!)
-- time -> flies -> airport (time flies at airport!)
-- book -> read -> adventure (reading book is adventure!)
-- music -> dance -> smile (music makes you dance and smile!)
-- pizza -> cheese -> yummy (pizza is all cheese, so yummy!)
+Example:
+dog -> guard -> danger
 
-STRICT RULES:
-- Use simple, everyday words
-- Make associations playful and fun, not academic
-- Avoid weak words like "thing", "object", "concept"
-- Each word should feel connected and memorable
-- Use humor and joy to make chains stick in memory
+HARD:
+- Total: 4 words (word + 3 associations)
+- Associations are CREATIVE, ABSTRACT, or UNEXPECTED
+- May use metaphor or indirect logic
 
-LENGTH REQUIREMENTS:
-- For EASY difficulty: exactly 2 associations after the word
-- For MEDIUM difficulty: exactly 3 associations after the word
-- For HARD difficulty: exactly 4 associations after the word
+Example:
+dog -> loyalty -> king -> crown
 
-QUALITY CHECK:
-- Does this chain make me smile or find it fun?
-- Can I easily picture each step?
-- Does each word logically lead to the next?
-If NO to any question - improve it!
+--------------------------------
+CRITICAL RULES:
 
-OUTPUT FORMAT:
-Return ONLY a valid JSON array with NO explanations:
+1. The chain MUST start with the original word
+2. DO NOT repeat the word twice
+   ❌ dog -> dog -> bone
+   ✅ dog -> bone -> happy
+
+3. Each next word MUST be logically connected to the previous one
+4. The chain must feel NATURAL, not random
+
+--------------------------------
+ASSOCIATION QUALITY RULES:
+
+Each chain MUST be:
+- VISUAL (easy to imagine)
+- FUN or INTERESTING
+- MEMORABLE (not boring or generic)
+
+Avoid:
+- weak words: "thing", "object", "something"
+- abstract filler: "concept", "idea"
+- random unrelated jumps
+
+--------------------------------
+CHAIN VALIDATION (VERY IMPORTANT):
+
+Before output, check:
+- Can I visualize each step?
+- Does each word lead naturally to the next?
+- Is this chain interesting or fun?
+
+If NOT — improve it.
+
+--------------------------------
+OUTPUT FORMAT (STRICT):
+
+Return ONLY valid JSON array:
+
 [
   {"word":"dog","chain":"bone -> happy"},
-  {"word":"time","chain":"flies -> airport -> nap"}
+  {"word":"time","chain":"flies -> airport"}
 ]
 
-CURRENT DIFFICULTY: ${difficulty}
-Required chain length: ${difficulty === "easy" ? 3 : difficulty === "medium" ? 4 : 5} words total
+IMPORTANT:
+- Do NOT include the original word inside "chain"
+- "chain" must contain ONLY associations
 
-Words:
+--------------------------------
+CURRENT DIFFICULTY: ${difficulty}
+
+REQUIRED LENGTH:
+- easy → 2 words in chain
+- medium → 2 words in chain
+- hard → 3 words in chain
+
+--------------------------------
+WORDS:
 ${JSON.stringify(words)}`
 
 :
