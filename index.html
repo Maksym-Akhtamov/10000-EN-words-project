@@ -850,6 +850,9 @@ let aiTasks = [];
 let aiTasksCache = {};
 let aiDifficulty = "medium"; // easy | medium | hard
 let memoryState = null;
+let memoryRound = 0;
+const MEMORY_SIZE = 4;
+let memoryStarted = false;
 let lastTapTime = 0;
 let lastSpaceTime = 0;
 let memoryShowTime = 2; // seconds
@@ -910,15 +913,16 @@ function getTranslation(word) {
 function render() {
   const words = getWords();
   const matchesTotalRounds = getMatchesTotalRounds();
+  const memoryTotalRounds = getMemoryTotalRounds();
   const counterValue = activeMode === "matches"
     ? (matchesTotalRounds ? `${matchesRound + 1} / ${matchesTotalRounds}` : "")
     : activeMode === "memory"
-    ? "Memory Challenge"
+    ? (memoryTotalRounds ? `${memoryRound + 1} / ${memoryTotalRounds}` : "Memory Challenge")
     : (words.length ? `${current + 1} / ${order.length}` : "");
   const progressPct = activeMode === "matches"
     ? (matchesTotalRounds ? ((matchesRound + 1) / matchesTotalRounds * 100) : 0)
     : activeMode === "memory"
-    ? (memoryState ? (memoryState.matchedIds.length / memoryState.pairs.length * 100) : 0)
+    ? (memoryTotalRounds ? ((memoryRound + 1) / memoryTotalRounds * 100) : 0)
     : (words.length ? ((current + 1) / order.length * 100) : 0);
 
   const extraCounter = tutorMode ? ` · reviews ${tutorReviewsShown}` : "";
@@ -1198,16 +1202,21 @@ function resetMatchesProgress() {
 }
 
 function renderMemoryMode(word, words) {
-  const roundWords = getMemoryRoundWords(words);
-  const roundSig = roundWords.map(w => w.id).join(",");
-  if (!memoryState || memoryState.roundSig !== roundSig) {
-    memoryState = buildMemoryState(roundWords);
-  }
-
   // Check if we have AI-generated pairs for this set
   const hasMemoryTasks = Array.isArray(memoryTasks) && memoryTasks.some(t => t.setId === sets[currentSet].id);
 
+  if (memoryTasks === null) {
+    document.getElementById("front").innerHTML = `<div style="color:var(--muted);font-size:18px">⏳ Generating…</div>`;
+    document.getElementById("back").innerHTML = "";
+    const container = document.getElementById("testOptions");
+    container.innerHTML = "";
+    container.style.display = "none";
+    return;
+  }
+
   if (!hasMemoryTasks) {
+    memoryStarted = false;
+    memoryState = null;
     document.getElementById("front").innerHTML = `
       <div style="display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center">
         <div style="color:var(--muted);font-size:17px">No memory pairs for this set</div>
@@ -1223,6 +1232,29 @@ function renderMemoryMode(word, words) {
     return;
   }
 
+  if (!memoryStarted) {
+    document.getElementById("front").innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center">
+        <div class="card-word" style="font-size:24px">Ready for Memory</div>
+        <div style="font-size:14px;color:var(--muted);max-width:420px">Memory tasks are prepared. Press start to see the first pairs.</div>
+        <button onclick="event.stopPropagation();startMemoryRound()" 
+          style="background:var(--accent);color:#fff;padding:12px 24px;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;border:none;cursor:pointer">
+          ▶ Start Memory
+        </button>
+      </div>`;
+    document.getElementById("back").innerHTML = "";
+    const container = document.getElementById("testOptions");
+    container.innerHTML = "";
+    container.style.display = "none";
+    return;
+  }
+
+  const roundWords = getMemoryRoundWords(words);
+  const roundSig = roundWords.map(w => w.id).join(",");
+  if (!memoryState || memoryState.roundSig !== roundSig) {
+    memoryState = buildMemoryState(roundWords);
+  }
+
   document.getElementById("front").innerHTML = `
     <div style="display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center">
       <div class="card-word" style="font-size:30px">Memory Challenge</div>
@@ -1236,7 +1268,7 @@ function buildMemoryState(roundWords) {
   // Use AI-generated pairs or fallback to static
   const pairs = [];
   roundWords.forEach(word => {
-    const aiPair = memoryTasks.find(t => t.word === word.en && t.setId === sets[currentSet].id);
+    const aiPair = Array.isArray(memoryTasks) && memoryTasks.find(t => t.word === word.en && t.setId === sets[currentSet].id);
     if (aiPair) {
       pairs.push({ en: word.en, pair: aiPair.pair, id: word.id });
     } else {
@@ -1245,10 +1277,11 @@ function buildMemoryState(roundWords) {
       pairs.push({ en: word.en, pair: staticPair, id: word.id });
     }
   });
-  
+  const rightItems = [...pairs].sort(() => Math.random() - 0.5);
   return {
     roundSig: roundWords.map(w => w.id).join(","),
     pairs,
+    rightItems,
     phase: "show", // show | hide | select
     showTime: memoryShowTime * 1000, // convert to ms
     selectedLeft: null,
@@ -1337,8 +1370,7 @@ function renderMemorySelectionBoard() {
   rightCol.className = "match-col";
   rightCol.innerHTML = `<div class="match-col-title">Pair</div>`;
 
-  // Shuffle right side
-  const rightItems = [...memoryState.pairs].sort(() => Math.random() - 0.5);
+  const rightItems = memoryState.rightItems || [...memoryState.pairs];
 
   memoryState.pairs.forEach(pair => {
     const btn = document.createElement("button");
@@ -1402,12 +1434,17 @@ function handleMemoryPick(side, id) {
   }, 550);
 }
 
+function getMemoryTotalRounds() {
+  return Math.max(1, Math.ceil(order.length / MEMORY_SIZE));
+}
+
 function getMemoryRoundWords(words) {
   if (!words.length) return [];
-  // Use 4 pairs for memory mode
-  const start = 0;
-  const end = Math.min(4, words.length);
-  return words.slice(start, end);
+  const totalRounds = getMemoryTotalRounds();
+  const safeRound = Math.min(Math.max(memoryRound, 0), totalRounds - 1);
+  const start = safeRound * MEMORY_SIZE;
+  const end = Math.min(start + MEMORY_SIZE, words.length);
+  return order.slice(start, end).map(i => words[i]).filter(Boolean);
 }
 
 function toggleTutor() {
@@ -1649,7 +1686,10 @@ function nextWord() {
     return;
   }
   if (activeMode === "memory") {
+    const totalRounds = getMemoryTotalRounds();
+    memoryRound = (memoryRound + 1) % totalRounds;
     memoryState = null;
+    memoryStarted = true;
     tfPrompt = null;
     tickTutorQueue();
     render();
@@ -1681,7 +1721,10 @@ function prevWord() {
     return;
   }
   if (activeMode === "memory") {
+    const totalRounds = getMemoryTotalRounds();
+    memoryRound = (memoryRound - 1 + totalRounds) % totalRounds;
     memoryState = null;
+    memoryStarted = true;
     tfPrompt = null;
     render();
     return;
@@ -1760,7 +1803,11 @@ function selectMode(m) {
 
   if (m !== "study") { keyboardOn = false; }
   if (m === "ai") loadAITasks();
-  if (m === "memory") loadMemoryTasks();
+  if (m === "memory") {
+    memoryStarted = false;
+    memoryRound = 0;
+    loadMemoryTasks();
+  }
 
   current = 0;
   initOrder();
@@ -1907,6 +1954,8 @@ function selectSet(idx) {
     aiTasks = cached || [];
   }
   if (activeMode === "memory") {
+    memoryStarted = false;
+    memoryRound = 0;
     const cached = loadMemoryCache();
     memoryTasks = cached || [];
   }
@@ -2082,6 +2131,8 @@ function saveMemoryCache(tasks) {
 
 async function loadMemoryTasks() {
   const cached = loadMemoryCache();
+  memoryStarted = false;
+  memoryState = null;
   if (cached) { memoryTasks = cached; render(); return; }
   memoryTasks = []; render();
 }
@@ -2097,7 +2148,9 @@ async function generateMemoryBatch(words) {
 }
 
 async function startMemoryGeneration() {
-  memoryTasks = [];
+  memoryTasks = null;
+  memoryStarted = false;
+  memoryState = null;
   render();
   const words = getWords();
   const batches = [];
@@ -2112,7 +2165,8 @@ async function startMemoryGeneration() {
     render();
   } catch(e) {
     console.error(e);
-    memoryTasks = []; render();
+    memoryTasks = [];
+    render();
   }
 }
 
@@ -2121,6 +2175,13 @@ function regenerateMemory() {
   delete memoryTasksCache[getMemoryKey()];
   startMemoryGeneration();
 }
+
+function startMemoryRound() {
+  memoryStarted = true;
+  memoryState = null;
+  render();
+}
+
 
 // ===================== UI STATE =====================
 function updateAllUI() {

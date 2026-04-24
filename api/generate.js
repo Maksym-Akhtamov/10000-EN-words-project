@@ -28,54 +28,109 @@ export default async function handler(req, res) {
   }
 
   const prompt = type === "memory" ? 
-    `You create logical word pairs for memory training.
+`You are an expert in cognitive psychology and memory training.
 
-For EACH word in the list below:
-1. Create ONE logical association pair
-2. The pair should be: [word] - [associated_word]
-3. Make associations meaningful and memorable
-4. Use different types: synonyms, antonyms, categories, concepts, idioms, etc.
+TASK:
+Create powerful and memorable association pairs for vocabulary learning.
 
-EXAMPLES:
-- time - flies (idiom)
-- car - wheels (parts)
-- give - receive (opposites in action)
-- clear - transparent (similar meaning)
-- heavy - light (opposites)
+FOR EACH word:
+1. Create EXACTLY ONE association pair
+2. Format: [word] - [pair]
+3. The association MUST be:
+   - vivid
+   - specific
+   - easy to imagine
+   - not generic
 
-Output ONLY a raw JSON array of objects: [{"word": "time", "pair": "flies"}, ...]
+ALLOWED TYPES:
+- synonym (clear - transparent)
+- antonym (heavy - light)
+- part/whole (car - wheel)
+- cause/effect (rain - flood)
+- function (knife - cut)
+- idiom/collocation (time - flies)
+- strong real-world connection
+
+STRICT RULES:
+- Avoid weak or abstract words like: "thing", "object", "concept"
+- Avoid repeating the same association type too often
+- Prefer concrete and visual connections
+- Each pair must feel NATURAL to a human learner
+
+QUALITY CHECK (VERY IMPORTANT):
+Before output:
+- Ask yourself: "Would this help me remember the word instantly?"
+- If not — improve it
+
+OUTPUT FORMAT:
+Return ONLY a valid JSON array:
+[{"word":"time","pair":"flies"}]
 
 Words:
-${JSON.stringify(words)}` :
-    `You create English fill-in-the-blank exercises.
+${JSON.stringify(words)}`
 
-For EACH word in the list below:
-1. Write ONE sentence (8-15 words) using that word
-2. Replace the word with ___
-3. Provide 4 options: 1 correct + 3 wrong that clearly don't fit
+:
 
-RULES FOR SENTENCES:
+`You are an expert English teacher creating high-quality test questions.
+
+TASK:
+Create challenging and natural fill-in-the-blank exercises.
+
+FOR EACH word:
+1. Write ONE sentence (8–16 words)
+2. Replace the target word with ___
+3. Provide 4 options:
+   - 1 correct answer
+   - 3 clearly incorrect answers
+
+SENTENCE RULES:
 ${difficulty === "easy" ? 
-  "- Use simple grammar: Present Simple, Past Simple, basic structures\n- Use common contexts: daily life, basic emotions, simple travel\n- Keep sentences short and straightforward, avoid complex vocabulary\n- Sentences should be easy for beginners" :
+`- Use simple grammar (Present/Past Simple)
+- Use everyday situations
+- Avoid rare vocabulary
+- Make sentences clear and direct` :
+
 difficulty === "hard" ?
-  "- Use advanced grammar: Perfect tenses, Conditionals, passive voice, complex structures\n- Use varied and sophisticated contexts: science, philosophy, business, literature\n- Make sentences longer and more intricate, use advanced vocabulary\n- Sentences should challenge advanced learners" :
-  "- Use varied grammar: mix Past Simple, Present Perfect, Conditional, passive voice\n- Use varied contexts: science, emotions, travel, history, business, relationships\n- Make sentences specific and vivid, NOT generic (avoid: 'I always check the ___', 'every ___')\n- Sentences should feel like real, natural English"
+`- Use advanced grammar (conditionals, passive, perfect tenses)
+- Use sophisticated contexts (business, science, abstract ideas)
+- Make sentences nuanced and precise` :
+
+`- Mix grammar naturally
+- Use realistic contexts (work, travel, emotions, decisions)
+- Avoid generic sentences like "I always ___ things"
+- Make sentences feel like real-life English`
 }
-- Only ONE word can correctly fill the blank
-- Wrong options must clearly not fit the sentence meaning
 
-WRONG OPTIONS:
-- Must be same part of speech as the correct word
-- Must make NO grammatical or semantic sense in context
-- Do NOT use near-synonyms that could also work
+CRITICAL RULES FOR OPTIONS:
+- All options MUST be the SAME part of speech
+- Wrong answers MUST be:
+   • grammatically possible
+   • BUT logically incorrect
+- Do NOT use synonyms or близкие слова
+- There must be ONLY ONE correct answer
 
-Output ONLY a raw JSON array, no explanation, no markdown:
+BAD EXAMPLE (forbidden):
+"She ___ the door"
+options: open, opened, opens, opening ❌
+
+GOOD EXAMPLE:
+"She carefully ___ the confidential document before signing it."
+options: reviewed ✅, banana ❌, quickly ❌, mountain ❌
+
+QUALITY CHECK:
+Before output:
+- Ensure ONLY ONE correct answer exists
+- Ensure wrong answers cannot logically fit
+- Ensure sentence sounds natural
+
+OUTPUT FORMAT:
+Return ONLY valid JSON:
 [
   {
-    "word": "day",
-    "sentence": "She spent the entire ___ reviewing contracts before the merger.",
-    "correct": "day",
-    "options": ["day", "roof", "debt", "silence"]
+    "word": "example",
+    "sentence": "She carefully ___ the confidential document before signing it.",
+    "correct": "reviewed",
+    "options": ["reviewed","banana","mountain","plastic"]
   }
 ]
 
