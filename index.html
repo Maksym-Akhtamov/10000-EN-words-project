@@ -1316,20 +1316,22 @@ function buildMemoryState(roundWords) {
   const chains = roundWords.map(word => {
     const aiChain = Array.isArray(memoryTasks) && memoryTasks.find(t => t.word === word.en && t.setId === sets[currentSet].id);
     const chain = aiChain ? aiChain.chain : generateMemoryChain(word.en);
+    const parts = chain.split(" -> ");
     return {
       word: word.en,
       chain,
-      parts: chain.split(" -> ")
+      parts,
+      correct: parts.slice(1).map(p => p.toLowerCase())
     };
   });
 
   return {
     roundSig: roundWords.map(w => w.id).join(","),
     chains,
-    phase: "show", // show | delay | input
+    phase: "show",
     showTime: memoryShowTime * 1000,
     delayTime: memoryDelayTime * 1000,
-    inputs: new Array(chains.length * 2).fill(""),
+    inputs: new Array(chains.length * (chains[0]?.parts.length - 1 || 2)).fill(""),
     startTime: Date.now()
   };
 }
@@ -1428,6 +1430,7 @@ function renderMemoryBoard() {
     form.style.padding = "20px";
 
     memoryState.chains.forEach((chain, idx) => {
+      const numAssociations = chain.parts.length - 1;
       const row = document.createElement("div");
       row.style.display = "flex";
       row.style.flexDirection = "column";
@@ -1446,54 +1449,41 @@ function renderMemoryBoard() {
       inputsDiv.style.display = "flex";
       inputsDiv.style.gap = "12px";
       inputsDiv.style.alignItems = "center";
+      inputsDiv.style.flexWrap = "wrap";
       inputsDiv.style.width = "100%";
+      inputsDiv.style.justifyContent = "center";
 
-      const input1 = document.createElement("input");
-      input1.type = "text";
-      input1.placeholder = "association 1";
-      input1.autocomplete = "off";
-      input1.autocorrect = "off";
-      input1.autocapitalize = "off";
-      input1.spellcheck = false;
-      input1.value = memoryState.inputs[idx * 2] || "";
-      input1.className = "memory-input";
-      input1.oninput = (e) => {
-        memoryState.inputs[idx * 2] = e.target.value;
-      };
-      input1.onkeydown = (e) => {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          checkMemoryAnswer();
+      for (let i = 0; i < numAssociations; i++) {
+        const input = document.createElement("input");
+        input.type = "text";
+        input.placeholder = `word ${i + 1}`;
+        input.autocomplete = "off";
+        input.autocorrect = "off";
+        input.autocapitalize = "off";
+        input.spellcheck = false;
+        input.value = memoryState.inputs[idx * numAssociations + i] || "";
+        input.className = "memory-input";
+        input.style.flex = numAssociations > 2 ? "1 1 auto" : "1 1 100px";
+        input.oninput = (e) => {
+          memoryState.inputs[idx * numAssociations + i] = e.target.value;
+        };
+        input.onkeydown = (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            checkMemoryAnswer();
+          }
+        };
+        inputsDiv.appendChild(input);
+
+        if (i < numAssociations - 1) {
+          const arrow = document.createElement("span");
+          arrow.textContent = "→";
+          arrow.style.fontSize = "20px";
+          arrow.style.color = "var(--muted)";
+          arrow.style.margin = numAssociations > 2 ? "0 6px" : "0 12px";
+          inputsDiv.appendChild(arrow);
         }
-      };
-
-      const arrow = document.createElement("span");
-      arrow.textContent = "→";
-      arrow.style.fontSize = "20px";
-      arrow.style.color = "var(--muted)";
-
-      const input2 = document.createElement("input");
-      input2.type = "text";
-      input2.placeholder = "association 2";
-      input2.autocomplete = "off";
-      input2.autocorrect = "off";
-      input2.autocapitalize = "off";
-      input2.spellcheck = false;
-      input2.value = memoryState.inputs[idx * 2 + 1] || "";
-      input2.className = "memory-input";
-      input2.oninput = (e) => {
-        memoryState.inputs[idx * 2 + 1] = e.target.value;
-      };
-      input2.onkeydown = (e) => {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          checkMemoryAnswer();
-        }
-      };
-
-      inputsDiv.appendChild(input1);
-      inputsDiv.appendChild(arrow);
-      inputsDiv.appendChild(input2);
+      }
       row.appendChild(inputsDiv);
       form.appendChild(row);
     });
@@ -1590,23 +1580,18 @@ function handleMemoryPick(side, id) {
 }
 
 function getMemorySize() {
-  if (memoryDifficulty === "hard") return 3;
-  if (memoryDifficulty === "medium") return 2;
-  return 1;
+  return 1; // Always 1 word per round, chain length depends on difficulty
 }
 
 function getMemoryTotalRounds() {
-  return Math.max(1, Math.ceil(order.length / getMemorySize()));
+  return Math.max(1, order.length); // One round per word
 }
 
 function getMemoryRoundWords(words) {
   if (!words.length) return [];
-  const size = getMemorySize();
   const totalRounds = getMemoryTotalRounds();
   const safeRound = Math.min(Math.max(memoryRound, 0), totalRounds - 1);
-  const start = safeRound * size;
-  const end = Math.min(start + size, words.length);
-  return order.slice(start, end).map(i => words[i]).filter(Boolean);
+  return [words[order[safeRound]]].filter(Boolean);
 }
 
 function toggleTutor() {
@@ -1950,13 +1935,16 @@ function checkAnswer() {
 function checkMemoryAnswer() {
   if (!memoryState || memoryState.phase !== "input") return;
   const inputs = Array.from(document.querySelectorAll(".memory-input"));
-  const answers = memoryState.chains.flatMap(chain => [chain.parts[1].toLowerCase(), chain.parts[2].toLowerCase()]);
-
+  
   let allCorrect = true;
   inputs.forEach((input, idx) => {
+    const chainIdx = Math.floor(idx / (memoryState.chains[0]?.parts.length - 1 || 2));
+    const wordIdx = idx % (memoryState.chains[0]?.parts.length - 1 || 2);
+    const correct = memoryState.chains[chainIdx]?.correct[wordIdx] || "";
     const value = input.value.trim().toLowerCase();
+    
     input.classList.remove("input-correct", "input-wrong");
-    if (value === answers[idx]) {
+    if (value === correct) {
       input.classList.add("input-correct");
     } else {
       input.classList.add("input-wrong");
@@ -2123,8 +2111,8 @@ function setMemoryDifficulty(diff) {
   memoryDifficulty = diff;
   const times = {
     easy: { show: 2, delay: 3 },
-    medium: { show: 5, delay: 4 },
-    hard: { show: 8, delay: 5 }
+    medium: { show: 5, delay: 5 },
+    hard: { show: 7, delay: 5 }
   };
   memoryShowTime = times[diff].show;
   memoryDelayTime = times[diff].delay;
@@ -2369,6 +2357,8 @@ async function startMemoryGeneration() {
   memoryState = null;
   render();
   const words = getWords();
+  if (!words.length) { memoryTasks = []; render(); return; }
+  
   const batches = [];
   for (let i = 0; i < words.length; i += 10) batches.push(words.slice(i, i + 10));
   try {

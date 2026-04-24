@@ -31,36 +31,57 @@ export default async function handler(req, res) {
 `You are an expert in cognitive psychology and memory training.
 
 TASK:
-Create powerful and memorable association chains for vocabulary learning.
+Create fun and memorable association chains for vocabulary learning.
 
-FOR EACH word:
-1. Create EXACTLY ONE association chain of 3 words
-2. Format: [word] -> [association1] -> [association2]
-3. The associations MUST be:
-   - vivid and specific
-   - easy to imagine
-   - logically connected in a chain
-   - not generic or abstract
+DIFFICULTY LEVELS:
+- easy: chains of 3 words (word + 2 associations)
+- medium: chains of 4 words (word + 3 associations)
+- hard: chains of 5 words (word + 4 associations)
 
-CHAIN EXAMPLES:
-- dog -> bone -> hungry (dog chews bone, bone makes you hungry)
-- time -> flies -> quickly (time flies, flies move quickly)
-- book -> page -> story (book has pages, pages tell a story)
+FOR EACH word - Create EXACTLY ONE association chain:
+1. First word is the TARGET WORD (from the list)
+2. Following words are FUN and SIMPLE associations
+3. Format: [word] -> [association1] -> [association2] -> ...
+4. Associations MUST be:
+   - FUN and PLAYFUL (not serious or boring)
+   - SIMPLE (easy to understand and remember)
+   - VISUAL (easy to imagine and picture)
+   - CONNECTED logically in a chain
+
+FUN CHAIN EXAMPLES:
+- dog -> bone -> happy (dog loves bone, bone makes you happy!)
+- time -> flies -> airport (time flies at airport!)
+- book -> read -> adventure (reading book is adventure!)
+- music -> dance -> smile (music makes you dance and smile!)
+- pizza -> cheese -> yummy (pizza is all cheese, so yummy!)
 
 STRICT RULES:
-- Avoid weak words like: "thing", "object", "concept"
-- Each link must feel natural and memorable
-- Prefer concrete, visual connections
-- Chains should be unique and creative
+- Use simple, everyday words
+- Make associations playful and fun, not academic
+- Avoid weak words like "thing", "object", "concept"
+- Each word should feel connected and memorable
+- Use humor and joy to make chains stick in memory
+
+LENGTH REQUIREMENTS:
+- For EASY difficulty: exactly 2 associations after the word
+- For MEDIUM difficulty: exactly 3 associations after the word
+- For HARD difficulty: exactly 4 associations after the word
 
 QUALITY CHECK:
-Before output:
-- Ask: "Does this chain help remember the word through vivid associations?"
-- If not — improve it
+- Does this chain make me smile or find it fun?
+- Can I easily picture each step?
+- Does each word logically lead to the next?
+If NO to any question - improve it!
 
 OUTPUT FORMAT:
-Return ONLY a valid JSON array:
-[{"word":"dog","chain":"bone -> hungry"}]
+Return ONLY a valid JSON array with NO explanations:
+[
+  {"word":"dog","chain":"bone -> happy"},
+  {"word":"time","chain":"flies -> airport -> nap"}
+]
+
+CURRENT DIFFICULTY: ${difficulty}
+Required chain length: ${difficulty === "easy" ? 3 : difficulty === "medium" ? 4 : 5} words total
 
 Words:
 ${JSON.stringify(words)}`
