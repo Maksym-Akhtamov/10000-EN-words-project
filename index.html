@@ -1314,7 +1314,9 @@ function renderMemoryMode(word, words) {
 
 function buildMemoryState(roundWords) {
   const chains = roundWords.map(word => {
-    const aiChain = Array.isArray(memoryTasks) && memoryTasks.find(t => t.word === word.en && t.setId === sets[currentSet].id);
+    const aiChain = memoryTasks.find(t => 
+  t.word.toLowerCase().trim() === word.en.toLowerCase().trim()
+);
     const chain = aiChain ? aiChain.chain : generateMemoryChain(word.en);
     const parts = chain.split(" -> ");
     return {
@@ -1352,7 +1354,10 @@ function renderMemoryCard() {
     if (memoryState.phase === "show") {
       return `<div class="card-word" style="font-size:24px;line-height:1.2;margin:12px 0">${chain.chain.replace(/ -> /g, " → ")}</div>`;
     }
-    return `<div class="card-word" style="font-size:24px;line-height:1.2;margin:12px 0">${chain.parts[0]} → ___ → ___</div>`;
+    const blanks = chain.parts.slice(1).map(() => "___").join(" → ");
+return `<div class="card-word" style="font-size:24px;line-height:1.2;margin:12px 0">
+  ${chain.parts[0]} → ${blanks}
+</div>`;
   }).join("");
 
   front.innerHTML = `

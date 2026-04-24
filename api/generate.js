@@ -41,7 +41,14 @@ DIFFICULTY LEVELS:
 FOR EACH word - Create EXACTLY ONE association chain:
 1. First word is the TARGET WORD (from the list)
 2. Following words are FUN and SIMPLE associations
-3. Format: [word] -> [association1] -> [association2] -> ...
+3. CRITICAL:
+The chain MUST start with the original word.
+
+Example:
+dog -> bone -> happy
+time -> flies -> airport
+
+Never omit the first word.
 4. Associations MUST be:
    - FUN and PLAYFUL (not serious or boring)
    - SIMPLE (easy to understand and remember)
