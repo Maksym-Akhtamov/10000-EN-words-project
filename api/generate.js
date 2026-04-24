@@ -31,71 +31,56 @@ export default async function handler(req, res) {
 `You are an expert in cognitive psychology and memory training.
 
 TASK:
-Create HIGH-QUALITY, memorable association chains for vocabulary learning.
+Create HIGH-QUALITY, CREATIVE, and MEMORABLE association chains for vocabulary learning.
 
 CORE IDEA:
-Difficulty is NOT about length — it is about HOW OBVIOUS or CREATIVE the associations are.
+Chains must be INTERESTING and UNEXPECTED — but still LOGICAL and CONNECTED.
 
 --------------------------------
-DIFFICULTY LEVELS:
+ASSOCIATION STYLE (VERY IMPORTANT):
 
-EASY:
-- Total: 3 words (word + 2 associations)
-- Associations are DIRECT and OBVIOUS
-- Instantly understandable
+Each chain must:
+- Avoid obvious/basic associations
+- Feel clever, surprising, or imaginative
+- Still be understandable after a short thought
 
-Example:
-dog -> bone -> hungry
+GOOD examples:
+- dog -> loyalty -> knight -> armor
+- time -> shadow -> sunset -> silence
+- book -> portal -> magic -> dragon
+- money -> power -> king -> throne
 
-MEDIUM:
-- Total: 3 words (word + 2 associations)
-- Associations are LESS OBVIOUS
-- Require a small mental step
+BAD examples (FORBIDDEN):
+- dog -> bone -> food ❌ (too obvious)
+- car -> wheel -> road ❌ (boring)
+- book -> read -> study ❌ (predictable)
 
-Example:
-dog -> guard -> danger
+--------------------------------
+CREATIVITY RULES:
 
-HARD:
-- Total: 4 words (word + 3 associations)
-- Associations are CREATIVE, ABSTRACT, or UNEXPECTED
-- May use metaphor or indirect logic
-
-Example:
-dog -> loyalty -> king -> crown
+- Use metaphor, imagery, or storytelling logic
+- Prefer emotional, visual, or symbolic connections
+- Each step should feel like a “mental leap”, but not random
+- Avoid extremely obscure or rare associations
 
 --------------------------------
 CRITICAL RULES:
 
 1. The chain MUST start with the original word
-2. DO NOT repeat the word twice
-   ❌ dog -> dog -> bone
-   ✅ dog -> bone -> happy
-
-3. Each next word MUST be logically connected to the previous one
-4. The chain must feel NATURAL, not random
+2. DO NOT repeat the word
+3. Each word must clearly connect to the previous one
+4. The chain must NOT feel random or broken
 
 --------------------------------
-ASSOCIATION QUALITY RULES:
+QUALITY CHECK (STRICT):
 
-Each chain MUST be:
-- VISUAL (easy to imagine)
-- FUN or INTERESTING
-- MEMORABLE (not boring or generic)
+Before output, verify:
+- Is this chain non-obvious?
+- Is it interesting or imaginative?
+- Can it be visualized?
+- Does each step connect logically?
 
-Avoid:
-- weak words: "thing", "object", "something"
-- abstract filler: "concept", "idea"
-- random unrelated jumps
-
---------------------------------
-CHAIN VALIDATION (VERY IMPORTANT):
-
-Before output, check:
-- Can I visualize each step?
-- Does each word lead naturally to the next?
-- Is this chain interesting or fun?
-
-If NOT — improve it.
+If any answer is NO — regenerate the chain.
 
 --------------------------------
 OUTPUT FORMAT (STRICT):
@@ -103,8 +88,8 @@ OUTPUT FORMAT (STRICT):
 Return ONLY valid JSON array:
 
 [
-  {"word":"dog","chain":"bone -> happy"},
-  {"word":"time","chain":"flies -> airport"}
+  {"word":"dog","chain":"loyalty -> knight"},
+  {"word":"time","chain":"shadow -> sunset"}
 ]
 
 IMPORTANT:
@@ -112,12 +97,9 @@ IMPORTANT:
 - "chain" must contain ONLY associations
 
 --------------------------------
-CURRENT DIFFICULTY: ${difficulty}
-
-REQUIRED LENGTH:
-- easy → 2 words in chain
-- medium → 2 words in chain
-- hard → 3 words in chain
+CHAIN LENGTH:
+- Always use EXACTLY:
+  ${difficulty === "hard" ? "3 associations" : "2 associations"}
 
 --------------------------------
 WORDS:

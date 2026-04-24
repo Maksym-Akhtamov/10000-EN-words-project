@@ -674,8 +674,6 @@
     }
     .btn-clear:hover { background: rgba(248,113,113,0.15) !important; }
 
-    #regenBtn { display: none; }
-
     /* ===== PROGRESS BAR ===== */
     .progress-bar-wrap {
       width: 100%;
@@ -860,12 +858,9 @@
       </div>
     </div>
 
-    <div class="auto-row" id="memorySettings" style="display:none">
-    </div>
-
     <button class="ctrl-btn btn-clear" id="clearBtn" onclick="clearCustomSet()">🗑 Clear Review</button>
-    <button class="ctrl-btn" id="regenBtn" onclick="regenerateAI()">🔄 Regen AI</button>
-    <button class="ctrl-btn" id="regenMemoryBtn" onclick="regenerateMemory()">🔄 Regen Memory</button>
+    <button class="ctrl-btn" id="regenBtn" onclick="regenerateAI()" style="display:none">🔄 Regen AI</button>
+    <button class="ctrl-btn" id="regenMemoryBtn" onclick="regenerateMemory()" style="display:none">🔄 Regen Memory</button>
   </aside>
 
 </div>
@@ -1360,14 +1355,16 @@ function buildMemoryState(roundWords) {
     };
   });
 
+  const validChains = chains.filter(Boolean);
+
   return {
     roundSig: roundWords.map(w => w.id).join(","),
-    chains,
+    chains: validChains,
     phase: "show",
     showTime: memoryShowTime * 1000,
     delayTime: memoryDelayTime * 1000,
     inputs: new Array(
-      chains.length * (chains[0]?.parts.length - 1 || 2)
+      validChains.length * (validChains[0]?.parts.length - 1 || 2)
     ).fill(""),
     startTime: Date.now()
   };
@@ -1400,22 +1397,6 @@ return `<div class="card-word" style="font-size:24px;line-height:1.2;margin:12px
       <div style="font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:0.12em">${title}</div>
       ${lines}
     </div>`;
-}
-
-function generateMemoryPair(word) {
-  // Logical associations for memory training
-  const associations = {
-    time: "flies", car: "wheels", give: "receive", dad: "son", clear: "transparent",
-    five: "fingers", for: "against", human: "being", large: "small", he: "she",
-    video: "screen", position: "place", problem: "solution", final: "first", smell: "taste",
-    with: "without", heavy: "light", wait: "hurry", mistake: "correct", sun: "moon",
-    service: "customer", put: "take", end: "beginning", worry: "calm", football: "basketball",
-    when: "where", neighbour: "friend", bus: "train", middle: "edge", feel: "touch",
-    kitchen: "bathroom", class: "lesson", computer: "phone", dear: "cheap", again: "never",
-    general: "specific", doubt: "certainty", sick: "healthy", base: "top", catch: "throw",
-    afford: "expensive", bottom: "top", holiday: "workday", guess: "know", hardly: "easily"
-  };
-  return associations[word] || "concept"; // fallback
 }
 
 function generateMemoryChain(word) {
@@ -1538,85 +1519,6 @@ function renderMemoryBoard() {
 
     container.appendChild(form);
   }
-}
-
-function renderMemorySelectionBoard() {
-  const container = document.getElementById("testOptions");
-  container.innerHTML = "";
-
-  const grid = document.createElement("div");
-  grid.className = "matches-grid";
-
-  const leftCol = document.createElement("div");
-  leftCol.className = "match-col";
-  leftCol.innerHTML = `<div class="match-col-title">English</div>`;
-
-  const rightCol = document.createElement("div");
-  rightCol.className = "match-col";
-  rightCol.innerHTML = `<div class="match-col-title">Pair</div>`;
-
-  const rightItems = memoryState.rightItems || [...memoryState.pairs];
-
-  memoryState.pairs.forEach(pair => {
-    const btn = document.createElement("button");
-    btn.className = "choice-btn";
-    if (memoryState.selectedLeft === pair.id) btn.classList.add("match-selected");
-    if (memoryState.matchedIds.includes(pair.id)) btn.classList.add("match-done", "disabled");
-    btn.textContent = pair.en;
-    btn.onclick = () => handleMemoryPick("left", pair.id);
-    leftCol.appendChild(btn);
-  });
-
-  rightItems.forEach(pair => {
-    const btn = document.createElement("button");
-    btn.className = "choice-btn";
-    if (memoryState.selectedRight === pair.id) btn.classList.add("match-selected");
-    if (memoryState.matchedIds.includes(pair.id)) btn.classList.add("match-done", "disabled");
-    btn.textContent = pair.pair;
-    btn.onclick = () => handleMemoryPick("right", pair.id);
-    rightCol.appendChild(btn);
-  });
-
-  grid.appendChild(leftCol);
-  grid.appendChild(rightCol);
-  container.appendChild(grid);
-}
-
-function handleMemoryPick(side, id) {
-  if (!memoryState || memoryState.matchedIds.includes(id)) return;
-
-  if (side === "left") memoryState.selectedLeft = id;
-  else memoryState.selectedRight = id;
-
-  renderMemorySelectionBoard();
-
-  if (memoryState.selectedLeft === null || memoryState.selectedRight === null) return;
-
-  if (memoryState.selectedLeft === memoryState.selectedRight) {
-    const matchedId = memoryState.selectedLeft;
-    memoryState.matchedIds.push(matchedId);
-    memoryState.selectedLeft = null;
-    memoryState.selectedRight = null;
-    showResult("✓ Match!", "correct");
-    renderMemorySelectionBoard();
-
-    if (memoryState.matchedIds.length === memoryState.pairs.length) {
-      showResult("✓ Great! All pairs matched", "correct");
-      isAnswerLocked = true;
-      if (!autoPlay) setTimeout(() => nextWord(), 800);
-    }
-    return;
-  }
-
-  showResult("✗ Not a match", "wrong");
-  const prevLeft = memoryState.selectedLeft;
-  const prevRight = memoryState.selectedRight;
-  setTimeout(() => {
-    if (memoryState.selectedLeft === prevLeft) memoryState.selectedLeft = null;
-    if (memoryState.selectedRight === prevRight) memoryState.selectedRight = null;
-    showResult("", "");
-    renderMemorySelectionBoard();
-  }, 550);
 }
 
 function getMemorySize() {
@@ -2083,10 +1985,8 @@ function setAIDifficulty(diff) {
   document.getElementById("aiEasyBtn").classList.toggle("active", diff === "easy");
   document.getElementById("aiMediumBtn").classList.toggle("active", diff === "medium");
   document.getElementById("aiHardBtn").classList.toggle("active", diff === "hard");
-  // Regenerate AI tasks if needed
+  // Load cache for the newly selected difficulty (or show Generate prompt if none)
   if (activeMode === "ai") {
-    localStorage.removeItem(getAIKey());
-    delete aiTasksCache[getAIKey()];
     loadAITasks();
   }
 }
@@ -2159,8 +2059,11 @@ function setMemoryDifficulty(diff) {
   document.getElementById("memoryEasyBtn").classList.toggle("active", diff === "easy");
   document.getElementById("memoryMediumBtn").classList.toggle("active", diff === "medium");
   document.getElementById("memoryHardBtn").classList.toggle("active", diff === "hard");
-  // Regenerate if needed
-  if (activeMode === "memory" && memoryTasks.length > 0) {
+  // Load from cache for this difficulty, or show generate prompt — same as AI mode
+  if (activeMode === "memory") {
+    memoryStarted = false;
+    memoryState = null;
+    memoryRound = 0;
     loadMemoryTasks();
   }
 }
@@ -2357,7 +2260,7 @@ function regenerateAI() {
 }
 
 // ===================== MEMORY =====================
-function getMemoryKey() { return `memoryTasks_set_${sets[currentSet].id}`; }
+function getMemoryKey() { return `memoryTasks_set_${sets[currentSet].id}_diff_${memoryDifficulty}`; }
 
 function loadMemoryCache() {
   const key = getMemoryKey();
