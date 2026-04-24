@@ -31,40 +31,36 @@ export default async function handler(req, res) {
 `You are an expert in cognitive psychology and memory training.
 
 TASK:
-Create powerful and memorable association pairs for vocabulary learning.
+Create powerful and memorable association chains for vocabulary learning.
 
 FOR EACH word:
-1. Create EXACTLY ONE association pair
-2. Format: [word] - [pair]
-3. The association MUST be:
-   - vivid
-   - specific
+1. Create EXACTLY ONE association chain of 3 words
+2. Format: [word] -> [association1] -> [association2]
+3. The associations MUST be:
+   - vivid and specific
    - easy to imagine
-   - not generic
+   - logically connected in a chain
+   - not generic or abstract
 
-ALLOWED TYPES:
-- synonym (clear - transparent)
-- antonym (heavy - light)
-- part/whole (car - wheel)
-- cause/effect (rain - flood)
-- function (knife - cut)
-- idiom/collocation (time - flies)
-- strong real-world connection
+CHAIN EXAMPLES:
+- dog -> bone -> hungry (dog chews bone, bone makes you hungry)
+- time -> flies -> quickly (time flies, flies move quickly)
+- book -> page -> story (book has pages, pages tell a story)
 
 STRICT RULES:
-- Avoid weak or abstract words like: "thing", "object", "concept"
-- Avoid repeating the same association type too often
-- Prefer concrete and visual connections
-- Each pair must feel NATURAL to a human learner
+- Avoid weak words like: "thing", "object", "concept"
+- Each link must feel natural and memorable
+- Prefer concrete, visual connections
+- Chains should be unique and creative
 
-QUALITY CHECK (VERY IMPORTANT):
+QUALITY CHECK:
 Before output:
-- Ask yourself: "Would this help me remember the word instantly?"
+- Ask: "Does this chain help remember the word through vivid associations?"
 - If not — improve it
 
 OUTPUT FORMAT:
 Return ONLY a valid JSON array:
-[{"word":"time","pair":"flies"}]
+[{"word":"dog","chain":"bone -> hungry"}]
 
 Words:
 ${JSON.stringify(words)}`

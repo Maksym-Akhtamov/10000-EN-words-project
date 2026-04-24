@@ -185,6 +185,21 @@
     .lang-setting { margin-top: 16px; }
     .lang-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; font-weight: 600; }
     .lang-btns { display: flex; gap: 6px; }
+    .lang-btn,
+    .ctrl-btn,
+    .setting-btn,
+    .choice-btn,
+    .mini-trigger,
+    .mini-option,
+    .dropdown-item,
+    button {
+      border-radius: 8px;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+      -moz-focus-inner: 0;
+      -webkit-focus-ring-color: transparent;
+    }
+
     .lang-btn {
       flex: 1;
       background: var(--surface2);
@@ -194,12 +209,22 @@
       font-size: 12px;
       font-weight: 600;
       padding: 8px 6px;
-      border-radius: 8px;
       cursor: pointer;
       transition: all 0.15s;
       text-align: center;
     }
     .lang-btn:hover { color: var(--text); border-color: var(--border2); }
+    .lang-btn:focus-visible,
+    .ctrl-btn:focus-visible,
+    .setting-btn:focus-visible,
+    .choice-btn:focus-visible,
+    .mini-trigger:focus-visible,
+    .mini-option:focus-visible,
+    .dropdown-item:focus-visible,
+    button:focus-visible {
+      outline: none;
+      box-shadow: none;
+    }
     .lang-btn.active { background: rgba(79,142,247,0.15); border-color: var(--accent); color: var(--accent); }
 
     /* ===== MAIN CONTENT ===== */
@@ -231,6 +256,10 @@
       height: 300px;
       cursor: pointer;
       position: relative;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+      -moz-focus-inner: 0;
+      -webkit-focus-ring-color: transparent;
     }
 
     .card-inner {
@@ -238,6 +267,8 @@
       position: relative;
       transform-style: preserve-3d;
       transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
     }
     .card-inner.flipped { transform: rotateY(180deg); }
 
@@ -436,6 +467,9 @@
     #answerInput.input-correct { border-color: var(--correct); }
     #answerInput.input-wrong   { border-color: var(--wrong); animation: shake 0.3s; }
 
+    input.input-correct { border-color: var(--correct); }
+    input.input-wrong   { border-color: var(--wrong); animation: shake 0.3s; }
+
     @keyframes shake {
       0%,100% { transform: translateX(0); }
       25% { transform: translateX(-6px); }
@@ -570,8 +604,11 @@
       cursor: pointer;
       transition: all 0.15s;
       text-align: center;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
     }
     .ctrl-btn:hover { border-color: var(--border2); color: var(--text); }
+    .ctrl-btn:focus-visible { outline: none; box-shadow: none; }
     .ctrl-btn.active { background: rgba(79,142,247,0.12); border-color: var(--accent); color: var(--accent); }
 
     .auto-row { display: flex; gap: 8px; }
@@ -694,7 +731,7 @@
           <div class="dropdown-item" onclick="selectMode('truefalse')"> <span class="icon">✅</span> True / False</div>
           <div class="dropdown-item" onclick="selectMode('matches')"> <span class="icon">🧩</span> Matches</div>
           <div class="dropdown-item" onclick="selectMode('ai')">     <span class="icon">⚡</span> AI Mode</div>
-          <div class="dropdown-item" onclick="selectMode('memory')"> <span class="icon">🧠</span> Memory</div>
+          <div class="dropdown-item" onclick="selectMode('memory')"> <span class="icon">🧠</span> Memory Associations</div>
         </div>
       </div>
 
@@ -718,9 +755,18 @@
         <div class="choice-setting" id="aiDifficultySetting">
           <div class="lang-label">AI Difficulty</div>
           <div class="lang-btns">
-            <button class="lang-btn active" id="aiEasyBtn" onclick="setAIDifficulty('easy')">Easy</button>
-            <button class="lang-btn" id="aiMediumBtn" onclick="setAIDifficulty('medium')">Medium</button>
+            <button class="lang-btn" id="aiEasyBtn" onclick="setAIDifficulty('easy')">Easy</button>
+            <button class="lang-btn active" id="aiMediumBtn" onclick="setAIDifficulty('medium')">Medium</button>
             <button class="lang-btn" id="aiHardBtn" onclick="setAIDifficulty('hard')">Hard</button>
+          </div>
+        </div>
+
+        <div class="choice-setting" id="memoryDifficultySetting">
+          <div class="lang-label">Memory Difficulty</div>
+          <div class="lang-btns">
+            <button class="lang-btn" id="memoryEasyBtn" onclick="setMemoryDifficulty('easy')">Easy</button>
+            <button class="lang-btn active" id="memoryMediumBtn" onclick="setMemoryDifficulty('medium')">Medium</button>
+            <button class="lang-btn" id="memoryHardBtn" onclick="setMemoryDifficulty('hard')">Hard</button>
           </div>
         </div>
     </div>
@@ -798,15 +844,6 @@
     </div>
 
     <div class="auto-row" id="memorySettings" style="display:none">
-      <div class="mini-dropdown" id="memoryTimeDropdown">
-        <button class="mini-trigger" id="memoryTimeTrigger" onclick="toggleMemoryTimeDropdown()">2s</button>
-        <div class="mini-menu">
-          <div class="mini-option" onclick="setMemoryTime(1)">1s</div>
-          <div class="mini-option" onclick="setMemoryTime(2)">2s</div>
-          <div class="mini-option" onclick="setMemoryTime(3)">3s</div>
-          <div class="mini-option" onclick="setMemoryTime(5)">5s</div>
-        </div>
-      </div>
     </div>
 
     <button class="ctrl-btn btn-clear" id="clearBtn" onclick="clearCustomSet()">🗑 Clear Review</button>
@@ -849,13 +886,15 @@ let currentCustomSet = null;
 let aiTasks = [];
 let aiTasksCache = {};
 let aiDifficulty = "medium"; // easy | medium | hard
+let memoryDifficulty = "medium"; // easy | medium | hard
 let memoryState = null;
 let memoryRound = 0;
-const MEMORY_SIZE = 4;
+const MEMORY_SIZE = 1;
 let memoryStarted = false;
 let lastTapTime = 0;
 let lastSpaceTime = 0;
 let memoryShowTime = 2; // seconds
+let memoryDelayTime = 3; // seconds before showing input fields
 let memoryTasks = [];
 let memoryTasksCache = {};
 let frozenOrder = null;   // locked shuffle order — not changed by star actions
@@ -1222,7 +1261,7 @@ function renderMemoryMode(word, words) {
         <div style="color:var(--muted);font-size:17px">No memory pairs for this set</div>
         <button onclick="event.stopPropagation();startMemoryGeneration()" 
           style="background:var(--accent);color:#fff;padding:12px 24px;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;border:none;cursor:pointer">
-          ⚡ Generate Memory Pairs
+          ⚡ Generate Memory Associations
         </button>
       </div>`;
     document.getElementById("back").innerHTML = "";
@@ -1236,7 +1275,7 @@ function renderMemoryMode(word, words) {
     document.getElementById("front").innerHTML = `
       <div style="display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center">
         <div class="card-word" style="font-size:24px">Ready for Memory</div>
-        <div style="font-size:14px;color:var(--muted);max-width:420px">Memory tasks are prepared. Press start to see the first pairs.</div>
+        <div style="font-size:14px;color:var(--muted);max-width:420px">Memory associations are prepared. Press start to begin.</div>
         <button onclick="event.stopPropagation();startMemoryRound()" 
           style="background:var(--accent);color:#fff;padding:12px 24px;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;border:none;cursor:pointer">
           ▶ Start Memory
@@ -1257,36 +1296,34 @@ function renderMemoryMode(word, words) {
 
   document.getElementById("front").innerHTML = `
     <div style="display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center">
-      <div class="card-word" style="font-size:30px">Memory Challenge</div>
-      <div style="font-size:14px;color:var(--muted)">Memorize pairs, then match them</div>
+      <div class="card-word" style="font-size:30px">${memoryState.word}</div>
+      <div style="font-size:14px;color:var(--muted)">Memory Associations</div>
     </div>`;
   document.getElementById("back").innerHTML = "";
   renderMemoryBoard();
 }
 
 function buildMemoryState(roundWords) {
-  // Use AI-generated pairs or fallback to static
-  const pairs = [];
-  roundWords.forEach(word => {
-    const aiPair = Array.isArray(memoryTasks) && memoryTasks.find(t => t.word === word.en && t.setId === sets[currentSet].id);
-    if (aiPair) {
-      pairs.push({ en: word.en, pair: aiPair.pair, id: word.id });
-    } else {
-      // Fallback to static associations
-      const staticPair = generateMemoryPair(word.en);
-      pairs.push({ en: word.en, pair: staticPair, id: word.id });
-    }
-  });
-  const rightItems = [...pairs].sort(() => Math.random() - 0.5);
+  // Use AI-generated chains
+  const word = roundWords[0];
+  const aiChain = Array.isArray(memoryTasks) && memoryTasks.find(t => t.word === word.en && t.setId === sets[currentSet].id);
+  let chain = "";
+  if (aiChain) {
+    chain = aiChain.chain;
+  } else {
+    // Fallback
+    chain = generateMemoryChain(word.en);
+  }
+  const parts = chain.split(" -> ");
   return {
     roundSig: roundWords.map(w => w.id).join(","),
-    pairs,
-    rightItems,
-    phase: "show", // show | hide | select
-    showTime: memoryShowTime * 1000, // convert to ms
-    selectedLeft: null,
-    selectedRight: null,
-    matchedIds: [],
+    word: word.en,
+    chain,
+    parts,
+    phase: "show", // show | delay | input
+    showTime: memoryShowTime * 1000,
+    delayTime: memoryDelayTime * 1000,
+    inputs: ["", ""],
     startTime: Date.now()
   };
 }
@@ -1307,51 +1344,117 @@ function generateMemoryPair(word) {
   return associations[word] || "concept"; // fallback
 }
 
+function generateMemoryChain(word) {
+  // Simple chains for fallback
+  const chains = {
+    dog: "bone -> hungry",
+    time: "flies -> quickly",
+    car: "wheel -> road",
+    give: "receive -> share",
+    clear: "transparent -> glass"
+  };
+  return chains[word] || "bone -> hungry"; // fallback
+}
+
 function renderMemoryBoard() {
   const container = document.getElementById("testOptions");
   container.style.display = "block";
   container.innerHTML = "";
 
-  if (!memoryState || !memoryState.pairs.length) return;
+  if (!memoryState) return;
 
   if (memoryState.phase === "show") {
-    // Show pairs for memorization
-    const pairsList = document.createElement("div");
-    pairsList.style.display = "grid";
-    pairsList.style.gridTemplateColumns = "1fr 1fr";
-    pairsList.style.gap = "12px";
-    pairsList.style.width = "100%";
-    pairsList.style.maxWidth = "520px";
+    // Show full chain
+    const chainDiv = document.createElement("div");
+    chainDiv.style.textAlign = "center";
+    chainDiv.style.fontSize = "24px";
+    chainDiv.style.padding = "20px";
+    chainDiv.innerHTML = memoryState.chain.replace(" -> ", " → ");
+    container.appendChild(chainDiv);
 
-    memoryState.pairs.forEach(pair => {
-      const pairDiv = document.createElement("div");
-      pairDiv.style.display = "flex";
-      pairDiv.style.justifyContent = "space-between";
-      pairDiv.style.alignItems = "center";
-      pairDiv.style.padding = "12px";
-      pairDiv.style.background = "var(--surface)";
-      pairDiv.style.border = "1px solid var(--border2)";
-      pairDiv.style.borderRadius = "12px";
-      pairDiv.style.fontSize = "16px";
-      pairDiv.innerHTML = `<span>${pair.en}</span> <span style="color:var(--accent)">→</span> <span>${pair.pair}</span>`;
-      pairsList.appendChild(pairDiv);
-    });
-
-    container.appendChild(pairsList);
-
-    // Auto-hide after showTime
+    // Auto-transition to delay after showTime
     setTimeout(() => {
-      memoryState.phase = "hide";
+      memoryState.phase = "delay";
       renderMemoryBoard();
     }, memoryState.showTime);
 
-  } else if (memoryState.phase === "hide") {
-    // Hide pairs, show selection board
-    memoryState.phase = "select";
-    renderMemorySelectionBoard();
+  } else if (memoryState.phase === "delay") {
+    // Show first word and blanks
+    const inputDiv = document.createElement("div");
+    inputDiv.style.textAlign = "center";
+    inputDiv.style.fontSize = "24px";
+    inputDiv.style.padding = "20px";
+    inputDiv.innerHTML = `${memoryState.parts[0]} → ___ → ___`;
+    container.appendChild(inputDiv);
 
-  } else if (memoryState.phase === "select") {
-    renderMemorySelectionBoard();
+    // Auto-transition to input after delayTime
+    setTimeout(() => {
+      memoryState.phase = "input";
+      renderMemoryBoard();
+    }, memoryState.delayTime);
+
+  } else if (memoryState.phase === "input") {
+    // Show input fields
+    const form = document.createElement("div");
+    form.style.display = "flex";
+    form.style.flexDirection = "column";
+    form.style.alignItems = "center";
+    form.style.gap = "16px";
+    form.style.padding = "20px";
+
+    const chainDisplay = document.createElement("div");
+    chainDisplay.style.fontSize = "20px";
+    chainDisplay.style.marginBottom = "10px";
+    chainDisplay.textContent = `${memoryState.parts[0]} →`;
+    form.appendChild(chainDisplay);
+
+    const inputsDiv = document.createElement("div");
+    inputsDiv.style.display = "flex";
+    inputsDiv.style.gap = "12px";
+    inputsDiv.style.alignItems = "center";
+
+    const input1 = document.createElement("input");
+    input1.type = "text";
+    input1.placeholder = "association 1";
+    input1.value = memoryState.inputs[0];
+    input1.style.padding = "8px 12px";
+    input1.style.border = "1px solid var(--border)";
+    input1.style.borderRadius = "8px";
+    input1.style.fontSize = "16px";
+    input1.oninput = (e) => { memoryState.inputs[0] = e.target.value; };
+
+    const arrow = document.createElement("span");
+    arrow.textContent = "→";
+    arrow.style.fontSize = "20px";
+
+    const input2 = document.createElement("input");
+    input2.type = "text";
+    input2.placeholder = "association 2";
+    input2.value = memoryState.inputs[1];
+    input2.style.padding = "8px 12px";
+    input2.style.border = "1px solid var(--border)";
+    input2.style.borderRadius = "8px";
+    input2.style.fontSize = "16px";
+    input2.oninput = (e) => { memoryState.inputs[1] = e.target.value; };
+
+    inputsDiv.appendChild(input1);
+    inputsDiv.appendChild(arrow);
+    inputsDiv.appendChild(input2);
+    form.appendChild(inputsDiv);
+
+    const checkBtn = document.createElement("button");
+    checkBtn.textContent = "Check";
+    checkBtn.style.background = "var(--accent)";
+    checkBtn.style.color = "#fff";
+    checkBtn.style.padding = "10px 20px";
+    checkBtn.style.border = "none";
+    checkBtn.style.borderRadius = "8px";
+    checkBtn.style.fontSize = "16px";
+    checkBtn.style.cursor = "pointer";
+    checkBtn.onclick = checkMemoryAnswer;
+    form.appendChild(checkBtn);
+
+    container.appendChild(form);
   }
 }
 
@@ -1748,37 +1851,40 @@ function handleEnter() {
   else { nextWord(); }
 }
 
-function checkAnswer() {
-  const inp = document.getElementById("answerInput");
-  const val = inp.value.trim().toLowerCase();
-  const words = getWords();
-  const activeWord = getCurrentWord(words);
-  const correct = activeWord.en.toLowerCase();
+function checkMemoryAnswer() {
+  const correct1 = memoryState.parts[1].toLowerCase();
+  const correct2 = memoryState.parts[2].toLowerCase();
+  const user1 = memoryState.inputs[0].trim().toLowerCase();
+  const user2 = memoryState.inputs[1].trim().toLowerCase();
 
-  if (val === correct) {
-  inp.className = "input-correct";
-  showResult("✓ Correct!", "correct");
-  isAnswerLocked = true;
+  const input1 = document.querySelector('input[placeholder="association 1"]');
+  const input2 = document.querySelector('input[placeholder="association 2"]');
 
-  setTimeout(() => {
-    inp.value = "";        // ✅ очистка
-    inp.className = "";
-  }, 700);
+  let allCorrect = true;
 
-  if (!autoPlay) setTimeout(() => {
-    nextWord();
-  }, 700);
+  if (user1 === correct1) {
+    input1.className = "input-correct";
+  } else {
+    input1.className = "input-wrong";
+    allCorrect = false;
+  }
 
-} else {
-  inp.className = "input-wrong";
-  showResult(`✗  ${correct}`, "wrong");
-  scheduleTutorReview(activeWord.id);
+  if (user2 === correct2) {
+    input2.className = "input-correct";
+  } else {
+    input2.className = "input-wrong";
+    allCorrect = false;
+  }
 
-  setTimeout(() => {
-    inp.value = "";        // ✅ очистка
-    inp.className = "";
-  }, 700);
-}
+  if (allCorrect) {
+    showResult("✓ Correct!", "correct");
+    setTimeout(() => {
+      nextWord();
+    }, 1000);
+  } else {
+    showResult(`✗ Correct: ${memoryState.parts[1]} → ${memoryState.parts[2]}`, "wrong");
+    // Allow retry
+  }
 }
 
 // ===================== MODES =====================
@@ -1797,9 +1903,12 @@ function selectMode(m) {
     matches: "🧩 Matches",
     audio: "🔊 Audio",
     ai: "⚡ AI Mode",
-    memory: "🧠 Memory"
+    memory: "🧠 Memory Associations"
   };
   document.getElementById("modeTriggerLabel").textContent = labels[m];
+
+  // Hide tutor button in matches and memory modes
+  document.getElementById("tutorBtn").style.display = (m === "matches" || m === "memory") ? "none" : "block";
 
   if (m !== "study") { keyboardOn = false; }
   if (m === "ai") loadAITasks();
@@ -1919,6 +2028,24 @@ function setMemoryTime(s) {
   memoryShowTime = s;
   document.getElementById("memoryTimeTrigger").textContent = s + "s";
   document.getElementById("memoryTimeDropdown").classList.remove("open");
+}
+
+function setMemoryDifficulty(diff) {
+  memoryDifficulty = diff;
+  const times = {
+    easy: { show: 2, delay: 3 },
+    medium: { show: 5, delay: 4 },
+    hard: { show: 8, delay: 5 }
+  };
+  memoryShowTime = times[diff].show;
+  memoryDelayTime = times[diff].delay;
+  document.getElementById("memoryEasyBtn").classList.toggle("active", diff === "easy");
+  document.getElementById("memoryMediumBtn").classList.toggle("active", diff === "medium");
+  document.getElementById("memoryHardBtn").classList.toggle("active", diff === "hard");
+  // Regenerate if needed
+  if (activeMode === "memory" && memoryTasks.length > 0) {
+    loadMemoryTasks();
+  }
 }
 
 // ===================== SETS =====================
@@ -2141,7 +2268,7 @@ async function generateMemoryBatch(words) {
   const res = await fetch("/api/generate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ words: words.map(w => w.en), type: "memory" })
+    body: JSON.stringify({ words: words.map(w => w.en), type: "memory", difficulty: memoryDifficulty })
   });
   if (!res.ok) throw new Error("Server " + res.status);
   return res.json();
@@ -2216,9 +2343,9 @@ function updateAllUI() {
   document.getElementById("regenMemoryBtn").style.display =
     activeMode === "memory" ? "block" : "none";
 
-  // memory time settings
-  document.getElementById("memorySettings").style.display =
-    activeMode === "memory" ? "flex" : "none";
+  // memory difficulty controls
+  document.getElementById("memoryDifficultySetting").style.display =
+    activeMode === "memory" ? "block" : "none";
 
   // choice direction controls
   document.getElementById("choiceSetting").style.display =
