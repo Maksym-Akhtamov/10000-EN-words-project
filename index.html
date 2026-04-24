@@ -1205,7 +1205,7 @@ function renderMemoryMode(word, words) {
   }
 
   // Check if we have AI-generated pairs for this set
-  const hasMemoryTasks = memoryTasks.some(t => t.setId === sets[currentSet].id);
+  const hasMemoryTasks = Array.isArray(memoryTasks) && memoryTasks.some(t => t.setId === sets[currentSet].id);
 
   if (!hasMemoryTasks) {
     document.getElementById("front").innerHTML = `
@@ -2097,7 +2097,8 @@ async function generateMemoryBatch(words) {
 }
 
 async function startMemoryGeneration() {
-  memoryTasks = null; render();
+  memoryTasks = [];
+  render();
   const words = getWords();
   const batches = [];
   for (let i = 0; i < words.length; i += 10) batches.push(words.slice(i, i + 10));
