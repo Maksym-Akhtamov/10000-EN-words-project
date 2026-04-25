@@ -2741,7 +2741,39 @@ async function fetchCMBatch(fourWords) {
   });
   if (!res.ok) throw new Error("Server " + res.status);
   const data = await res.json();
-  return { ...data, wordIds: fourWords.map(w => w.id), setId: sets[currentSet].id };
+
+  // Renumber slots by order of appearance in sentence (left to right)
+  // So slot 1 = first blank in the sentence, regardless of set order
+  const sentence = data.sentence || "";
+  const slotOrder = [];
+  // Find all [N] placeholders in order of appearance
+  const matches = sentence.matchAll(/\[(\d+)\]/g);
+  for (const m of matches) {
+    const n = parseInt(m[1]);
+    if (!slotOrder.includes(n)) slotOrder.push(n);
+  }
+  // Remap: position in slotOrder (0-based) → new slot number (1-based)
+  const remapSlot = {};
+  slotOrder.forEach((oldSlot, idx) => { remapSlot[oldSlot] = idx + 1; });
+
+  // Rebuild sentence with new slot numbers
+  let newSentence = sentence;
+  // Replace in reverse order to avoid [1] matching [10] etc
+  for (const [oldSlot, newSlot] of Object.entries(remapSlot)) {
+    newSentence = newSentence.replace(`[${oldSlot}]`, `[${newSlot}]`);
+  }
+
+  const remappedWords = (data.words || []).map(w => ({
+    ...w,
+    slot: remapSlot[w.slot] ?? w.slot
+  }));
+
+  return {
+    sentence: newSentence,
+    words: remappedWords,
+    wordIds: fourWords.map(w => w.id),
+    setId: sets[currentSet].id
+  };
 }
 
 async function startCMGeneration() {
