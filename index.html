@@ -2743,34 +2743,65 @@ async function fetchCMBatch(fourWords) {
   if (!res.ok) throw new Error("Server " + res.status);
   const data = await res.json();
 
-  // Renumber slots by order of appearance in sentence (left to right)
-  // So slot 1 = first blank in the sentence, regardless of set order
-  const sentence = data.sentence || "";
-  const slotOrder = [];
-  // Find all [N] placeholders in order of appearance
-  const matches = sentence.matchAll(/\[(\d+)\]/g);
-  for (const m of matches) {
-    const n = parseInt(m[1]);
-    if (!slotOrder.includes(n)) slotOrder.push(n);
-  }
-  // Remap: position in slotOrder (0-based) → new slot number (1-based)
-  const remapSlot = {};
-  slotOrder.forEach((oldSlot, idx) => { remapSlot[oldSlot] = idx + 1; });
+  let sentence = data.sentence || "";
+  const apiWords = data.words || [];
 
-  // Rebuild sentence with new slot numbers
-  let newSentence = sentence;
-  // Replace in reverse order to avoid [1] matching [10] etc
-  for (const [oldSlot, newSlot] of Object.entries(remapSlot)) {
-    newSentence = newSentence.replace(`[${oldSlot}]`, `[${newSlot}]`);
+  // Step 1: Build sentence with [N] placeholders in left-to-right order
+  // Find each correct word's position in the sentence and replace with [N]
+  // Sort words by position of appearance in sentence
+  const wordPositions = [];
+  const sentenceLower = sentence.toLowerCase();
+
+  for (const w of apiWords) {
+    const regex = new RegExp(`\\b${w.correct.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+    const match = sentenceLower.search(regex);
+    if (match !== -1) {
+      wordPositions.push({ ...w, pos: match });
+    } else {
+      wordPositions.push({ ...w, pos: 9999 }); // not found — push to end
+    }
   }
 
-  const remappedWords = (data.words || []).map(w => ({
-    ...w,
-    slot: remapSlot[w.slot] ?? w.slot
+  // Sort by position in sentence (left to right)
+  wordPositions.sort((a, b) => a.pos - b.pos);
+
+  // Assign new slots 1-4 in left-to-right order
+  wordPositions.forEach((w, idx) => { w.newSlot = idx + 1; });
+
+  // Replace words in sentence with [N] — process right-to-left to preserve positions
+  const sorted = [...wordPositions].sort((a, b) => b.pos - a.pos);
+  for (const w of sorted) {
+    const regex = new RegExp(`\\b${w.correct.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+    sentence = sentence.replace(regex, `[${w.newSlot}]`);
+  }
+
+  // If sentence still has old [N] placeholders from AI (instead of real words), remap them
+  if (sentence.match(/\[\d+\]/)) {
+    const matches = [...sentence.matchAll(/\[(\d+)\]/g)];
+    const appearOrder = [];
+    for (const m of matches) {
+      const n = parseInt(m[1]);
+      if (!appearOrder.includes(n)) appearOrder.push(n);
+    }
+    const remap = {};
+    appearOrder.forEach((old, i) => { remap[old] = i + 1; });
+    // Replace all at once using a temp marker to avoid double-replace
+    sentence = sentence.replace(/\[(\d+)\]/g, (_, n) => `__SLOT${remap[parseInt(n)]}__`);
+    sentence = sentence.replace(/__SLOT(\d+)__/g, (_, n) => `[${n}]`);
+    // Remap words slots too
+    wordPositions.forEach(w => {
+      w.newSlot = remap[w.newSlot] ?? w.newSlot;
+    });
+  }
+
+  const remappedWords = wordPositions.map(w => ({
+    slot: w.newSlot,
+    correct: w.correct,
+    options: w.options || [w.correct]
   }));
 
   return {
-    sentence: newSentence,
+    sentence,
     words: remappedWords,
     wordIds: fourWords.map(w => w.id),
     setId: sets[currentSet].id
