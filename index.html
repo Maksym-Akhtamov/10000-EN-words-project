@@ -2845,6 +2845,7 @@ function renderCMMode(words) {
 
 function buildCMState(task) {
   const times = CM_TIMES[cmDifficulty];
+  task.words.sort((a, b) => a.slot - b.slot);
   return {
     taskIdx: cmRound % cmTasks.length,
     phase: "show",   // show → pause → input → result
@@ -2959,7 +2960,20 @@ function renderCMInput(task) {
 
   let inputHtml = "";
   if (currentWord && cmInputMode === "choice") {
-    const shuffled = [...currentWord.options].sort(() => Math.random() - 0.5);
+    let options = currentWord.options.filter(opt => !/^wrong\d*$/i.test(opt));
+
+// fallback если API прислал мусор
+if (options.length < 2) {
+  options = [
+    currentWord.correct,
+    ...getWords()
+      .filter(w => w.en !== currentWord.correct)
+      .slice(0, 3)
+      .map(w => w.en)
+  ];
+}
+
+const shuffled = [...options].sort(() => Math.random() - 0.5);
     inputHtml = `<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:16px">
       ${shuffled.map(opt => `
         <button onclick="submitCMAnswer(${currentWord.slot}, '${opt}', event)"
@@ -3004,7 +3018,7 @@ function submitCMAnswer(slot, given, e) {
   // Move to next unanswered slot
   const unanswered = task.words.filter(w => !cmState.answered.find(a => a.slot === w.slot));
   if (unanswered.length > 0) {
-    cmState.activeSlot = task.words.indexOf(unanswered[0]);
+    cmState.activeSlot = unanswered[0].slot - 1;
     renderCMInput(task);
   } else {
     // All answered — show result
