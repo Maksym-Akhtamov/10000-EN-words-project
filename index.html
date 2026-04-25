@@ -1314,15 +1314,22 @@ function render() {
   const words = getWords();
   const matchesTotalRounds = getMatchesTotalRounds();
   const memoryTotalRounds = getMemoryTotalRounds();
+  const cmTotal = cmTasks?.length || 0;
+
   const counterValue = activeMode === "matches"
     ? (matchesTotalRounds ? `${matchesRound + 1} / ${matchesTotalRounds}` : "")
     : activeMode === "memory"
     ? (memoryTotalRounds ? `${memoryRound + 1} / ${memoryTotalRounds}` : "Memory Challenge")
+    : activeMode === "contextmemory"
+    ? (cmTotal ? `${cmRound + 1} / ${cmTotal}` : "Context Memory")
     : (words.length ? `${current + 1} / ${order.length}` : "");
+
   const progressPct = activeMode === "matches"
     ? (matchesTotalRounds ? ((matchesRound + 1) / matchesTotalRounds * 100) : 0)
     : activeMode === "memory"
     ? (memoryTotalRounds ? ((memoryRound + 1) / memoryTotalRounds * 100) : 0)
+    : activeMode === "contextmemory"
+    ? (cmTotal ? ((cmRound + 1) / cmTotal * 100) : 0)
     : (words.length ? ((current + 1) / order.length * 100) : 0);
 
   const extraCounter = tutorMode ? ` · reviews ${tutorReviewsShown}` : "";
@@ -1689,10 +1696,11 @@ function buildMemoryState(roundWords) {
     // ✅ убираем дубли подряд
     parts = parts.filter((p, i) => i === 0 || p !== parts[i - 1]);
 
-    // ✅ длина под новую систему (word + N associations)
+    // Chain length = word + N associations (as sent to AI)
+    // easy: word + 3 = 4 parts, medium: word + 4 = 5 parts, hard: word + 5 = 6 parts
     const expectedLength =
-      memoryDifficulty === "hard" ? 6 : 
-      memoryDifficulty === "medium" ? 5 : 4; // easy: 4
+      memoryDifficulty === "hard" ? 6 :
+      memoryDifficulty === "medium" ? 5 : 4;
 
     // ❗ если длина не совпадает — заменяем полностью
     if (parts.length !== expectedLength) {
@@ -1766,6 +1774,8 @@ function generateMemoryChain(word) {
   return chains[word] || "bone -> hungry"; // fallback
 }
 
+let memoryTimer = null;
+
 function renderMemoryBoard() {
   const container = document.getElementById("testOptions");
   container.innerHTML = "";
@@ -1779,7 +1789,10 @@ function renderMemoryBoard() {
   }
 
   if (memoryState.phase === "show") {
-    setTimeout(() => {
+    const snap = memoryState;
+    if (memoryTimer) clearTimeout(memoryTimer);
+    memoryTimer = setTimeout(() => {
+      if (memoryState !== snap) return; // state changed, abort
       memoryState.phase = "delay";
       renderMemoryCard();
       renderMemoryBoard();
@@ -1788,7 +1801,10 @@ function renderMemoryBoard() {
   }
 
   if (memoryState.phase === "delay") {
-    setTimeout(() => {
+    const snap = memoryState;
+    if (memoryTimer) clearTimeout(memoryTimer);
+    memoryTimer = setTimeout(() => {
+      if (memoryState !== snap) return; // state changed, abort
       memoryState.phase = "input";
       renderMemoryCard();
       renderMemoryBoard();
@@ -2130,6 +2146,7 @@ function nextWord() {
     return;
   }
   if (activeMode === "memory") {
+    if (memoryTimer) { clearTimeout(memoryTimer); memoryTimer = null; }
     const totalRounds = getMemoryTotalRounds();
     memoryRound = (memoryRound + 1) % totalRounds;
     memoryState = null;
@@ -2294,6 +2311,7 @@ function selectMode(m) {
   if (m !== "study") { keyboardOn = false; }
   if (m === "ai") loadAITasks();
   if (m === "memory") {
+    if (memoryTimer) { clearTimeout(memoryTimer); memoryTimer = null; }
     memoryStarted = false;
     memoryRound = 0;
     loadMemoryTasks();
@@ -2426,9 +2444,9 @@ function setMemoryTime(s) {
 function setMemoryDifficulty(diff) {
   memoryDifficulty = diff;
   const times = {
-    easy: { show: 2, delay: 3 },
-    medium: { show: 5, delay: 5 },
-    hard: { show: 7, delay: 5 }
+    easy:   { show: 4, delay: 2 },
+    medium: { show: 3, delay: 3 },
+    hard:   { show: 4, delay: 4 }
   };
   memoryShowTime = times[diff].show;
   memoryDelayTime = times[diff].delay;
@@ -2437,6 +2455,7 @@ function setMemoryDifficulty(diff) {
   document.getElementById("memoryHardBtn").classList.toggle("active", diff === "hard");
   // Load from cache for this difficulty, or show generate prompt — same as AI mode
   if (activeMode === "memory") {
+    if (memoryTimer) { clearTimeout(memoryTimer); memoryTimer = null; }
     memoryStarted = false;
     memoryState = null;
     memoryRound = 0;
