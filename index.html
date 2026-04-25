@@ -2299,6 +2299,7 @@ function selectMode(m) {
     loadMemoryTasks();
   }
   if (m === "contextmemory") {
+    if (cmState?.timer) { clearInterval(cmState.timer); }
     cmStarted = false;
     cmState = null;
     cmRound = 0;
@@ -2482,6 +2483,7 @@ function selectSet(idx) {
     memoryTasks = cached || [];
   }
   if (activeMode === "contextmemory") {
+    if (cmState?.timer) { clearInterval(cmState.timer); }
     cmStarted = false; cmState = null; cmRound = 0;
     loadCMTasks();
   }
@@ -2779,6 +2781,7 @@ function setCMDifficulty(diff) {
   document.getElementById("cmMediumBtn").classList.toggle("active", diff === "medium");
   document.getElementById("cmHardBtn").classList.toggle("active", diff === "hard");
   if (activeMode === "contextmemory") {
+    if (cmState?.timer) { clearInterval(cmState.timer); }
     cmStarted = false; cmState = null; cmRound = 0;
     loadCMTasks();
   }
@@ -2792,7 +2795,7 @@ function setCMInput(mode) {
     cmState.phase = "input";
     cmState.inputs = new Array(4).fill("");
     cmState.selected = null;
-    cmState.activeSlot = 0;
+    cmState.activeSlot = 1;
     render();
   }
 }
@@ -2845,23 +2848,17 @@ function renderCMMode(words) {
 
 function buildCMState(task) {
   const times = CM_TIMES[cmDifficulty];
-
-  const words = [...task.words] // ✅ правильный источник
-    .sort((a, b) => a.slot - b.slot);
-
+  const words = [...task.words].sort((a, b) => a.slot - b.slot);
   return {
     taskIdx: cmRound % cmTasks.length,
     phase: "show",
     showTime: times.show * 1000,
     pauseTime: times.pause * 1000,
-
     inputs: new Array(words.length).fill(""),
-
     selected: null,
-    activeSlot: 0,
+    activeSlot: 1,   // slot number (1-4), not array index
     answered: [],
     timer: null,
-
     words
   };
 }
@@ -2904,7 +2901,7 @@ function renderCMPhase(task) {
       </div>`;
     startCMTimer(s.pauseTime, "cmTimer", () => {
       s.phase = "input";
-      s.activeSlot = 0;
+      s.activeSlot = 1;  // start from slot 1
       renderCMPhase(task);
     });
 
@@ -2917,18 +2914,24 @@ function renderCMPhase(task) {
 }
 
 function startCMTimer(ms, elId, cb) {
-  if (cmState.timer) clearInterval(cmState.timer);
+  if (cmState && cmState.timer) clearInterval(cmState.timer);
   const end = Date.now() + ms;
-  cmState.timer = setInterval(() => {
+  const interval = setInterval(() => {
+    // Guard: if cmState was reset (mode switch, set change), stop timer
+    if (!cmState || cmState.timer !== interval) {
+      clearInterval(interval);
+      return;
+    }
     const el = document.getElementById(elId);
     const left = Math.ceil((end - Date.now()) / 1000);
     if (el) el.textContent = left + "s";
     if (Date.now() >= end) {
-      clearInterval(cmState.timer);
+      clearInterval(interval);
       cmState.timer = null;
       cb();
     }
   }, 200);
+  if (cmState) cmState.timer = interval;
 }
 
 function renderCMInput(task) {
@@ -2947,7 +2950,7 @@ function renderCMInput(task) {
   // Now build the display HTML with answered/unanswered slots
   let sentenceHtml = sentenceWithBlanks;
   for (let i = 1; i <= 4; i++) {
-    const isActive = s.activeSlot === i - 1;
+    const isActive = s.activeSlot === i;  // compare slot number directly
     const answered = s.answered.find(a => a.slot === i);
     let content;
     if (answered) {
@@ -3022,10 +3025,12 @@ function submitCMAnswer(slot, given, e) {
 
   cmState.answered.push({ slot, correct: word.correct, given: given.toLowerCase().trim() });
 
-  // Move to next unanswered slot
-  const unanswered = cmState.words.filter(w => !cmState.answered.find(a => a.slot === w.slot));
+  // Move to next unanswered slot (sorted by slot number = left-to-right in sentence)
+  const unanswered = cmState.words
+    .filter(w => !cmState.answered.find(a => a.slot === w.slot))
+    .sort((a, b) => a.slot - b.slot);
   if (unanswered.length > 0) {
-    cmState.activeSlot = unanswered[0].slot - 1;
+    cmState.activeSlot = unanswered[0].slot;  // slot number, not index
     renderCMInput(task);
   } else {
     // All answered — show result
