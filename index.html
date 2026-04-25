@@ -1352,6 +1352,9 @@ function render() {
   starBtn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.4l2.7 5.5 6.1.9-4.4 4.3 1 6.1L12 17.3 6.6 20.2l1-6.1L3.2 9.8l6.1-.9L12 3.4z"></path></svg>`;
   starBtn.className = "card-icon star-btn" + (inCustom ? " starred" : "");
 
+  // Show card by default, unless we're in contextmemory mode
+  document.getElementById("card").style.display = activeMode === "contextmemory" ? "none" : "flex";
+
   if (activeMode === "audio") {
     renderAudioMode(word);
   } else if (activeMode === "ai") {
@@ -1686,15 +1689,16 @@ function buildMemoryState(roundWords) {
     // ✅ убираем дубли подряд
     parts = parts.filter((p, i) => i === 0 || p !== parts[i - 1]);
 
-    // ✅ длина под новую систему
+    // ✅ длина под новую систему (word + N associations)
     const expectedLength =
-      memoryDifficulty === "hard" ? 4 : 3;
+      memoryDifficulty === "hard" ? 6 : 
+      memoryDifficulty === "medium" ? 5 : 4; // easy: 4
 
     // ❗ если длина не совпадает — заменяем полностью
     if (parts.length !== expectedLength) {
-  console.warn("Invalid chain length, skipping:", parts);
-  return null;
-}
+      console.warn("Invalid chain length, skipping:", parts, "expected:", expectedLength);
+      return null;
+    }
 
     const chain = parts.join(" -> ");
 
@@ -2797,6 +2801,7 @@ function renderCMMode(words) {
   const container = document.getElementById("testOptions");
   const card = document.getElementById("card");
   card.style.display = "none";
+  container.style.display = "block";
 
   // No tasks yet — show generate button
   if (cmTasks === null) {

@@ -136,7 +136,7 @@ IMPORTANT:
 --------------------------------
 CHAIN LENGTH:
 - Always use EXACTLY:
-  ${difficulty === "hard" ? "3 associations" : "2 associations"}
+  ${difficulty === "easy" ? "3 associations (word + 3 steps)" : difficulty === "medium" ? "4 associations (word + 4 steps)" : "5 associations (word + 5 steps)"}
 
 --------------------------------
 WORDS:
