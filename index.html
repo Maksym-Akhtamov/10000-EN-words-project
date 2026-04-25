@@ -2879,15 +2879,18 @@ function renderCMPhase(task) {
     });
 
   } else if (s.phase === "pause") {
-    // Show sentence with blanks [1] [2] [3] [4]
+    // Show sentence with blanks ___ instead of words
+    const sentenceWithBlanks = task.sentence
+      .replace(/\[1\]/g, '<span style="color:var(--accent);font-weight:700;background:rgba(59,130,246,0.1);padding:2px 6px;border-radius:4px">___</span>')
+      .replace(/\[2\]/g, '<span style="color:var(--accent);font-weight:700;background:rgba(59,130,246,0.1);padding:2px 6px;border-radius:4px">___</span>')
+      .replace(/\[3\]/g, '<span style="color:var(--accent);font-weight:700;background:rgba(59,130,246,0.1);padding:2px 6px;border-radius:4px">___</span>')
+      .replace(/\[4\]/g, '<span style="color:var(--accent);font-weight:700;background:rgba(59,130,246,0.1);padding:2px 6px;border-radius:4px">___</span>');
+    
     container.innerHTML = `
       <div style="text-align:center;padding:24px 0">
         <div style="font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:24px">Remember where to place the words</div>
         <div style="font-size:18px;line-height:1.8;color:var(--text);max-width:560px;margin:0 auto;padding:0 16px">
-          ${task.sentence.replace(/\[1\]/g, '<span style="color:var(--accent);font-weight:700;background:rgba(59,130,246,0.1);padding:2px 6px;border-radius:4px">[1]</span>')
-                          .replace(/\[2\]/g, '<span style="color:var(--accent);font-weight:700;background:rgba(59,130,246,0.1);padding:2px 6px;border-radius:4px">[2]</span>')
-                          .replace(/\[3\]/g, '<span style="color:var(--accent);font-weight:700;background:rgba(59,130,246,0.1);padding:2px 6px;border-radius:4px">[3]</span>')
-                          .replace(/\[4\]/g, '<span style="color:var(--accent);font-weight:700;background:rgba(59,130,246,0.1);padding:2px 6px;border-radius:4px">[4]</span>')}
+          ${sentenceWithBlanks}
         </div>
         <div id="cmTimer" style="margin-top:24px;font-size:13px;color:var(--muted)"></div>
       </div>`;
