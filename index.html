@@ -129,7 +129,34 @@
     .custom-set-btn.active { background: rgba(251,191,36,0.2); border-color: var(--gold); }
 
     /* ===== MODE DROPDOWN ===== */
-    .dropdown-wrap { position: relative; margin-top: 16px; }
+    .mode-sub-label {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+
+  display: flex;
+  gap: 6px;
+  align-items: center;
+
+  margin: 18px 0 6px;
+}
+
+/* слово Modes — одинаковое */
+.mode-word {
+  color: rgba(138,147,168,0.6);
+}
+
+/* Core — спокойный */
+.mode-type.core {
+  color: rgba(255,255,255,0.75);
+}
+
+/* AI — акцент */
+.mode-type.ai {
+  color: #6ee7c0;
+  text-shadow: 0 0 6px rgba(110,231,192,0.35);
+}
 
     .dropdown-trigger {
       width: 100%;
@@ -149,6 +176,7 @@
     }
     .dropdown-trigger:hover { border-color: var(--accent); }
     .dropdown-trigger .arrow { transition: transform 0.2s; font-size: 10px; color: var(--muted); }
+    .dropdown-wrap { position: relative; margin-top: 6px; }
     .dropdown-wrap.open .arrow { transform: rotate(180deg); }
 
     .dropdown-menu {
@@ -735,9 +763,14 @@
 
     <div class="panel">
       <div class="panel-title">Mode</div>
-      <div class="dropdown-wrap" id="modeDropdown">
-        <button class="dropdown-trigger" onclick="toggleModeDropdown()">
-          <span id="modeTriggerLabel">📖 Study</span>
+
+      <div class="mode-sub-label">
+  <span class="mode-type core">Core</span>
+  <span class="mode-word">Modes</span>
+</div>
+      <div class="dropdown-wrap" id="coreDropdown">
+        <button class="dropdown-trigger" onclick="toggleDropdown('coreDropdown')">
+          <span id="coreTriggerLabel">📖 Study</span>
           <span class="arrow">▼</span>
         </button>
         <div class="dropdown-menu">
@@ -746,7 +779,20 @@
           <div class="dropdown-item" onclick="selectMode('audio')">  <span class="icon">🔊</span> Audio</div>
           <div class="dropdown-item" onclick="selectMode('truefalse')"> <span class="icon">✅</span> True / False</div>
           <div class="dropdown-item" onclick="selectMode('matches')"> <span class="icon">🧩</span> Matches</div>
-          <div class="dropdown-item" onclick="selectMode('ai')">     <span class="icon">⚡</span> AI Mode</div>
+        </div>
+      </div>
+
+      <div class="mode-sub-label">
+  <span class="mode-type ai">AI</span>
+  <span class="mode-word">Modes</span>
+</div>
+      <div class="dropdown-wrap" id="aiDropdown">
+        <button class="dropdown-trigger" onclick="toggleDropdown('aiDropdown')">
+          <span id="aiTriggerLabel">— Select —</span>
+          <span class="arrow">▼</span>
+        </button>
+        <div class="dropdown-menu">
+          <div class="dropdown-item" onclick="selectMode('ai')">     <span class="icon">⚡</span> Context Mode</div>
           <div class="dropdown-item" onclick="selectMode('memory')"> <span class="icon">🧠</span> Memory Associations</div>
         </div>
       </div>
@@ -906,7 +952,7 @@
     stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
   }
   @media (max-width: 960px) {
-    #cornerAuth { top: 12px; right: 12px; width: 34px; height: 34px; }
+    #cornerAuth { top: auto; bottom: 20px; right: 16px; width: 42px; height: 42px; }
   }
 </style>
 <button id="cornerAuth" class="signed-out" onclick="openAuth()" aria-label="Account">
@@ -2172,17 +2218,24 @@ function selectMode(m) {
   memoryState = null;
   tutorReviewWordId = null;
   tutorReviewStage = null;
-  document.getElementById("modeDropdown").classList.remove("open");
-  const labels = {
-    study: "📖 Study",
-    choice: "🎯 Choice",
-    truefalse: "✅ True / False",
-    matches: "🧩 Matches",
-    audio: "🔊 Audio",
-    ai: "⚡ AI Mode",
-    memory: "🧠 Memory Associations"
+
+  const coreIds = ["study","choice","truefalse","matches","audio"];
+  const aiIds   = ["ai","memory"];
+  const coreLabels = {
+    study: "📖 Study", choice: "🎯 Choice", truefalse: "✅ True / False",
+    matches: "🧩 Matches", audio: "🔊 Audio"
   };
-  document.getElementById("modeTriggerLabel").textContent = labels[m];
+  const aiLabels = { ai: "⚡ Context Mode", memory: "🧠 Memory Associations" };
+
+  if (coreIds.includes(m)) {
+    document.getElementById("coreTriggerLabel").textContent = coreLabels[m];
+    document.getElementById("aiTriggerLabel").textContent  = "— Select —";
+    document.getElementById("coreDropdown").classList.remove("open");
+  } else {
+    document.getElementById("aiTriggerLabel").textContent  = aiLabels[m];
+    document.getElementById("coreTriggerLabel").textContent = "— Select —";
+    document.getElementById("aiDropdown").classList.remove("open");
+  }
 
   // Hide tutor button in matches and memory modes
   document.getElementById("tutorBtn").style.display = (m === "matches" || m === "memory") ? "none" : "block";
@@ -2200,8 +2253,15 @@ function selectMode(m) {
   render();
 }
 
+function toggleDropdown(id) {
+  const el = document.getElementById(id);
+  const other = id === "coreDropdown" ? "aiDropdown" : "coreDropdown";
+  document.getElementById(other).classList.remove("open");
+  el.classList.toggle("open");
+}
+
 function toggleModeDropdown() {
-  document.getElementById("modeDropdown").classList.toggle("open");
+  toggleDropdown("coreDropdown");
 }
 
 function toggleDir() {
@@ -2675,7 +2735,8 @@ document.addEventListener("touchend", e => {
 
 // ===================== CLOSE DROPDOWNS =====================
 document.addEventListener("click", e => {
-  if (!e.target.closest("#modeDropdown"))   document.getElementById("modeDropdown").classList.remove("open");
+  if (!e.target.closest("#coreDropdown"))  document.getElementById("coreDropdown").classList.remove("open");
+  if (!e.target.closest("#aiDropdown"))    document.getElementById("aiDropdown").classList.remove("open");
   if (!e.target.closest("#delayDropdown"))  document.getElementById("delayDropdown").classList.remove("open");
 });
 
