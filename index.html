@@ -129,34 +129,7 @@
     .custom-set-btn.active { background: rgba(251,191,36,0.2); border-color: var(--gold); }
 
     /* ===== MODE DROPDOWN ===== */
-    .mode-sub-label {
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-
-  display: flex;
-  gap: 6px;
-  align-items: center;
-
-  margin: 18px 0 6px;
-}
-
-/* слово Modes — одинаковое */
-.mode-word {
-  color: rgba(138,147,168,0.6);
-}
-
-/* Core — спокойный */
-.mode-type.core {
-  color: rgba(255,255,255,0.75);
-}
-
-/* AI — акцент */
-.mode-type.ai {
-  color: #6ee7c0;
-  text-shadow: 0 0 6px rgba(110,231,192,0.35);
-}
+    .dropdown-wrap { position: relative; margin-top: 16px; }
 
     .dropdown-trigger {
       width: 100%;
@@ -176,7 +149,6 @@
     }
     .dropdown-trigger:hover { border-color: var(--accent); }
     .dropdown-trigger .arrow { transition: transform 0.2s; font-size: 10px; color: var(--muted); }
-    .dropdown-wrap { position: relative; margin-top: 6px; }
     .dropdown-wrap.open .arrow { transform: rotate(180deg); }
 
     .dropdown-menu {
@@ -763,14 +735,9 @@
 
     <div class="panel">
       <div class="panel-title">Mode</div>
-
-      <div class="mode-sub-label">
-  <span class="mode-type core">Core</span>
-  <span class="mode-word">Modes</span>
-</div>
-      <div class="dropdown-wrap" id="coreDropdown">
-        <button class="dropdown-trigger" onclick="toggleDropdown('coreDropdown')">
-          <span id="coreTriggerLabel">📖 Study</span>
+      <div class="dropdown-wrap" id="modeDropdown">
+        <button class="dropdown-trigger" onclick="toggleModeDropdown()">
+          <span id="modeTriggerLabel">📖 Study</span>
           <span class="arrow">▼</span>
         </button>
         <div class="dropdown-menu">
@@ -779,22 +746,8 @@
           <div class="dropdown-item" onclick="selectMode('audio')">  <span class="icon">🔊</span> Audio</div>
           <div class="dropdown-item" onclick="selectMode('truefalse')"> <span class="icon">✅</span> True / False</div>
           <div class="dropdown-item" onclick="selectMode('matches')"> <span class="icon">🧩</span> Matches</div>
-        </div>
-      </div>
-
-      <div class="mode-sub-label">
-  <span class="mode-type ai">AI</span>
-  <span class="mode-word">Modes</span>
-</div>
-      <div class="dropdown-wrap" id="aiDropdown">
-        <button class="dropdown-trigger" onclick="toggleDropdown('aiDropdown')">
-          <span id="aiTriggerLabel">— Select —</span>
-          <span class="arrow">▼</span>
-        </button>
-        <div class="dropdown-menu">
-          <div class="dropdown-item" onclick="selectMode('ai')">     <span class="icon">⚡</span> Context Mode</div>
+          <div class="dropdown-item" onclick="selectMode('ai')">     <span class="icon">⚡</span> AI Mode</div>
           <div class="dropdown-item" onclick="selectMode('memory')"> <span class="icon">🧠</span> Memory Associations</div>
-          <div class="dropdown-item" onclick="selectMode('contextmemory')"> <span class="icon">🔗</span> Context Memory</div>
         </div>
       </div>
 
@@ -830,22 +783,6 @@
             <button class="lang-btn" id="memoryEasyBtn" onclick="setMemoryDifficulty('easy')">Easy</button>
             <button class="lang-btn active" id="memoryMediumBtn" onclick="setMemoryDifficulty('medium')">Medium</button>
             <button class="lang-btn" id="memoryHardBtn" onclick="setMemoryDifficulty('hard')">Hard</button>
-          </div>
-        </div>
-
-        <div class="choice-setting" id="cmDifficultySetting">
-          <div class="lang-label">CM Difficulty</div>
-          <div class="lang-btns">
-            <button class="lang-btn" id="cmEasyBtn" onclick="setCMDifficulty('easy')">Easy</button>
-            <button class="lang-btn active" id="cmMediumBtn" onclick="setCMDifficulty('medium')">Medium</button>
-            <button class="lang-btn" id="cmHardBtn" onclick="setCMDifficulty('hard')">Hard</button>
-          </div>
-        </div>
-        <div class="choice-setting" id="cmInputSetting">
-          <div class="lang-label">Input Mode</div>
-          <div class="lang-btns">
-            <button class="lang-btn active" id="cmChoiceBtn" onclick="setCMInput('choice')">Choice</button>
-            <button class="lang-btn" id="cmTypeBtn" onclick="setCMInput('type')">Type</button>
           </div>
         </div>
     </div>
@@ -925,7 +862,7 @@
     <button class="ctrl-btn btn-clear" id="clearBtn" onclick="clearCustomSet()">🗑 Clear Review</button>
     <button class="ctrl-btn" id="regenBtn" onclick="regenerateAI()" style="display:none">🔄 Regen AI</button>
     <button class="ctrl-btn" id="regenMemoryBtn" onclick="regenerateMemory()" style="display:none">🔄 Regen Memory</button>
-    <button class="ctrl-btn" id="regenCMBtn" onclick="regenerateCM()" style="display:none">🔄 Regen CM</button>
+    <button class="ctrl-btn" id="helpBtn" onclick="openHelp()" style="margin-top:auto">❓ Help</button>
   </aside>
 
 </div>
@@ -969,7 +906,7 @@
     stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
   }
   @media (max-width: 960px) {
-    #cornerAuth { top: auto; bottom: 20px; right: 16px; width: 42px; height: 42px; }
+    #cornerAuth { top: 12px; right: 12px; width: 34px; height: 34px; }
   }
 </style>
 <button id="cornerAuth" class="signed-out" onclick="openAuth()" aria-label="Account">
@@ -1064,23 +1001,6 @@
   .auth-signout:hover { background:rgba(248,113,113,0.15); }
   .auth-sync-info {
     font-size:12px; color:#4a5268; text-align:center; line-height:1.5;
-  }
-  .auth-help-btn {
-    width:100%; background:rgba(255,255,255,0.03);
-    border:1px solid rgba(255,255,255,0.08); color:#8a93a8;
-    font-family:'DM Sans',sans-serif; font-size:14px; font-weight:500;
-    padding:12px 16px; border-radius:12px; cursor:pointer;
-    display:flex; align-items:center; gap:10px; transition:all 0.15s;
-    text-align:left;
-  }
-  .auth-help-btn:hover { background:rgba(255,255,255,0.06); color:#e8eaf0; border-color:rgba(255,255,255,0.14); }
-  .auth-help-btn .help-icon {
-    width:28px; height:28px; border-radius:8px; flex-shrink:0;
-    background:rgba(79,142,247,0.12); border:1px solid rgba(79,142,247,0.2);
-    display:grid; place-items:center; font-size:14px;
-  }
-  .auth-separator {
-    height:1px; background:rgba(255,255,255,0.06); margin:2px 0;
   }
   .auth-google {
     width:100%; background:#fff; color:#1f1f1f;
@@ -1249,17 +1169,6 @@ let memoryTasks = [];
 let memoryTasksCache = {};
 let frozenOrder = null;   // locked shuffle order — not changed by star actions
 
-// ===================== CONTEXT MEMORY STATE =====================
-let cmDifficulty = "medium";   // easy | medium | hard
-let cmInputMode = "choice";    // choice | type
-let cmTasks = [];              // cached AI tasks [{sentence, words:[{slot,correct,options}]}]
-let cmTasksCache = {};
-let cmState = null;            // current round state
-let cmRound = 0;
-let cmStarted = false;
-// show times: easy=7s, medium=5s, hard=3s; pause always 3s (easy=2s)
-const CM_TIMES = { easy:{show:7,pause:2}, medium:{show:5,pause:3}, hard:{show:3,pause:3} };
-
 // ===================== INIT =====================
 async function init() {
   loadCompletion();
@@ -1314,22 +1223,15 @@ function render() {
   const words = getWords();
   const matchesTotalRounds = getMatchesTotalRounds();
   const memoryTotalRounds = getMemoryTotalRounds();
-  const cmTotal = cmTasks?.length || 0;
-
   const counterValue = activeMode === "matches"
     ? (matchesTotalRounds ? `${matchesRound + 1} / ${matchesTotalRounds}` : "")
     : activeMode === "memory"
     ? (memoryTotalRounds ? `${memoryRound + 1} / ${memoryTotalRounds}` : "Memory Challenge")
-    : activeMode === "contextmemory"
-    ? (cmTotal ? `${cmRound + 1} / ${cmTotal}` : "Context Memory")
     : (words.length ? `${current + 1} / ${order.length}` : "");
-
   const progressPct = activeMode === "matches"
     ? (matchesTotalRounds ? ((matchesRound + 1) / matchesTotalRounds * 100) : 0)
     : activeMode === "memory"
     ? (memoryTotalRounds ? ((memoryRound + 1) / memoryTotalRounds * 100) : 0)
-    : activeMode === "contextmemory"
-    ? (cmTotal ? ((cmRound + 1) / cmTotal * 100) : 0)
     : (words.length ? ((current + 1) / order.length * 100) : 0);
 
   const extraCounter = tutorMode ? ` · reviews ${tutorReviewsShown}` : "";
@@ -1359,9 +1261,6 @@ function render() {
   starBtn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.4l2.7 5.5 6.1.9-4.4 4.3 1 6.1L12 17.3 6.6 20.2l1-6.1L3.2 9.8l6.1-.9L12 3.4z"></path></svg>`;
   starBtn.className = "card-icon star-btn" + (inCustom ? " starred" : "");
 
-  // Show card by default, unless we're in contextmemory mode
-  document.getElementById("card").style.display = activeMode === "contextmemory" ? "none" : "flex";
-
   if (activeMode === "audio") {
     renderAudioMode(word);
   } else if (activeMode === "ai") {
@@ -1370,8 +1269,6 @@ function render() {
     renderMatchesMode(word, words);
   } else if (activeMode === "memory") {
     renderMemoryMode(word, words);
-  } else if (activeMode === "contextmemory") {
-    renderCMMode(words);
   } else if (activeMode === "truefalse") {
     renderTrueFalseMode(word, words);
   } else if (activeMode === "choice") {
@@ -1696,17 +1593,15 @@ function buildMemoryState(roundWords) {
     // ✅ убираем дубли подряд
     parts = parts.filter((p, i) => i === 0 || p !== parts[i - 1]);
 
-    // Chain length = word + N associations (as sent to AI)
-    // easy: word + 3 = 4 parts, medium: word + 4 = 5 parts, hard: word + 5 = 6 parts
+    // ✅ длина под новую систему
     const expectedLength =
-      memoryDifficulty === "hard" ? 6 :
-      memoryDifficulty === "medium" ? 5 : 4;
+      memoryDifficulty === "hard" ? 4 : 3;
 
     // ❗ если длина не совпадает — заменяем полностью
     if (parts.length !== expectedLength) {
-      console.warn("Invalid chain length, skipping:", parts, "expected:", expectedLength);
-      return null;
-    }
+  console.warn("Invalid chain length, skipping:", parts);
+  return null;
+}
 
     const chain = parts.join(" -> ");
 
@@ -1774,8 +1669,6 @@ function generateMemoryChain(word) {
   return chains[word] || "bone -> hungry"; // fallback
 }
 
-let memoryTimer = null;
-
 function renderMemoryBoard() {
   const container = document.getElementById("testOptions");
   container.innerHTML = "";
@@ -1789,10 +1682,7 @@ function renderMemoryBoard() {
   }
 
   if (memoryState.phase === "show") {
-    const snap = memoryState;
-    if (memoryTimer) clearTimeout(memoryTimer);
-    memoryTimer = setTimeout(() => {
-      if (memoryState !== snap) return; // state changed, abort
+    setTimeout(() => {
       memoryState.phase = "delay";
       renderMemoryCard();
       renderMemoryBoard();
@@ -1801,10 +1691,7 @@ function renderMemoryBoard() {
   }
 
   if (memoryState.phase === "delay") {
-    const snap = memoryState;
-    if (memoryTimer) clearTimeout(memoryTimer);
-    memoryTimer = setTimeout(() => {
-      if (memoryState !== snap) return; // state changed, abort
+    setTimeout(() => {
       memoryState.phase = "input";
       renderMemoryCard();
       renderMemoryBoard();
@@ -2146,7 +2033,6 @@ function nextWord() {
     return;
   }
   if (activeMode === "memory") {
-    if (memoryTimer) { clearTimeout(memoryTimer); memoryTimer = null; }
     const totalRounds = getMemoryTotalRounds();
     memoryRound = (memoryRound + 1) % totalRounds;
     memoryState = null;
@@ -2286,42 +2172,27 @@ function selectMode(m) {
   memoryState = null;
   tutorReviewWordId = null;
   tutorReviewStage = null;
-
-  const coreIds = ["study","choice","truefalse","matches","audio"];
-  const aiIds   = ["ai","memory","contextmemory"];
-  const coreLabels = {
-    study: "📖 Study", choice: "🎯 Choice", truefalse: "✅ True / False",
-    matches: "🧩 Matches", audio: "🔊 Audio"
+  document.getElementById("modeDropdown").classList.remove("open");
+  const labels = {
+    study: "📖 Study",
+    choice: "🎯 Choice",
+    truefalse: "✅ True / False",
+    matches: "🧩 Matches",
+    audio: "🔊 Audio",
+    ai: "⚡ AI Mode",
+    memory: "🧠 Memory Associations"
   };
-  const aiLabels = { ai: "⚡ Context Mode", memory: "🧠 Memory Associations", contextmemory: "🔗 Context Memory" };
-
-  if (coreIds.includes(m)) {
-    document.getElementById("coreTriggerLabel").textContent = coreLabels[m];
-    document.getElementById("aiTriggerLabel").textContent  = "— Select —";
-    document.getElementById("coreDropdown").classList.remove("open");
-  } else {
-    document.getElementById("aiTriggerLabel").textContent  = aiLabels[m];
-    document.getElementById("coreTriggerLabel").textContent = "— Select —";
-    document.getElementById("aiDropdown").classList.remove("open");
-  }
+  document.getElementById("modeTriggerLabel").textContent = labels[m];
 
   // Hide tutor button in matches and memory modes
-  document.getElementById("tutorBtn").style.display = (m === "matches" || m === "memory" || m === "contextmemory") ? "none" : "block";
+  document.getElementById("tutorBtn").style.display = (m === "matches" || m === "memory") ? "none" : "block";
 
   if (m !== "study") { keyboardOn = false; }
   if (m === "ai") loadAITasks();
   if (m === "memory") {
-    if (memoryTimer) { clearTimeout(memoryTimer); memoryTimer = null; }
     memoryStarted = false;
     memoryRound = 0;
     loadMemoryTasks();
-  }
-  if (m === "contextmemory") {
-    if (cmState?.timer) { clearInterval(cmState.timer); }
-    cmStarted = false;
-    cmState = null;
-    cmRound = 0;
-    loadCMTasks();
   }
 
   current = 0;
@@ -2329,15 +2200,8 @@ function selectMode(m) {
   render();
 }
 
-function toggleDropdown(id) {
-  const el = document.getElementById(id);
-  const other = id === "coreDropdown" ? "aiDropdown" : "coreDropdown";
-  document.getElementById(other).classList.remove("open");
-  el.classList.toggle("open");
-}
-
 function toggleModeDropdown() {
-  toggleDropdown("coreDropdown");
+  document.getElementById("modeDropdown").classList.toggle("open");
 }
 
 function toggleDir() {
@@ -2444,9 +2308,9 @@ function setMemoryTime(s) {
 function setMemoryDifficulty(diff) {
   memoryDifficulty = diff;
   const times = {
-    easy:   { show: 4, delay: 2 },
-    medium: { show: 3, delay: 3 },
-    hard:   { show: 4, delay: 4 }
+    easy: { show: 2, delay: 3 },
+    medium: { show: 5, delay: 5 },
+    hard: { show: 7, delay: 5 }
   };
   memoryShowTime = times[diff].show;
   memoryDelayTime = times[diff].delay;
@@ -2455,7 +2319,6 @@ function setMemoryDifficulty(diff) {
   document.getElementById("memoryHardBtn").classList.toggle("active", diff === "hard");
   // Load from cache for this difficulty, or show generate prompt — same as AI mode
   if (activeMode === "memory") {
-    if (memoryTimer) { clearTimeout(memoryTimer); memoryTimer = null; }
     memoryStarted = false;
     memoryState = null;
     memoryRound = 0;
@@ -2500,11 +2363,6 @@ function selectSet(idx) {
     memoryRound = 0;
     const cached = loadMemoryCache();
     memoryTasks = cached || [];
-  }
-  if (activeMode === "contextmemory") {
-    if (cmState?.timer) { clearInterval(cmState.timer); }
-    cmStarted = false; cmState = null; cmRound = 0;
-    loadCMTasks();
   }
   initOrder();
   renderSets();
@@ -2727,457 +2585,6 @@ function regenerateMemory() {
   startMemoryGeneration();
 }
 
-// ===================== CONTEXT MEMORY =====================
-function getCMKey() { return `cmTasks_set_${sets[currentSet].id}_diff_${cmDifficulty}`; }
-
-function loadCMCache() {
-  const key = getCMKey();
-  if (cmTasksCache[key]) return cmTasksCache[key];
-  const s = localStorage.getItem(key);
-  if (s) { try { const p = JSON.parse(s); cmTasksCache[key] = p; return p; } catch(e){} }
-  return null;
-}
-
-function saveCMCache(tasks) {
-  const key = getCMKey();
-  cmTasksCache[key] = tasks;
-  localStorage.setItem(key, JSON.stringify(tasks));
-}
-
-function loadCMTasks() {
-  // Clear any old cache that has pre-remap slot numbering
-  const cached = loadCMCache();
-  cmStarted = false;
-  cmState = null;
-  if (cached) { cmTasks = cached; render(); return; }
-  cmTasks = []; render();
-}
-
-async function fetchCMBatch(fourWords) {
-  const res = await fetch("/api/generate", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ words: fourWords.map(w => w.en), type: "contextmemory", difficulty: cmDifficulty })
-  });
-  if (!res.ok) throw new Error("Server " + res.status);
-  const data = await res.json();
-
-  let sentence = data.sentence || "";
-  const apiWords = data.words || [];
-
-  // Step 1: Build sentence with [N] placeholders in left-to-right order
-  // Find each correct word's position in the sentence and replace with [N]
-  // Sort words by position of appearance in sentence
-  const wordPositions = [];
-  const sentenceLower = sentence.toLowerCase();
-
-  for (const w of apiWords) {
-    const regex = new RegExp(`\\b${w.correct.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
-    const match = sentenceLower.search(regex);
-    if (match !== -1) {
-      wordPositions.push({ ...w, pos: match });
-    } else {
-      wordPositions.push({ ...w, pos: 9999 }); // not found — push to end
-    }
-  }
-
-  // Sort by position in sentence (left to right)
-  wordPositions.sort((a, b) => a.pos - b.pos);
-
-  // Assign new slots 1-4 in left-to-right order
-  wordPositions.forEach((w, idx) => { w.newSlot = idx + 1; });
-
-  // Replace words in sentence with [N] — process right-to-left to preserve positions
-  const sorted = [...wordPositions].sort((a, b) => b.pos - a.pos);
-  for (const w of sorted) {
-    const regex = new RegExp(`\\b${w.correct.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
-    sentence = sentence.replace(regex, `[${w.newSlot}]`);
-  }
-
-  // If sentence still has old [N] placeholders from AI (instead of real words), remap them
-  if (sentence.match(/\[\d+\]/)) {
-    const matches = [...sentence.matchAll(/\[(\d+)\]/g)];
-    const appearOrder = [];
-    for (const m of matches) {
-      const n = parseInt(m[1]);
-      if (!appearOrder.includes(n)) appearOrder.push(n);
-    }
-    const remap = {};
-    appearOrder.forEach((old, i) => { remap[old] = i + 1; });
-    // Replace all at once using a temp marker to avoid double-replace
-    sentence = sentence.replace(/\[(\d+)\]/g, (_, n) => `__SLOT${remap[parseInt(n)]}__`);
-    sentence = sentence.replace(/__SLOT(\d+)__/g, (_, n) => `[${n}]`);
-    // Remap words slots too
-    wordPositions.forEach(w => {
-      w.newSlot = remap[w.newSlot] ?? w.newSlot;
-    });
-  }
-
-  const remappedWords = wordPositions.map(w => ({
-    slot: w.newSlot,
-    correct: w.correct,
-    options: w.options || [w.correct]
-  }));
-
-  return {
-    sentence,
-    words: remappedWords,
-    wordIds: fourWords.map(w => w.id),
-    setId: sets[currentSet].id
-  };
-}
-
-async function startCMGeneration() {
-  cmTasks = null;
-  cmStarted = false;
-  cmState = null;
-  render();
-  const words = getWords();
-  if (!words.length) { cmTasks = []; render(); return; }
-
-  // Shuffle words before batching — different groups each generation
-  const shuffled = [...words].sort(() => Math.random() - 0.5);
-
-  // batch into groups of 4
-  const batches = [];
-  for (let i = 0; i + 3 < shuffled.length; i += 4) batches.push(shuffled.slice(i, i + 4));
-  // if leftover words (1-3), skip them — need exactly 4
-
-  try {
-    const results = await Promise.all(batches.map(b => fetchCMBatch(b)));
-    cmTasks = results.filter(Boolean);
-    saveCMCache(cmTasks);
-    render();
-  } catch(e) {
-    console.error("CM generation error:", e);
-    cmTasks = [];
-    render();
-  }
-}
-
-function regenerateCM() {
-  localStorage.removeItem(getCMKey());
-  delete cmTasksCache[getCMKey()];
-  startCMGeneration();
-}
-
-function setCMDifficulty(diff) {
-  cmDifficulty = diff;
-  document.getElementById("cmEasyBtn").classList.toggle("active", diff === "easy");
-  document.getElementById("cmMediumBtn").classList.toggle("active", diff === "medium");
-  document.getElementById("cmHardBtn").classList.toggle("active", diff === "hard");
-  if (activeMode === "contextmemory") {
-    if (cmState?.timer) { clearInterval(cmState.timer); }
-    cmStarted = false; cmState = null; cmRound = 0;
-    loadCMTasks();
-  }
-}
-
-function setCMInput(mode) {
-  cmInputMode = mode;
-  document.getElementById("cmChoiceBtn").classList.toggle("active", mode === "choice");
-  document.getElementById("cmTypeBtn").classList.toggle("active", mode === "type");
-  if (activeMode === "contextmemory" && cmState) {
-    cmState.phase = "input";
-    cmState.inputs = new Array(4).fill("");
-    cmState.selected = null;
-    cmState.activeSlot = 1;
-    render();
-  }
-}
-
-function renderCMMode(words) {
-  const container = document.getElementById("testOptions");
-  const card = document.getElementById("card");
-  card.style.display = "none";
-  container.style.display = "block";
-
-  // No tasks yet — show generate button
-  if (cmTasks === null) {
-    container.innerHTML = `<div class="memory-loading">⏳ Generating Context Memory tasks…</div>`;
-    return;
-  }
-  if (!cmTasks.length) {
-    container.innerHTML = `
-      <div class="memory-generate-wrap">
-        <div class="memory-generate-title">🔗 Context Memory</div>
-        <div class="memory-generate-desc">AI creates sentences using 4 words from this set.<br>Memorize the words, then fill in the blanks.</div>
-        <button onclick="event.stopPropagation();startCMGeneration()"
-          style="margin-top:16px;padding:12px 28px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer">
-          ⚡ Generate Context Memory
-        </button>
-      </div>`;
-    return;
-  }
-
-  if (!cmStarted) {
-    const total = cmTasks.length;
-    container.innerHTML = `
-      <div class="memory-generate-wrap">
-        <div class="memory-generate-title">🔗 Context Memory</div>
-        <div class="memory-generate-desc">${total} rounds ready · ${cmDifficulty} difficulty<br>You'll see 4 words, then fill them into a sentence.</div>
-        <button onclick="startCMRound()"
-          style="margin-top:16px;padding:12px 28px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer">
-          ▶ Start
-        </button>
-      </div>`;
-    return;
-  }
-
-  const task = cmTasks[cmRound % cmTasks.length];
-  if (!cmState || cmState.taskIdx !== cmRound % cmTasks.length) {
-    cmState = buildCMState(task);
-  }
-
-  renderCMPhase(task);
-}
-
-function buildCMState(task) {
-  const times = CM_TIMES[cmDifficulty];
-  const words = [...task.words].sort((a, b) => a.slot - b.slot);
-  return {
-    taskIdx: cmRound % cmTasks.length,
-    phase: "show",
-    showTime: times.show * 1000,
-    pauseTime: times.pause * 1000,
-    inputs: new Array(words.length).fill(""),
-    selected: null,
-    activeSlot: 1,   // slot number (1-4), not array index
-    answered: [],
-    timer: null,
-    words
-  };
-}
-
-function renderCMPhase(task) {
-  const container = document.getElementById("testOptions");
-  const s = cmState;
-
-  if (s.phase === "show") {
-    // Show words in shuffled order (not in sentence order) to make memorization harder
-    const shuffledWords = [...cmState.words].sort(() => Math.random() - 0.5);
-    const wordList = shuffledWords.map(w =>
-      `<div style="padding:12px 0;font-size:24px;font-weight:700;color:var(--text);letter-spacing:0.02em">${w.correct}</div>`
-    ).join("");
-    container.innerHTML = `
-      <div style="text-align:center;padding:24px 0">
-        <div style="font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:24px">Memorize these 4 words</div>
-        ${wordList}
-        <div id="cmTimer" style="margin-top:24px;font-size:13px;color:var(--muted)"></div>
-      </div>`;
-    startCMTimer(s.showTime, "cmTimer", () => {
-      s.phase = "pause";
-      renderCMPhase(task);
-    });
-
-  } else if (s.phase === "pause") {
-    // Show sentence with blanks ___ instead of words
-    const sentenceWithBlanks = task.sentence
-      .replace(/\[1\]/g, '<span style="color:var(--accent);font-weight:700;background:rgba(59,130,246,0.1);padding:2px 6px;border-radius:4px">___</span>')
-      .replace(/\[2\]/g, '<span style="color:var(--accent);font-weight:700;background:rgba(59,130,246,0.1);padding:2px 6px;border-radius:4px">___</span>')
-      .replace(/\[3\]/g, '<span style="color:var(--accent);font-weight:700;background:rgba(59,130,246,0.1);padding:2px 6px;border-radius:4px">___</span>')
-      .replace(/\[4\]/g, '<span style="color:var(--accent);font-weight:700;background:rgba(59,130,246,0.1);padding:2px 6px;border-radius:4px">___</span>');
-    
-    container.innerHTML = `
-      <div style="text-align:center;padding:24px 0">
-        <div style="font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:24px">Remember where to place the words</div>
-        <div style="font-size:18px;line-height:1.8;color:var(--text);max-width:560px;margin:0 auto;padding:0 16px">
-          ${sentenceWithBlanks}
-        </div>
-        <div id="cmTimer" style="margin-top:24px;font-size:13px;color:var(--muted)"></div>
-      </div>`;
-    startCMTimer(s.pauseTime, "cmTimer", () => {
-      s.phase = "input";
-      s.activeSlot = 1;  // start from slot 1
-      renderCMPhase(task);
-    });
-
-  } else if (s.phase === "input") {
-    renderCMInput(task);
-
-  } else if (s.phase === "result") {
-    renderCMResult(task);
-  }
-}
-
-function startCMTimer(ms, elId, cb) {
-  if (cmState && cmState.timer) clearInterval(cmState.timer);
-  const end = Date.now() + ms;
-  const interval = setInterval(() => {
-    // Guard: if cmState was reset (mode switch, set change), stop timer
-    if (!cmState || cmState.timer !== interval) {
-      clearInterval(interval);
-      return;
-    }
-    const el = document.getElementById(elId);
-    const left = Math.ceil((end - Date.now()) / 1000);
-    if (el) el.textContent = left + "s";
-    if (Date.now() >= end) {
-      clearInterval(interval);
-      cmState.timer = null;
-      cb();
-    }
-  }, 200);
-  if (cmState) cmState.timer = interval;
-}
-
-function renderCMInput(task) {
-  const container = document.getElementById("testOptions");
-  const s = cmState;
-
-  // task.sentence already has [1][2][3][4] placeholders in left-to-right order
-  // Always derive activeSlot from first unanswered slot (sorted = left-to-right)
-  const unanswered = cmState.words
-    .filter(w => !s.answered.find(a => a.slot === w.slot))
-    .sort((a, b) => a.slot - b.slot);
-  if (unanswered.length > 0) {
-    s.activeSlot = unanswered[0].slot; // always sync to first unanswered
-  }
-
-  // Build sentence HTML — replace [1][2][3][4] with styled spans
-  let sentenceHtml = task.sentence;
-  for (let i = 1; i <= 4; i++) {
-    const isActive = s.activeSlot === i;
-    const answered = s.answered.find(a => a.slot === i);
-    let content;
-    if (answered) {
-      const ok = answered.given === answered.correct;
-      content = `<span style="color:${ok ? "#4ade80" : "#f87171"};font-weight:700;border-bottom:2px solid ${ok ? "#4ade80" : "#f87171"};padding:0 4px">${answered.given}</span>`;
-    } else if (isActive) {
-      content = `<span style="display:inline-block;min-width:80px;border-bottom:2px solid var(--accent);padding:0 4px;color:var(--accent);font-weight:600">___</span>`;
-    } else {
-      content = `<span style="display:inline-block;min-width:60px;border-bottom:2px solid var(--muted);padding:0 4px;color:var(--muted)">___</span>`;
-    }
-    sentenceHtml = sentenceHtml.replace(`[${i}]`, content);
-  }
-
-  const currentWord = unanswered[0];
-
-  let inputHtml = "";
-  if (currentWord && cmInputMode === "choice") {
-    let options = currentWord.options.filter(opt => !/^wrong\d*$/i.test(opt));
-
-// fallback если API прислал мусор
-if (options.length < 2) {
-  options = [
-    currentWord.correct,
-    ...getWords()
-      .filter(w => w.en !== currentWord.correct)
-      .slice(0, 3)
-      .map(w => w.en)
-  ];
-}
-
-const shuffled = [...options].sort(() => Math.random() - 0.5);
-    inputHtml = `<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:16px">
-      ${shuffled.map(opt => `
-        <button onclick="submitCMAnswer(${currentWord.slot}, '${opt}', event)"
-          style="padding:10px 20px;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:10px;font-size:15px;font-weight:500;cursor:pointer;transition:all 0.15s"
-          onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)'">
-          ${opt}
-        </button>`).join("")}
-    </div>`;
-  } else if (currentWord && cmInputMode === "type") {
-    inputHtml = `<div style="display:flex;gap:8px;margin-top:16px;justify-content:center">
-      <input id="cmTypeInput" type="text" placeholder="Type word ${currentWord.slot}…"
-        style="padding:10px 16px;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:10px;font-size:15px;font-family:inherit;outline:none;width:200px"
-        onkeydown="if(event.key==='Enter')submitCMAnswer(${currentWord.slot}, this.value.trim(), event)" />
-      <button onclick="submitCMAnswer(${currentWord.slot}, document.getElementById('cmTypeInput').value.trim(), event)"
-        style="padding:10px 20px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer">
-        →
-      </button>
-    </div>`;
-  }
-
-  container.innerHTML = `
-    <div style="padding:8px 0">
-      <div style="font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:16px;text-align:center">Fill in the blanks</div>
-      <div style="font-size:17px;line-height:2;color:var(--text);text-align:center;padding:0 8px">${sentenceHtml}</div>
-      ${inputHtml}
-    </div>`;
-
-  if (cmInputMode === "type") {
-    setTimeout(() => document.getElementById("cmTypeInput")?.focus(), 50);
-  }
-}
-
-function submitCMAnswer(slot, given, e) {
-  e?.stopPropagation();
-  if (!given) return;
-  const task = cmTasks[cmRound % cmTasks.length];
-  const word = cmState.words.find(w => w.slot === slot);
-  if (!word) return;
-
-  cmState.answered.push({ slot, correct: word.correct, given: given.toLowerCase().trim() });
-
-  const unanswered = cmState.words
-    .filter(w => !cmState.answered.find(a => a.slot === w.slot))
-    .sort((a, b) => a.slot - b.slot);
-  if (unanswered.length > 0) {
-    renderCMInput(task);
-  } else {
-    // All answered — show result
-    cmState.phase = "result";
-    renderCMPhase(task);
-  }
-}
-
-function renderCMResult(task) {
-  const container = document.getElementById("testOptions");
-  const correct = cmState.answered.filter(a => a.given === a.correct).length;
-  const total = cmState.answered.length;
-  const allCorrect = correct === total;
-
-  const rows = cmState.answered.map(a => {
-    const ok = a.given === a.correct;
-    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
-      <span style="font-size:16px">${ok ? "✅" : "❌"}</span>
-      <span style="color:var(--muted);font-size:13px">Slot ${a.slot}:</span>
-      <span style="font-weight:600;color:var(--text)">${a.correct}</span>
-      ${!ok ? `<span style="color:var(--muted);font-size:13px">← you: ${a.given}</span>` : ""}
-    </div>`;
-  }).join("");
-
-  const isLast = cmRound >= cmTasks.length - 1;
-
-  container.innerHTML = `
-    <div style="padding:8px 0">
-      <div style="text-align:center;margin-bottom:16px">
-        <div style="font-size:28px;margin-bottom:6px">${allCorrect ? "🎉" : "💪"}</div>
-        <div style="font-size:20px;font-weight:700;color:var(--text)">${correct} / ${total} correct</div>
-      </div>
-      <div style="margin-bottom:20px">${rows}</div>
-      <div style="display:flex;gap:8px;justify-content:center">
-        ${!isLast ? `<button onclick="nextCMRound()"
-          style="padding:12px 28px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer">
-          Next Round →
-        </button>` : `<button onclick="restartCM()"
-          style="padding:12px 28px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer">
-          🔄 Restart
-        </button>`}
-      </div>
-    </div>`;
-}
-
-function startCMRound() {
-  cmStarted = true;
-  cmState = null;
-  render();
-}
-
-function nextCMRound() {
-  cmRound++;
-  cmState = null;
-  render();
-}
-
-function restartCM() {
-  cmRound = 0;
-  cmState = null;
-  cmStarted = true;
-  render();
-}
-
 function startMemoryRound() {
   memoryStarted = true;
   memoryState = null;
@@ -3187,47 +2594,48 @@ function startMemoryRound() {
 
 // ===================== UI STATE =====================
 function updateAllUI() {
-  const isTest = ["choice","truefalse","matches","ai","memory","contextmemory"].includes(activeMode);
+  const isTest = activeMode === "choice" || activeMode === "truefalse" || activeMode === "matches" || activeMode === "ai" || activeMode === "memory";
   const isAudio = activeMode === "audio";
 
+  // testOptions visibility
   const to = document.getElementById("testOptions");
   if (!isTest) { to.style.display = "none"; to.innerHTML = ""; }
 
+  // input area
   document.getElementById("inputArea").style.display =
     (keyboardOn || isAudio) ? "flex" : "none";
 
+  // speak btn - hide in keyboard mode and choice/ai
   document.getElementById("audioBtn").style.display =
     (keyboardOn || isTest) ? "none" : "";
 
+  // bottom settings - hide in test/audio/ai
   document.getElementById("bottomSettings").style.display =
     (isTest || isAudio) ? "none" : "";
 
+  // clear btn
   document.getElementById("clearBtn").style.display =
     (filterMode === "custom") ? "block" : "none";
 
+  // regen btn
   document.getElementById("regenBtn").style.display =
     activeMode === "ai" ? "block" : "none";
 
+  // regen memory btn
   document.getElementById("regenMemoryBtn").style.display =
     activeMode === "memory" ? "block" : "none";
 
-  document.getElementById("regenCMBtn").style.display =
-    activeMode === "contextmemory" ? "block" : "none";
-
+  // memory difficulty controls
   document.getElementById("memoryDifficultySetting").style.display =
     activeMode === "memory" ? "block" : "none";
 
+  // choice direction controls
   document.getElementById("choiceSetting").style.display =
     activeMode === "choice" ? "block" : "none";
 
+  // ai difficulty controls
   document.getElementById("aiDifficultySetting").style.display =
     activeMode === "ai" ? "block" : "none";
-
-  document.getElementById("cmDifficultySetting").style.display =
-    activeMode === "contextmemory" ? "block" : "none";
-
-  document.getElementById("cmInputSetting").style.display =
-    activeMode === "contextmemory" ? "block" : "none";
 }
 
 // ===================== KEYBOARD SHORTCUTS =====================
@@ -3267,8 +2675,7 @@ document.addEventListener("touchend", e => {
 
 // ===================== CLOSE DROPDOWNS =====================
 document.addEventListener("click", e => {
-  if (!e.target.closest("#coreDropdown"))  document.getElementById("coreDropdown").classList.remove("open");
-  if (!e.target.closest("#aiDropdown"))    document.getElementById("aiDropdown").classList.remove("open");
+  if (!e.target.closest("#modeDropdown"))   document.getElementById("modeDropdown").classList.remove("open");
   if (!e.target.closest("#delayDropdown"))  document.getElementById("delayDropdown").classList.remove("open");
 });
 
@@ -3369,7 +2776,6 @@ let authTab = "signin"; // signin | signup
 function openAuth() {
   document.getElementById("authOverlay").style.display = "block";
   document.getElementById("authModal").style.display = "block";
-  document.getElementById("authModalTitle").textContent = currentUser ? "My Account" : "Account";
   renderAuthModal();
 }
 
@@ -3387,21 +2793,12 @@ function renderAuthModal() {
     body.innerHTML = `
       <div class="auth-user-info">
         <div class="auth-avatar">${letter}</div>
-        <div style="font-size:15px;font-weight:600;color:#e8eaf0;text-align:center">${email}</div>
-        <div class="auth-user-email" style="display:flex;align-items:center;gap:5px">
-          <span style="width:6px;height:6px;border-radius:50%;background:#4ade80;flex-shrink:0"></span>
-          Synced — progress saved across devices
-        </div>
+        <div style="font-size:15px;font-weight:600;color:#e8eaf0">${email}</div>
+        <div class="auth-user-email">Signed in — progress syncs automatically</div>
       </div>
-      <div class="auth-separator"></div>
-      <button class="auth-help-btn" onclick="closeAuth(); openHelp()">
-        <span class="help-icon">❓</span>
-        <div>
-          <div style="font-size:13px;font-weight:600;color:#e8eaf0">Help & Guide</div>
-          <div style="font-size:11px;color:#4a5268;margin-top:1px">How to use all modes and features</div>
-        </div>
-      </button>
-      <div class="auth-separator"></div>
+      <div class="auth-sync-info">
+        Your completed sets and starred words are saved to the cloud<br>and available on any device.
+      </div>
       <button class="auth-signout" onclick="signOut()">Sign Out</button>
     `;
     return;
@@ -3428,16 +2825,12 @@ function renderAuthModal() {
     <button class="auth-submit" id="authSubmitBtn" onclick="handleAuthSubmit()">
       ${authTab === "signin" ? "Sign In" : "Create Account"}
     </button>
-    <div class="auth-separator"></div>
-    <button class="auth-help-btn" onclick="closeAuth(); openHelp()">
-      <span class="help-icon">❓</span>
-      <div>
-        <div style="font-size:13px;font-weight:600;color:#e8eaf0">Help & Guide</div>
-        <div style="font-size:11px;color:#4a5268;margin-top:1px">How to use all modes and features</div>
-      </div>
-    </button>
+    <div class="auth-sync-info">
+      Your progress (completed sets &amp; starred words) will sync<br>across all your devices automatically.
+    </div>
   `;
 
+  // Allow Enter key
   ["authEmail","authPassword"].forEach(id => {
     document.getElementById(id)?.addEventListener("keydown", e => {
       if (e.key === "Enter") handleAuthSubmit();
