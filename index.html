@@ -794,6 +794,7 @@
         <div class="dropdown-menu">
           <div class="dropdown-item" onclick="selectMode('ai')">     <span class="icon">⚡</span> Context Mode</div>
           <div class="dropdown-item" onclick="selectMode('memory')"> <span class="icon">🧠</span> Memory Associations</div>
+          <div class="dropdown-item" onclick="selectMode('contextmemory')"> <span class="icon">🔗</span> Context Memory</div>
         </div>
       </div>
 
@@ -829,6 +830,22 @@
             <button class="lang-btn" id="memoryEasyBtn" onclick="setMemoryDifficulty('easy')">Easy</button>
             <button class="lang-btn active" id="memoryMediumBtn" onclick="setMemoryDifficulty('medium')">Medium</button>
             <button class="lang-btn" id="memoryHardBtn" onclick="setMemoryDifficulty('hard')">Hard</button>
+          </div>
+        </div>
+
+        <div class="choice-setting" id="cmDifficultySetting">
+          <div class="lang-label">CM Difficulty</div>
+          <div class="lang-btns">
+            <button class="lang-btn" id="cmEasyBtn" onclick="setCMDifficulty('easy')">Easy</button>
+            <button class="lang-btn active" id="cmMediumBtn" onclick="setCMDifficulty('medium')">Medium</button>
+            <button class="lang-btn" id="cmHardBtn" onclick="setCMDifficulty('hard')">Hard</button>
+          </div>
+        </div>
+        <div class="choice-setting" id="cmInputSetting">
+          <div class="lang-label">Input Mode</div>
+          <div class="lang-btns">
+            <button class="lang-btn active" id="cmChoiceBtn" onclick="setCMInput('choice')">Choice</button>
+            <button class="lang-btn" id="cmTypeBtn" onclick="setCMInput('type')">Type</button>
           </div>
         </div>
     </div>
@@ -908,6 +925,7 @@
     <button class="ctrl-btn btn-clear" id="clearBtn" onclick="clearCustomSet()">🗑 Clear Review</button>
     <button class="ctrl-btn" id="regenBtn" onclick="regenerateAI()" style="display:none">🔄 Regen AI</button>
     <button class="ctrl-btn" id="regenMemoryBtn" onclick="regenerateMemory()" style="display:none">🔄 Regen Memory</button>
+    <button class="ctrl-btn" id="regenCMBtn" onclick="regenerateCM()" style="display:none">🔄 Regen CM</button>
   </aside>
 
 </div>
@@ -1231,6 +1249,17 @@ let memoryTasks = [];
 let memoryTasksCache = {};
 let frozenOrder = null;   // locked shuffle order — not changed by star actions
 
+// ===================== CONTEXT MEMORY STATE =====================
+let cmDifficulty = "medium";   // easy | medium | hard
+let cmInputMode = "choice";    // choice | type
+let cmTasks = [];              // cached AI tasks [{sentence, words:[{slot,correct,options}]}]
+let cmTasksCache = {};
+let cmState = null;            // current round state
+let cmRound = 0;
+let cmStarted = false;
+// show times: easy=7s, medium=5s, hard=3s; pause always 3s (easy=2s)
+const CM_TIMES = { easy:{show:7,pause:2}, medium:{show:5,pause:3}, hard:{show:3,pause:3} };
+
 // ===================== INIT =====================
 async function init() {
   loadCompletion();
@@ -1331,6 +1360,8 @@ function render() {
     renderMatchesMode(word, words);
   } else if (activeMode === "memory") {
     renderMemoryMode(word, words);
+  } else if (activeMode === "contextmemory") {
+    renderCMMode(words);
   } else if (activeMode === "truefalse") {
     renderTrueFalseMode(word, words);
   } else if (activeMode === "choice") {
@@ -2236,12 +2267,12 @@ function selectMode(m) {
   tutorReviewStage = null;
 
   const coreIds = ["study","choice","truefalse","matches","audio"];
-  const aiIds   = ["ai","memory"];
+  const aiIds   = ["ai","memory","contextmemory"];
   const coreLabels = {
     study: "📖 Study", choice: "🎯 Choice", truefalse: "✅ True / False",
     matches: "🧩 Matches", audio: "🔊 Audio"
   };
-  const aiLabels = { ai: "⚡ Context Mode", memory: "🧠 Memory Associations" };
+  const aiLabels = { ai: "⚡ Context Mode", memory: "🧠 Memory Associations", contextmemory: "🔗 Context Memory" };
 
   if (coreIds.includes(m)) {
     document.getElementById("coreTriggerLabel").textContent = coreLabels[m];
@@ -2254,7 +2285,7 @@ function selectMode(m) {
   }
 
   // Hide tutor button in matches and memory modes
-  document.getElementById("tutorBtn").style.display = (m === "matches" || m === "memory") ? "none" : "block";
+  document.getElementById("tutorBtn").style.display = (m === "matches" || m === "memory" || m === "contextmemory") ? "none" : "block";
 
   if (m !== "study") { keyboardOn = false; }
   if (m === "ai") loadAITasks();
@@ -2262,6 +2293,12 @@ function selectMode(m) {
     memoryStarted = false;
     memoryRound = 0;
     loadMemoryTasks();
+  }
+  if (m === "contextmemory") {
+    cmStarted = false;
+    cmState = null;
+    cmRound = 0;
+    loadCMTasks();
   }
 
   current = 0;
@@ -2439,6 +2476,10 @@ function selectSet(idx) {
     memoryRound = 0;
     const cached = loadMemoryCache();
     memoryTasks = cached || [];
+  }
+  if (activeMode === "contextmemory") {
+    cmStarted = false; cmState = null; cmRound = 0;
+    loadCMTasks();
   }
   initOrder();
   renderSets();
@@ -2661,6 +2702,349 @@ function regenerateMemory() {
   startMemoryGeneration();
 }
 
+// ===================== CONTEXT MEMORY =====================
+function getCMKey() { return `cmTasks_set_${sets[currentSet].id}_diff_${cmDifficulty}`; }
+
+function loadCMCache() {
+  const key = getCMKey();
+  if (cmTasksCache[key]) return cmTasksCache[key];
+  const s = localStorage.getItem(key);
+  if (s) { try { const p = JSON.parse(s); cmTasksCache[key] = p; return p; } catch(e){} }
+  return null;
+}
+
+function saveCMCache(tasks) {
+  const key = getCMKey();
+  cmTasksCache[key] = tasks;
+  localStorage.setItem(key, JSON.stringify(tasks));
+}
+
+function loadCMTasks() {
+  const cached = loadCMCache();
+  cmStarted = false;
+  cmState = null;
+  if (cached) { cmTasks = cached; render(); return; }
+  cmTasks = []; render();
+}
+
+async function fetchCMBatch(fourWords) {
+  const res = await fetch("/api/generate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ words: fourWords.map(w => w.en), type: "contextmemory", difficulty: cmDifficulty })
+  });
+  if (!res.ok) throw new Error("Server " + res.status);
+  const data = await res.json();
+  return { ...data, wordIds: fourWords.map(w => w.id), setId: sets[currentSet].id };
+}
+
+async function startCMGeneration() {
+  cmTasks = null;
+  cmStarted = false;
+  cmState = null;
+  render();
+  const words = getWords();
+  if (!words.length) { cmTasks = []; render(); return; }
+
+  // batch into groups of 4
+  const batches = [];
+  for (let i = 0; i + 3 < words.length; i += 4) batches.push(words.slice(i, i + 4));
+  // if leftover words (1-3), skip them — need exactly 4
+
+  try {
+    const results = await Promise.all(batches.map(b => fetchCMBatch(b)));
+    cmTasks = results.filter(Boolean);
+    saveCMCache(cmTasks);
+    render();
+  } catch(e) {
+    console.error("CM generation error:", e);
+    cmTasks = [];
+    render();
+  }
+}
+
+function regenerateCM() {
+  localStorage.removeItem(getCMKey());
+  delete cmTasksCache[getCMKey()];
+  startCMGeneration();
+}
+
+function setCMDifficulty(diff) {
+  cmDifficulty = diff;
+  document.getElementById("cmEasyBtn").classList.toggle("active", diff === "easy");
+  document.getElementById("cmMediumBtn").classList.toggle("active", diff === "medium");
+  document.getElementById("cmHardBtn").classList.toggle("active", diff === "hard");
+  if (activeMode === "contextmemory") {
+    cmStarted = false; cmState = null; cmRound = 0;
+    loadCMTasks();
+  }
+}
+
+function setCMInput(mode) {
+  cmInputMode = mode;
+  document.getElementById("cmChoiceBtn").classList.toggle("active", mode === "choice");
+  document.getElementById("cmTypeBtn").classList.toggle("active", mode === "type");
+  if (activeMode === "contextmemory" && cmState) {
+    cmState.phase = "input";
+    cmState.inputs = new Array(4).fill("");
+    cmState.selected = null;
+    cmState.activeSlot = 0;
+    render();
+  }
+}
+
+function renderCMMode(words) {
+  const container = document.getElementById("testOptions");
+  const card = document.getElementById("card");
+  card.style.display = "none";
+
+  // No tasks yet — show generate button
+  if (cmTasks === null) {
+    container.innerHTML = `<div class="memory-loading">⏳ Generating Context Memory tasks…</div>`;
+    return;
+  }
+  if (!cmTasks.length) {
+    container.innerHTML = `
+      <div class="memory-generate-wrap">
+        <div class="memory-generate-title">🔗 Context Memory</div>
+        <div class="memory-generate-desc">AI creates sentences using 4 words from this set.<br>Memorize the words, then fill in the blanks.</div>
+        <button onclick="event.stopPropagation();startCMGeneration()"
+          style="margin-top:16px;padding:12px 28px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer">
+          ⚡ Generate Context Memory
+        </button>
+      </div>`;
+    return;
+  }
+
+  if (!cmStarted) {
+    const total = cmTasks.length;
+    container.innerHTML = `
+      <div class="memory-generate-wrap">
+        <div class="memory-generate-title">🔗 Context Memory</div>
+        <div class="memory-generate-desc">${total} rounds ready · ${cmDifficulty} difficulty<br>You'll see 4 words, then fill them into a sentence.</div>
+        <button onclick="startCMRound()"
+          style="margin-top:16px;padding:12px 28px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer">
+          ▶ Start
+        </button>
+      </div>`;
+    return;
+  }
+
+  const task = cmTasks[cmRound % cmTasks.length];
+  if (!cmState || cmState.taskIdx !== cmRound % cmTasks.length) {
+    cmState = buildCMState(task);
+  }
+
+  renderCMPhase(task);
+}
+
+function buildCMState(task) {
+  const times = CM_TIMES[cmDifficulty];
+  return {
+    taskIdx: cmRound % cmTasks.length,
+    phase: "show",   // show → pause → input → result
+    showTime: times.show * 1000,
+    pauseTime: times.pause * 1000,
+    inputs: new Array(4).fill(""),
+    selected: null,   // for choice mode: which slot is active
+    activeSlot: 0,    // choice mode: which blank is being answered
+    answered: [],     // [{slot, correct, given}]
+    timer: null
+  };
+}
+
+function renderCMPhase(task) {
+  const container = document.getElementById("testOptions");
+  const s = cmState;
+
+  if (s.phase === "show") {
+    const wordList = task.words.map(w =>
+      `<div style="padding:10px 0;font-size:22px;font-weight:700;color:var(--text);letter-spacing:0.02em">${w.correct}</div>`
+    ).join("");
+    container.innerHTML = `
+      <div style="text-align:center;padding:20px 0">
+        <div style="font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:20px">Memorize these 4 words</div>
+        ${wordList}
+        <div id="cmTimer" style="margin-top:20px;font-size:13px;color:var(--muted)"></div>
+      </div>`;
+    startCMTimer(s.showTime, "cmTimer", () => {
+      s.phase = "pause";
+      renderCMPhase(task);
+    });
+
+  } else if (s.phase === "pause") {
+    container.innerHTML = `
+      <div style="text-align:center;padding:40px 0">
+        <div style="font-size:32px;margin-bottom:12px">🧠</div>
+        <div style="font-size:16px;color:var(--muted)">Remember the words…</div>
+        <div id="cmTimer" style="margin-top:16px;font-size:13px;color:var(--muted)"></div>
+      </div>`;
+    startCMTimer(s.pauseTime, "cmTimer", () => {
+      s.phase = "input";
+      s.activeSlot = 0;
+      renderCMPhase(task);
+    });
+
+  } else if (s.phase === "input") {
+    renderCMInput(task);
+
+  } else if (s.phase === "result") {
+    renderCMResult(task);
+  }
+}
+
+function startCMTimer(ms, elId, cb) {
+  if (cmState.timer) clearInterval(cmState.timer);
+  const end = Date.now() + ms;
+  cmState.timer = setInterval(() => {
+    const el = document.getElementById(elId);
+    const left = Math.ceil((end - Date.now()) / 1000);
+    if (el) el.textContent = left + "s";
+    if (Date.now() >= end) {
+      clearInterval(cmState.timer);
+      cmState.timer = null;
+      cb();
+    }
+  }, 200);
+}
+
+function renderCMInput(task) {
+  const container = document.getElementById("testOptions");
+  const s = cmState;
+
+  // Build sentence with blanks
+  let sentenceHtml = task.sentence;
+  for (let i = 1; i <= 4; i++) {
+    const isActive = s.activeSlot === i - 1;
+    const answered = s.answered.find(a => a.slot === i);
+    let content;
+    if (answered) {
+      const ok = answered.given === answered.correct;
+      content = `<span style="color:${ok ? "#4ade80" : "#f87171"};font-weight:700;border-bottom:2px solid ${ok ? "#4ade80" : "#f87171"};padding:0 4px">${answered.given}</span>`;
+    } else if (isActive) {
+      content = `<span style="display:inline-block;min-width:80px;border-bottom:2px solid var(--accent);padding:0 4px;color:var(--accent);font-weight:600">[${i}]</span>`;
+    } else {
+      content = `<span style="display:inline-block;min-width:60px;border-bottom:2px solid var(--muted);padding:0 4px;color:var(--muted)">[${i}]</span>`;
+    }
+    sentenceHtml = sentenceHtml.replace(`[${i}]`, content);
+  }
+
+  // Find next unanswered slot
+  const unanswered = task.words.filter(w => !s.answered.find(a => a.slot === w.slot));
+  const currentWord = unanswered[0];
+
+  let inputHtml = "";
+  if (currentWord && cmInputMode === "choice") {
+    const shuffled = [...currentWord.options].sort(() => Math.random() - 0.5);
+    inputHtml = `<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:16px">
+      ${shuffled.map(opt => `
+        <button onclick="submitCMAnswer(${currentWord.slot}, '${opt}', event)"
+          style="padding:10px 20px;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:10px;font-size:15px;font-weight:500;cursor:pointer;transition:all 0.15s"
+          onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)'">
+          ${opt}
+        </button>`).join("")}
+    </div>`;
+  } else if (currentWord && cmInputMode === "type") {
+    inputHtml = `<div style="display:flex;gap:8px;margin-top:16px;justify-content:center">
+      <input id="cmTypeInput" type="text" placeholder="Type word ${currentWord.slot}…"
+        style="padding:10px 16px;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:10px;font-size:15px;font-family:inherit;outline:none;width:200px"
+        onkeydown="if(event.key==='Enter')submitCMAnswer(${currentWord.slot}, this.value.trim(), event)" />
+      <button onclick="submitCMAnswer(${currentWord.slot}, document.getElementById('cmTypeInput').value.trim(), event)"
+        style="padding:10px 20px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer">
+        →
+      </button>
+    </div>`;
+  }
+
+  container.innerHTML = `
+    <div style="padding:8px 0">
+      <div style="font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:16px;text-align:center">Fill in the blanks</div>
+      <div style="font-size:17px;line-height:2;color:var(--text);text-align:center;padding:0 8px">${sentenceHtml}</div>
+      ${inputHtml}
+    </div>`;
+
+  if (cmInputMode === "type") {
+    setTimeout(() => document.getElementById("cmTypeInput")?.focus(), 50);
+  }
+}
+
+function submitCMAnswer(slot, given, e) {
+  e?.stopPropagation();
+  if (!given) return;
+  const task = cmTasks[cmRound % cmTasks.length];
+  const word = task.words.find(w => w.slot === slot);
+  if (!word) return;
+
+  cmState.answered.push({ slot, correct: word.correct, given: given.toLowerCase().trim() });
+
+  // Move to next unanswered slot
+  const unanswered = task.words.filter(w => !cmState.answered.find(a => a.slot === w.slot));
+  if (unanswered.length > 0) {
+    cmState.activeSlot = task.words.indexOf(unanswered[0]);
+    renderCMInput(task);
+  } else {
+    // All answered — show result
+    cmState.phase = "result";
+    renderCMPhase(task);
+  }
+}
+
+function renderCMResult(task) {
+  const container = document.getElementById("testOptions");
+  const correct = cmState.answered.filter(a => a.given === a.correct).length;
+  const total = cmState.answered.length;
+  const allCorrect = correct === total;
+
+  const rows = cmState.answered.map(a => {
+    const ok = a.given === a.correct;
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:16px">${ok ? "✅" : "❌"}</span>
+      <span style="color:var(--muted);font-size:13px">Slot ${a.slot}:</span>
+      <span style="font-weight:600;color:var(--text)">${a.correct}</span>
+      ${!ok ? `<span style="color:var(--muted);font-size:13px">← you: ${a.given}</span>` : ""}
+    </div>`;
+  }).join("");
+
+  const isLast = cmRound >= cmTasks.length - 1;
+
+  container.innerHTML = `
+    <div style="padding:8px 0">
+      <div style="text-align:center;margin-bottom:16px">
+        <div style="font-size:28px;margin-bottom:6px">${allCorrect ? "🎉" : "💪"}</div>
+        <div style="font-size:20px;font-weight:700;color:var(--text)">${correct} / ${total} correct</div>
+      </div>
+      <div style="margin-bottom:20px">${rows}</div>
+      <div style="display:flex;gap:8px;justify-content:center">
+        ${!isLast ? `<button onclick="nextCMRound()"
+          style="padding:12px 28px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer">
+          Next Round →
+        </button>` : `<button onclick="restartCM()"
+          style="padding:12px 28px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer">
+          🔄 Restart
+        </button>`}
+      </div>
+    </div>`;
+}
+
+function startCMRound() {
+  cmStarted = true;
+  cmState = null;
+  render();
+}
+
+function nextCMRound() {
+  cmRound++;
+  cmState = null;
+  render();
+}
+
+function restartCM() {
+  cmRound = 0;
+  cmState = null;
+  cmStarted = true;
+  render();
+}
+
 function startMemoryRound() {
   memoryStarted = true;
   memoryState = null;
@@ -2670,48 +3054,47 @@ function startMemoryRound() {
 
 // ===================== UI STATE =====================
 function updateAllUI() {
-  const isTest = activeMode === "choice" || activeMode === "truefalse" || activeMode === "matches" || activeMode === "ai" || activeMode === "memory";
+  const isTest = ["choice","truefalse","matches","ai","memory","contextmemory"].includes(activeMode);
   const isAudio = activeMode === "audio";
 
-  // testOptions visibility
   const to = document.getElementById("testOptions");
   if (!isTest) { to.style.display = "none"; to.innerHTML = ""; }
 
-  // input area
   document.getElementById("inputArea").style.display =
     (keyboardOn || isAudio) ? "flex" : "none";
 
-  // speak btn - hide in keyboard mode and choice/ai
   document.getElementById("audioBtn").style.display =
     (keyboardOn || isTest) ? "none" : "";
 
-  // bottom settings - hide in test/audio/ai
   document.getElementById("bottomSettings").style.display =
     (isTest || isAudio) ? "none" : "";
 
-  // clear btn
   document.getElementById("clearBtn").style.display =
     (filterMode === "custom") ? "block" : "none";
 
-  // regen btn
   document.getElementById("regenBtn").style.display =
     activeMode === "ai" ? "block" : "none";
 
-  // regen memory btn
   document.getElementById("regenMemoryBtn").style.display =
     activeMode === "memory" ? "block" : "none";
 
-  // memory difficulty controls
+  document.getElementById("regenCMBtn").style.display =
+    activeMode === "contextmemory" ? "block" : "none";
+
   document.getElementById("memoryDifficultySetting").style.display =
     activeMode === "memory" ? "block" : "none";
 
-  // choice direction controls
   document.getElementById("choiceSetting").style.display =
     activeMode === "choice" ? "block" : "none";
 
-  // ai difficulty controls
   document.getElementById("aiDifficultySetting").style.display =
     activeMode === "ai" ? "block" : "none";
+
+  document.getElementById("cmDifficultySetting").style.display =
+    activeMode === "contextmemory" ? "block" : "none";
+
+  document.getElementById("cmInputSetting").style.display =
+    activeMode === "contextmemory" ? "block" : "none";
 }
 
 // ===================== KEYBOARD SHORTCUTS =====================
@@ -3034,7 +3417,7 @@ const HELP_CONTENT = {
       { icon: "🔊", name: "Audio", desc: "Listen and type. Hear the word spoken aloud and type it correctly. Perfect for pronunciation and spelling." },
       { icon: "✅", name: "True / False", desc: "See a word paired with a translation — decide if it's correct or not. Fast-paced and effective." },
       { icon: "🧩", name: "Matches", desc: "Match English words with their translations. Works in rounds — 8 pairs at a time." },
-      { icon: "⚡", name: "Context Mode", desc: "AI-generated fill-in-the-blank sentences. Real context makes words stick. Choose Easy / Medium / Hard difficulty." },
+      { icon: "⚡", name: "AI Mode", desc: "AI-generated fill-in-the-blank sentences. Real context makes words stick. Choose Easy / Medium / Hard difficulty." },
       { icon: "🧠", name: "Memory Associations", desc: "AI builds creative word chains (e.g. dog → loyalty → knight). Memorize the chain, then recall it. Trains deep memory." },
     ],
     featuresTitle: "Features & Tips",
@@ -3063,7 +3446,7 @@ const HELP_CONTENT = {
       { icon: "🔊", name: "Audio", desc: "Слухай та пиши. Почуй слово вголос і надрукуй його правильно. Ідеально для вимови та правопису." },
       { icon: "✅", name: "True / False", desc: "Бачиш слово з перекладом — визнач, правильно чи ні. Швидкий та ефективний режим." },
       { icon: "🧩", name: "Matches", desc: "Знайди відповідні пари: слово з перекладом. Працює раундами по 8 пар за раз." },
-      { icon: "⚡", name: "Context Mode", desc: "AI генерує речення з пропущеним словом. Реальний контекст допомагає словам запам'ятовуватися. Вибери складність: Easy / Medium / Hard." },
+      { icon: "⚡", name: "AI Mode", desc: "AI генерує речення з пропущеним словом. Реальний контекст допомагає словам запам'ятовуватися. Вибери складність: Easy / Medium / Hard." },
       { icon: "🧠", name: "Memory Associations", desc: "AI будує творчі ланцюжки слів (наприклад: dog → loyalty → knight). Запам'ятай ланцюжок, а потім відтвори його. Тренує глибинну пам'ять." },
     ],
     featuresTitle: "Функції та поради",
@@ -3092,7 +3475,7 @@ const HELP_CONTENT = {
       { icon: "🔊", name: "Audio", desc: "Слушай и печатай. Услышь слово вслух и напечатай его правильно. Идеально для произношения и правописания." },
       { icon: "✅", name: "True / False", desc: "Видишь слово с переводом — определи, правильно или нет. Быстрый и эффективный режим." },
       { icon: "🧩", name: "Matches", desc: "Найди подходящие пары: слово с переводом. Работает раундами по 8 пар за раз." },
-      { icon: "⚡", name: "Context Mode", desc: "AI генерирует предложения с пропущенным словом. Реальный контекст помогает словам запомниться. Выбери сложность: Easy / Medium / Hard." },
+      { icon: "⚡", name: "AI Mode", desc: "AI генерирует предложения с пропущенным словом. Реальный контекст помогает словам запомниться. Выбери сложность: Easy / Medium / Hard." },
       { icon: "🧠", name: "Memory Associations", desc: "AI строит творческие цепочки слов (например: dog → loyalty → knight). Запомни цепочку, потом воспроизведи. Тренирует глубинную память." },
     ],
     featuresTitle: "Функции и советы",

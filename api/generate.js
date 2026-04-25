@@ -27,7 +27,44 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Too many words per request (max 15)" });
   }
 
-  const prompt = type === "memory" ? 
+  const prompt = type === "contextmemory" ?
+`You are an expert English teacher creating memory-based exercises.
+
+TASK:
+You will receive EXACTLY 4 English words. Create ONE natural sentence that uses ALL 4 words.
+Then provide 3 distractor options for each word (wrong answers for fill-in-the-blank).
+
+SENTENCE RULES:
+- The sentence MUST contain all 4 words naturally
+- Length: 12–22 words
+- Use ${difficulty === "easy" ? "simple everyday grammar (Present/Past Simple)" : difficulty === "hard" ? "advanced grammar (conditionals, passive, perfect tenses)" : "natural mixed grammar"}
+- The sentence must sound like real English, not forced
+
+DISTRACTORS RULES:
+- 3 wrong options per word
+- Same part of speech as the correct word
+- Grammatically plausible in the sentence BUT semantically wrong
+- Not synonyms of the correct word
+
+OUTPUT FORMAT — return ONLY valid JSON, no markdown:
+{
+  "sentence": "The sentence with [1] [2] [3] [4] as placeholders",
+  "words": [
+    {"slot": 1, "correct": "word1", "options": ["word1","wrong1","wrong2","wrong3"]},
+    {"slot": 2, "correct": "word2", "options": ["word2","wrong1","wrong2","wrong3"]},
+    {"slot": 3, "correct": "word3", "options": ["word3","wrong1","wrong2","wrong3"]},
+    {"slot": 4, "correct": "word4", "options": ["word4","wrong1","wrong2","wrong3"]}
+  ]
+}
+
+IMPORTANT:
+- Replace each target word in the sentence with [1], [2], [3], [4] in order of appearance
+- Shuffle the options array so correct answer is not always first
+- Return ONLY the JSON object, no extra text
+
+WORDS: ${JSON.stringify(words)}`
+
+  : type === "memory" ? 
 `You are an expert in cognitive psychology and memory training.
 
 TASK:
@@ -196,6 +233,19 @@ ${JSON.stringify(words)}`;
 
     const data = await openaiRes.json();
     const text = data.choices[0].message.content;
+
+    // contextmemory returns an object {}, others return an array []
+    if (type === "contextmemory") {
+      const start = text.indexOf("{");
+      const end = text.lastIndexOf("}");
+      if (start === -1 || end === -1) {
+        console.error("No JSON object in response:", text);
+        return res.status(502).json({ error: "Invalid AI response format" });
+      }
+      const parsed = JSON.parse(text.slice(start, end + 1));
+      res.setHeader("Cache-Control", "no-store");
+      return res.status(200).json(parsed);
+    }
 
     const start = text.indexOf("[");
     const end = text.lastIndexOf("]");
