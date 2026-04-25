@@ -2236,7 +2236,10 @@ function flipCard() {
 
 // ===================== KEYBOARD =====================
 function handleEnter() {
-  if (activeMode === "memory" && memoryState && memoryState.phase === "input") {
+  if (activeMode === "contextmemory" && cmState?.phase === "result") {
+    const isLast = cmRound >= cmTasks.length - 1;
+    isLast ? restartCM() : nextCMRound();
+  } else if (activeMode === "memory" && memoryState && memoryState.phase === "input") {
     checkMemoryAnswer();
   } else if (!isAnswerLocked) {
     checkAnswer();
@@ -3288,6 +3291,12 @@ document.addEventListener("keydown", e => {
     lastSpaceTime = now;
   }
   if (e.code === "Enter" && typing) { e.preventDefault(); handleEnter(); }
+  // Enter on CM result screen (no input focused)
+  if (e.code === "Enter" && !typing && activeMode === "contextmemory" && cmState?.phase === "result") {
+    e.preventDefault();
+    const isLast = cmRound >= cmTasks.length - 1;
+    isLast ? restartCM() : nextCMRound();
+  }
 });
 
 // Double click for desktop
