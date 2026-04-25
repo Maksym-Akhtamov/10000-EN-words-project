@@ -2266,6 +2266,9 @@ function checkMemoryAnswer() {
 
   if (allCorrect) {
     memoryState.phase = "correct";
+    document.querySelectorAll(".memory-input").forEach(input => input.disabled = true);
+    const checkBtn = document.querySelector("#testOptions button.choice-btn");
+    if (checkBtn) checkBtn.disabled = true;
     showResult("✓ Correct!", "correct");
     setTimeout(() => {
       nextWord();
