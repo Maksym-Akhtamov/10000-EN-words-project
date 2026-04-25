@@ -1217,9 +1217,9 @@ let autoPlay = false;
 let autoTimer = null;
 let autoDelay = 3;
 let activeMode = "study"; // study | choice | truefalse | matches | audio | ai | memory
-let direction = "en-ru";  // en-ru | ru-en
+let direction = "all";  // en-ru | ru-en | all
 let keyboardOn = false;
-let langMode = "both";     // both | uk | ru
+let langMode = "uk";     // both | uk | ru
 let choiceDirection = "trans-en"; // trans-en | en-trans
 let tfPrompt = null; // current true/false statement for retries
 let matchesState = null;
@@ -1271,6 +1271,7 @@ async function init() {
   renderSets();
   renderCustomSets();
   render();
+  setLang("uk");
   updateAllUI();
   // Init AI difficulty buttons
   document.getElementById("aiMediumBtn").classList.add("active");
@@ -1390,9 +1391,12 @@ function renderStudyMode(word) {
   if (direction === "en-ru") {
     front.innerHTML = `<div class="card-word">${word.en}</div>`;
     back.innerHTML  = buildTransHTML(word);
-  } else {
+  } else if (direction === "ru-en") {
     front.innerHTML = buildTransHTML(word);
     back.innerHTML  = `<div class="card-word">${word.en}</div>`;
+  } else if (direction === "all") {
+    front.innerHTML = `<div class="card-word">${word.en}</div>${buildTransHTML(word)}`;
+    back.innerHTML  = front.innerHTML;
   }
 }
 
@@ -2343,10 +2347,17 @@ function toggleModeDropdown() {
 }
 
 function toggleDir() {
-  direction = direction === "en-ru" ? "ru-en" : "en-ru";
+  if (direction === "en-ru") {
+    direction = "ru-en";
+  } else if (direction === "ru-en") {
+    direction = "all";
+  } else {
+    direction = "en-ru";
+  }
   document.getElementById("dirBtn").textContent =
-    direction === "en-ru" ? "EN → Translation" : "Translation → EN";
-  document.getElementById("dirBtn").classList.toggle("active", direction === "ru-en");
+    direction === "en-ru" ? "EN → Translation" :
+    direction === "ru-en" ? "Translation → EN" : "All";
+  document.getElementById("dirBtn").classList.toggle("active", direction === "ru-en" || direction === "all");
   render();
 }
 
