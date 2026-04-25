@@ -2816,9 +2816,12 @@ async function startCMGeneration() {
   const words = getWords();
   if (!words.length) { cmTasks = []; render(); return; }
 
+  // Shuffle words before batching — different groups each generation
+  const shuffled = [...words].sort(() => Math.random() - 0.5);
+
   // batch into groups of 4
   const batches = [];
-  for (let i = 0; i + 3 < words.length; i += 4) batches.push(words.slice(i, i + 4));
+  for (let i = 0; i + 3 < shuffled.length; i += 4) batches.push(shuffled.slice(i, i + 4));
   // if leftover words (1-3), skip them — need exactly 4
 
   try {
@@ -2932,8 +2935,9 @@ function renderCMPhase(task) {
   const s = cmState;
 
   if (s.phase === "show") {
-    // Show only 4 words to memorize
-    const wordList = cmState.words.map(w =>
+    // Show words in shuffled order (not in sentence order) to make memorization harder
+    const shuffledWords = [...cmState.words].sort(() => Math.random() - 0.5);
+    const wordList = shuffledWords.map(w =>
       `<div style="padding:12px 0;font-size:24px;font-weight:700;color:var(--text);letter-spacing:0.02em">${w.correct}</div>`
     ).join("");
     container.innerHTML = `
