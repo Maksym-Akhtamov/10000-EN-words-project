@@ -41,19 +41,20 @@ SENTENCE RULES:
 - The sentence must sound like real English, not forced
 
 DISTRACTORS RULES:
-- 3 wrong options per word
+- 3 REAL wrong options per word (use actual English words, NOT "wrong1", "wrong2", "wrong3")
 - Same part of speech as the correct word
 - Grammatically plausible in the sentence BUT semantically wrong
 - Not synonyms of the correct word
+- Use common English words that fit the context
 
 OUTPUT FORMAT — return ONLY valid JSON, no markdown:
 {
   "sentence": "The sentence with [1] [2] [3] [4] as placeholders",
   "words": [
-    {"slot": 1, "correct": "word1", "options": ["word1","wrong1","wrong2","wrong3"]},
-    {"slot": 2, "correct": "word2", "options": ["word2","wrong1","wrong2","wrong3"]},
-    {"slot": 3, "correct": "word3", "options": ["word3","wrong1","wrong2","wrong3"]},
-    {"slot": 4, "correct": "word4", "options": ["word4","wrong1","wrong2","wrong3"]}
+    {"slot": 1, "correct": "word1", "options": ["word1","distractor1","distractor2","distractor3"]},
+    {"slot": 2, "correct": "word2", "options": ["word2","distractor1","distractor2","distractor3"]},
+    {"slot": 3, "correct": "word3", "options": ["word3","distractor1","distractor2","distractor3"]},
+    {"slot": 4, "correct": "word4", "options": ["word4","distractor1","distractor2","distractor3"]}
   ]
 }
 

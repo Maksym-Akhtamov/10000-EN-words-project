@@ -2953,8 +2953,8 @@ function renderCMInput(task) {
     sentenceHtml = sentenceHtml.replace(`[${i}]`, content);
   }
 
-  // Find next unanswered slot
-  const unanswered = task.words.filter(w => !s.answered.find(a => a.slot === w.slot));
+  // Find next unanswered slot (sorted by slot number to process in order 1, 2, 3, 4)
+  const unanswered = task.words.filter(w => !s.answered.find(a => a.slot === w.slot)).sort((a, b) => a.slot - b.slot);
   const currentWord = unanswered[0];
 
   let inputHtml = "";
