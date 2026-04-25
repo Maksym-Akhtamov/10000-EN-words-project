@@ -863,10 +863,59 @@
     <button class="ctrl-btn" id="regenBtn" onclick="regenerateAI()" style="display:none">🔄 Regen AI</button>
     <button class="ctrl-btn" id="regenMemoryBtn" onclick="regenerateMemory()" style="display:none">🔄 Regen Memory</button>
     <button class="ctrl-btn" id="helpBtn" onclick="openHelp()" style="margin-top:auto">❓ Help</button>
-    <button class="ctrl-btn" id="authBtn" onclick="openAuth()">👤 Sign In</button>
   </aside>
 
 </div>
+
+<!-- ===================== CORNER AUTH ===================== -->
+<style>
+  #cornerAuth {
+    position: fixed; top: 18px; right: 22px; z-index: 500;
+    width: 38px; height: 38px; border-radius: 50%; border: none;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: transform 0.2s, box-shadow 0.2s; outline: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #cornerAuth:hover { transform: scale(1.1); }
+  #cornerAuth.signed-out {
+    background: #1c2230; border: 1.5px solid rgba(255,255,255,0.1);
+  }
+  #cornerAuth.signed-out:hover { border-color: #4f8ef7; }
+  #cornerAuth.signed-in {
+    background: linear-gradient(135deg, #4f8ef7, #6ee7c0);
+    box-shadow: 0 0 0 2.5px rgba(79,142,247,0.3);
+  }
+  #cornerAuthDot {
+    display: none; position: absolute; top: 1px; right: 1px;
+    width: 10px; height: 10px; border-radius: 50%;
+    background: #4f8ef7; border: 2px solid #0c0f14;
+    animation: dotPulse 2.5s ease-in-out infinite;
+  }
+  @keyframes dotPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.5; transform: scale(0.8); }
+  }
+  #cornerAuth.signed-out #cornerAuthDot { display: block; }
+  #cornerAuthLetter {
+    display: none; font-family: 'DM Sans', sans-serif;
+    font-size: 15px; font-weight: 700; color: #fff; line-height: 1;
+  }
+  #cornerAuthIcon { display: flex; }
+  #cornerAuthIcon svg {
+    width: 18px; height: 18px; stroke: #5a6278; fill: none;
+    stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+  }
+  @media (max-width: 960px) {
+    #cornerAuth { top: 12px; right: 12px; width: 34px; height: 34px; }
+  }
+</style>
+<button id="cornerAuth" class="signed-out" onclick="openAuth()" aria-label="Account">
+  <span id="cornerAuthDot"></span>
+  <span id="cornerAuthLetter"></span>
+  <span id="cornerAuthIcon">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+  </span>
+</button>
 
 <!-- ===================== AUTH MODAL ===================== -->
 <div id="authOverlay" onclick="closeAuth()" style="
@@ -2858,15 +2907,21 @@ async function signOut() {
 }
 
 function updateAuthBtn() {
-  const btn = document.getElementById("authBtn");
+  const btn    = document.getElementById("cornerAuth");
+  const letter = document.getElementById("cornerAuthLetter");
+  const icon   = document.getElementById("cornerAuthIcon");
   if (!btn) return;
   if (currentUser) {
-    const letter = currentUser.email?.[0]?.toUpperCase() || "?";
-    btn.textContent = `${letter} Account`;
-    btn.classList.add("active");
+    btn.className = "signed-in";
+    letter.textContent = currentUser.email?.[0]?.toUpperCase() || "?";
+    letter.style.display = "block";
+    icon.style.display = "none";
+    btn.title = currentUser.email;
   } else {
-    btn.textContent = "👤 Sign In";
-    btn.classList.remove("active");
+    btn.className = "signed-out";
+    letter.style.display = "none";
+    icon.style.display = "flex";
+    btn.title = "Sign in";
   }
 }
 
