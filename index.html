@@ -908,7 +908,6 @@
     <button class="ctrl-btn btn-clear" id="clearBtn" onclick="clearCustomSet()">🗑 Clear Review</button>
     <button class="ctrl-btn" id="regenBtn" onclick="regenerateAI()" style="display:none">🔄 Regen AI</button>
     <button class="ctrl-btn" id="regenMemoryBtn" onclick="regenerateMemory()" style="display:none">🔄 Regen Memory</button>
-    <button class="ctrl-btn" id="helpBtn" onclick="openHelp()" style="margin-top:auto">❓ Help</button>
   </aside>
 
 </div>
@@ -1047,6 +1046,23 @@
   .auth-signout:hover { background:rgba(248,113,113,0.15); }
   .auth-sync-info {
     font-size:12px; color:#4a5268; text-align:center; line-height:1.5;
+  }
+  .auth-help-btn {
+    width:100%; background:rgba(255,255,255,0.03);
+    border:1px solid rgba(255,255,255,0.08); color:#8a93a8;
+    font-family:'DM Sans',sans-serif; font-size:14px; font-weight:500;
+    padding:12px 16px; border-radius:12px; cursor:pointer;
+    display:flex; align-items:center; gap:10px; transition:all 0.15s;
+    text-align:left;
+  }
+  .auth-help-btn:hover { background:rgba(255,255,255,0.06); color:#e8eaf0; border-color:rgba(255,255,255,0.14); }
+  .auth-help-btn .help-icon {
+    width:28px; height:28px; border-radius:8px; flex-shrink:0;
+    background:rgba(79,142,247,0.12); border:1px solid rgba(79,142,247,0.2);
+    display:grid; place-items:center; font-size:14px;
+  }
+  .auth-separator {
+    height:1px; background:rgba(255,255,255,0.06); margin:2px 0;
   }
   .auth-google {
     width:100%; background:#fff; color:#1f1f1f;
@@ -2837,6 +2853,7 @@ let authTab = "signin"; // signin | signup
 function openAuth() {
   document.getElementById("authOverlay").style.display = "block";
   document.getElementById("authModal").style.display = "block";
+  document.getElementById("authModalTitle").textContent = currentUser ? "My Account" : "Account";
   renderAuthModal();
 }
 
@@ -2854,12 +2871,21 @@ function renderAuthModal() {
     body.innerHTML = `
       <div class="auth-user-info">
         <div class="auth-avatar">${letter}</div>
-        <div style="font-size:15px;font-weight:600;color:#e8eaf0">${email}</div>
-        <div class="auth-user-email">Signed in — progress syncs automatically</div>
+        <div style="font-size:15px;font-weight:600;color:#e8eaf0;text-align:center">${email}</div>
+        <div class="auth-user-email" style="display:flex;align-items:center;gap:5px">
+          <span style="width:6px;height:6px;border-radius:50%;background:#4ade80;flex-shrink:0"></span>
+          Synced — progress saved across devices
+        </div>
       </div>
-      <div class="auth-sync-info">
-        Your completed sets and starred words are saved to the cloud<br>and available on any device.
-      </div>
+      <div class="auth-separator"></div>
+      <button class="auth-help-btn" onclick="closeAuth(); openHelp()">
+        <span class="help-icon">❓</span>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:#e8eaf0">Help & Guide</div>
+          <div style="font-size:11px;color:#4a5268;margin-top:1px">How to use all modes and features</div>
+        </div>
+      </button>
+      <div class="auth-separator"></div>
       <button class="auth-signout" onclick="signOut()">Sign Out</button>
     `;
     return;
@@ -2886,12 +2912,16 @@ function renderAuthModal() {
     <button class="auth-submit" id="authSubmitBtn" onclick="handleAuthSubmit()">
       ${authTab === "signin" ? "Sign In" : "Create Account"}
     </button>
-    <div class="auth-sync-info">
-      Your progress (completed sets &amp; starred words) will sync<br>across all your devices automatically.
-    </div>
+    <div class="auth-separator"></div>
+    <button class="auth-help-btn" onclick="closeAuth(); openHelp()">
+      <span class="help-icon">❓</span>
+      <div>
+        <div style="font-size:13px;font-weight:600;color:#e8eaf0">Help & Guide</div>
+        <div style="font-size:11px;color:#4a5268;margin-top:1px">How to use all modes and features</div>
+      </div>
+    </button>
   `;
 
-  // Allow Enter key
   ["authEmail","authPassword"].forEach(id => {
     document.getElementById(id)?.addEventListener("keydown", e => {
       if (e.key === "Enter") handleAuthSubmit();
@@ -3004,7 +3034,7 @@ const HELP_CONTENT = {
       { icon: "🔊", name: "Audio", desc: "Listen and type. Hear the word spoken aloud and type it correctly. Perfect for pronunciation and spelling." },
       { icon: "✅", name: "True / False", desc: "See a word paired with a translation — decide if it's correct or not. Fast-paced and effective." },
       { icon: "🧩", name: "Matches", desc: "Match English words with their translations. Works in rounds — 8 pairs at a time." },
-      { icon: "⚡", name: "AI Mode", desc: "AI-generated fill-in-the-blank sentences. Real context makes words stick. Choose Easy / Medium / Hard difficulty." },
+      { icon: "⚡", name: "Context Mode", desc: "AI-generated fill-in-the-blank sentences. Real context makes words stick. Choose Easy / Medium / Hard difficulty." },
       { icon: "🧠", name: "Memory Associations", desc: "AI builds creative word chains (e.g. dog → loyalty → knight). Memorize the chain, then recall it. Trains deep memory." },
     ],
     featuresTitle: "Features & Tips",
@@ -3033,7 +3063,7 @@ const HELP_CONTENT = {
       { icon: "🔊", name: "Audio", desc: "Слухай та пиши. Почуй слово вголос і надрукуй його правильно. Ідеально для вимови та правопису." },
       { icon: "✅", name: "True / False", desc: "Бачиш слово з перекладом — визнач, правильно чи ні. Швидкий та ефективний режим." },
       { icon: "🧩", name: "Matches", desc: "Знайди відповідні пари: слово з перекладом. Працює раундами по 8 пар за раз." },
-      { icon: "⚡", name: "AI Mode", desc: "AI генерує речення з пропущеним словом. Реальний контекст допомагає словам запам'ятовуватися. Вибери складність: Easy / Medium / Hard." },
+      { icon: "⚡", name: "Context Mode", desc: "AI генерує речення з пропущеним словом. Реальний контекст допомагає словам запам'ятовуватися. Вибери складність: Easy / Medium / Hard." },
       { icon: "🧠", name: "Memory Associations", desc: "AI будує творчі ланцюжки слів (наприклад: dog → loyalty → knight). Запам'ятай ланцюжок, а потім відтвори його. Тренує глибинну пам'ять." },
     ],
     featuresTitle: "Функції та поради",
@@ -3062,7 +3092,7 @@ const HELP_CONTENT = {
       { icon: "🔊", name: "Audio", desc: "Слушай и печатай. Услышь слово вслух и напечатай его правильно. Идеально для произношения и правописания." },
       { icon: "✅", name: "True / False", desc: "Видишь слово с переводом — определи, правильно или нет. Быстрый и эффективный режим." },
       { icon: "🧩", name: "Matches", desc: "Найди подходящие пары: слово с переводом. Работает раундами по 8 пар за раз." },
-      { icon: "⚡", name: "AI Mode", desc: "AI генерирует предложения с пропущенным словом. Реальный контекст помогает словам запомниться. Выбери сложность: Easy / Medium / Hard." },
+      { icon: "⚡", name: "Context Mode", desc: "AI генерирует предложения с пропущенным словом. Реальный контекст помогает словам запомниться. Выбери сложность: Easy / Medium / Hard." },
       { icon: "🧠", name: "Memory Associations", desc: "AI строит творческие цепочки слов (например: dog → loyalty → knight). Запомни цепочку, потом воспроизведи. Тренирует глубинную память." },
     ],
     featuresTitle: "Функции и советы",
