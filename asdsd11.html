@@ -2846,8 +2846,7 @@ function renderCMMode(words) {
 function buildCMState(task) {
   const times = CM_TIMES[cmDifficulty];
 
-  const words = [...task.words] // ✅ правильный источник
-    .sort((a, b) => a.slot - b.slot);
+  const words = [...cmState.words].sort((a, b) => a.slot - b.slot);
 
   return {
     taskIdx: cmRound % cmTasks.length,
@@ -2862,7 +2861,7 @@ function buildCMState(task) {
     answered: [],
     timer: null,
 
-    words
+    words // 👈 ключ
   };
 }
 
