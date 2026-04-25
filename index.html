@@ -695,6 +695,31 @@
     .mini-option { padding: 9px 14px; font-size: 13px; cursor: pointer; }
     .mini-option:hover { background: rgba(255,255,255,0.05); }
 
+    /* ===== DIR SEGMENT CONTROL ===== */
+    .dir-seg-wrap {
+      display: flex;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 3px;
+      gap: 2px;
+    }
+    .dir-seg-btn {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 7px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .dir-seg-btn:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+    .dir-seg-btn.active { background: rgba(79,142,247,0.18); color: var(--accent); }
+
     .btn-clear {
       background: rgba(248,113,113,0.08) !important;
       border-color: rgba(248,113,113,0.2) !important;
@@ -899,7 +924,11 @@
     </div>
 
     <div class="bottom-settings" id="bottomSettings">
-      <button class="setting-btn" id="dirBtn" onclick="toggleDir()">EN → Translation</button>
+      <div class="dir-seg-wrap" id="dirSegWrap">
+        <button class="dir-seg-btn active" id="dirAll"  onclick="setDir('all')">All</button>
+        <button class="dir-seg-btn"        id="dirEnTr" onclick="setDir('en-ru')">EN → Tr</button>
+        <button class="dir-seg-btn"        id="dirTrEn" onclick="setDir('ru-en')">Tr → EN</button>
+      </div>
       <button class="setting-btn" id="kbBtn"  onclick="toggleKeyboard()">⌨ Keyboard</button>
     </div>
   </main>
@@ -2346,25 +2375,23 @@ function toggleModeDropdown() {
   toggleDropdown("coreDropdown");
 }
 
-function toggleDir() {
-  if (direction === "en-ru") {
-    direction = "ru-en";
-  } else if (direction === "ru-en") {
-    direction = "all";
-  } else {
-    direction = "en-ru";
+function setDir(d) {
+  direction = d;
+  document.getElementById("dirAll").classList.toggle("active",  d === "all");
+  document.getElementById("dirEnTr").classList.toggle("active", d === "en-ru");
+  document.getElementById("dirTrEn").classList.toggle("active", d === "ru-en");
+  // Auto-disable keyboard if direction is no longer Tr → EN
+  if (d !== "ru-en" && keyboardOn) {
+    keyboardOn = false;
+    document.getElementById("kbBtn").classList.remove("active");
   }
-  document.getElementById("dirBtn").textContent =
-    direction === "en-ru" ? "EN → Translation" :
-    direction === "ru-en" ? "Translation → EN" : "All";
-  document.getElementById("dirBtn").classList.toggle("active", direction === "ru-en" || direction === "all");
   render();
 }
 
 function toggleKeyboard() {
-  if (direction !== "ru-en" && activeMode === "study") {
-    alert("Switch direction to Translation → EN first");
-    return;
+  if (!keyboardOn && direction !== "ru-en" && activeMode === "study") {
+    // Auto-switch to Tr → EN when enabling keyboard
+    setDir("ru-en");
   }
   keyboardOn = !keyboardOn;
   document.getElementById("kbBtn").classList.toggle("active", keyboardOn);
@@ -3121,7 +3148,7 @@ function submitCMAnswer(slot, given, e) {
   const word = cmState.words.find(w => w.slot === slot);
   if (!word) return;
 
-  cmState.answered.push({ slot, correct: word.correct, given: given.toLowerCase().trim() });
+  cmState.answered.push({ slot, correct: word.correct.toLowerCase().trim(), given: given.toLowerCase().trim() });
 
   const unanswered = cmState.words
     .filter(w => !cmState.answered.find(a => a.slot === w.slot))
@@ -3269,15 +3296,6 @@ document.getElementById("card").addEventListener("dblclick", e => {
   toggleStar();
 });
 
-// Double tap for mobile
-document.addEventListener("touchend", e => {
-  const now = Date.now();
-  if (now - lastTapTime < 300) { // double tap
-    toggleStar();
-  }
-  lastTapTime = now;
-});
-
 // ===================== CLOSE DROPDOWNS =====================
 document.addEventListener("click", e => {
   if (!e.target.closest("#coreDropdown"))  document.getElementById("coreDropdown").classList.remove("open");
@@ -3285,13 +3303,26 @@ document.addEventListener("click", e => {
   if (!e.target.closest("#delayDropdown"))  document.getElementById("delayDropdown").classList.remove("open");
 });
 
-// Touch swipe
+// Touch swipe + double-tap
 let touchStartX = 0;
 document.addEventListener("touchstart", e => { touchStartX = e.touches[0].clientX; });
-document.addEventListener("touchend",   e => {
+document.addEventListener("touchend", e => {
   const dx = e.changedTouches[0].clientX - touchStartX;
-  if (dx >  50) prevWord();
-  if (dx < -50) nextWord();
+
+  // Swipe — navigate and reset tap timer so swipe never counts as a tap
+  if (dx > 50)  { prevWord(); lastTapTime = 0; return; }
+  if (dx < -50) { nextWord(); lastTapTime = 0; return; }
+
+  // Short move = tap, check for double-tap (200ms window)
+  if (Math.abs(dx) <= 10) {
+    const now = Date.now();
+    if (now - lastTapTime < 200) {
+      toggleStar();
+      lastTapTime = 0; // reset so triple tap doesn't chain
+    } else {
+      lastTapTime = now;
+    }
+  }
 });
 
 // ===================== SUPABASE =====================
