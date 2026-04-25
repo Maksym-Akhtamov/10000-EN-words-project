@@ -2927,8 +2927,17 @@ function renderCMInput(task) {
   const container = document.getElementById("testOptions");
   const s = cmState;
 
-  // Build sentence with blanks
-  let sentenceHtml = task.sentence;
+  // Build sentence: first create it with placeholders [1][2][3][4], then replace with blanks
+  let sentenceWithBlanks = task.sentence;
+  
+  // Replace actual words with ___ (hide the words, show only blanks with slot numbers)
+  task.words.forEach(w => {
+    const regex = new RegExp(`\\b${w.correct}\\b`, 'gi');
+    sentenceWithBlanks = sentenceWithBlanks.replace(regex, `[${w.slot}]`);
+  });
+
+  // Now build the display HTML with answered/unanswered slots
+  let sentenceHtml = sentenceWithBlanks;
   for (let i = 1; i <= 4; i++) {
     const isActive = s.activeSlot === i - 1;
     const answered = s.answered.find(a => a.slot === i);
@@ -2937,9 +2946,9 @@ function renderCMInput(task) {
       const ok = answered.given === answered.correct;
       content = `<span style="color:${ok ? "#4ade80" : "#f87171"};font-weight:700;border-bottom:2px solid ${ok ? "#4ade80" : "#f87171"};padding:0 4px">${answered.given}</span>`;
     } else if (isActive) {
-      content = `<span style="display:inline-block;min-width:80px;border-bottom:2px solid var(--accent);padding:0 4px;color:var(--accent);font-weight:600">[${i}]</span>`;
+      content = `<span style="display:inline-block;min-width:80px;border-bottom:2px solid var(--accent);padding:0 4px;color:var(--accent);font-weight:600">___</span>`;
     } else {
-      content = `<span style="display:inline-block;min-width:60px;border-bottom:2px solid var(--muted);padding:0 4px;color:var(--muted)">[${i}]</span>`;
+      content = `<span style="display:inline-block;min-width:60px;border-bottom:2px solid var(--muted);padding:0 4px;color:var(--muted)">___</span>`;
     }
     sentenceHtml = sentenceHtml.replace(`[${i}]`, content);
   }
