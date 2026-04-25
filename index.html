@@ -2265,6 +2265,7 @@ function checkMemoryAnswer() {
   });
 
   if (allCorrect) {
+    memoryState.phase = "correct";
     showResult("✓ Correct!", "correct");
     setTimeout(() => {
       nextWord();
