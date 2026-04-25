@@ -2726,6 +2726,7 @@ function saveCMCache(tasks) {
 }
 
 function loadCMTasks() {
+  // Clear any old cache that has pre-remap slot numbering
   const cached = loadCMCache();
   cmStarted = false;
   cmState = null;
@@ -2970,19 +2971,19 @@ function renderCMInput(task) {
   const container = document.getElementById("testOptions");
   const s = cmState;
 
-  // Build sentence: first create it with placeholders [1][2][3][4], then replace with blanks
-  let sentenceWithBlanks = task.sentence;
-  
-  // Replace actual words with ___ (hide the words, show only blanks with slot numbers)
-  cmState.words.forEach(w => {
-    const regex = new RegExp(`\\b${w.correct}\\b`, 'gi');
-    sentenceWithBlanks = sentenceWithBlanks.replace(regex, `[${w.slot}]`);
-  });
+  // task.sentence already has [1][2][3][4] placeholders in left-to-right order
+  // Always derive activeSlot from first unanswered slot (sorted = left-to-right)
+  const unanswered = cmState.words
+    .filter(w => !s.answered.find(a => a.slot === w.slot))
+    .sort((a, b) => a.slot - b.slot);
+  if (unanswered.length > 0) {
+    s.activeSlot = unanswered[0].slot; // always sync to first unanswered
+  }
 
-  // Now build the display HTML with answered/unanswered slots
-  let sentenceHtml = sentenceWithBlanks;
+  // Build sentence HTML — replace [1][2][3][4] with styled spans
+  let sentenceHtml = task.sentence;
   for (let i = 1; i <= 4; i++) {
-    const isActive = s.activeSlot === i;  // compare slot number directly
+    const isActive = s.activeSlot === i;
     const answered = s.answered.find(a => a.slot === i);
     let content;
     if (answered) {
@@ -2996,8 +2997,6 @@ function renderCMInput(task) {
     sentenceHtml = sentenceHtml.replace(`[${i}]`, content);
   }
 
-  // Find next unanswered slot (sorted by slot number to process in order 1, 2, 3, 4)
-  const unanswered = cmState.words.filter(w => !s.answered.find(a => a.slot === w.slot)).sort((a, b) => a.slot - b.slot);
   const currentWord = unanswered[0];
 
   let inputHtml = "";
@@ -3057,12 +3056,10 @@ function submitCMAnswer(slot, given, e) {
 
   cmState.answered.push({ slot, correct: word.correct, given: given.toLowerCase().trim() });
 
-  // Move to next unanswered slot (sorted by slot number = left-to-right in sentence)
   const unanswered = cmState.words
     .filter(w => !cmState.answered.find(a => a.slot === w.slot))
     .sort((a, b) => a.slot - b.slot);
   if (unanswered.length > 0) {
-    cmState.activeSlot = unanswered[0].slot;  // slot number, not index
     renderCMInput(task);
   } else {
     // All answered — show result
