@@ -2845,17 +2845,23 @@ function renderCMMode(words) {
 
 function buildCMState(task) {
   const times = CM_TIMES[cmDifficulty];
-  task.words.sort((a, b) => a.slot - b.slot);
+
+  const words = [...cmState.words].sort((a, b) => a.slot - b.slot);
+
   return {
     taskIdx: cmRound % cmTasks.length,
-    phase: "show",   // show → pause → input → result
+    phase: "show",
     showTime: times.show * 1000,
     pauseTime: times.pause * 1000,
-    inputs: new Array(4).fill(""),
-    selected: null,   // for choice mode: which slot is active
-    activeSlot: 0,    // choice mode: which blank is being answered
-    answered: [],     // [{slot, correct, given}]
-    timer: null
+
+    inputs: new Array(words.length).fill(""),
+
+    selected: null,
+    activeSlot: 0,
+    answered: [],
+    timer: null,
+
+    words // 👈 ключ
   };
 }
 
@@ -2865,7 +2871,7 @@ function renderCMPhase(task) {
 
   if (s.phase === "show") {
     // Show only 4 words to memorize
-    const wordList = task.words.map(w =>
+    const wordList = cmState.words.map(w =>
       `<div style="padding:12px 0;font-size:24px;font-weight:700;color:var(--text);letter-spacing:0.02em">${w.correct}</div>`
     ).join("");
     container.innerHTML = `
@@ -2932,7 +2938,7 @@ function renderCMInput(task) {
   let sentenceWithBlanks = task.sentence;
   
   // Replace actual words with ___ (hide the words, show only blanks with slot numbers)
-  task.words.forEach(w => {
+  cmState.words.forEach(w => {
     const regex = new RegExp(`\\b${w.correct}\\b`, 'gi');
     sentenceWithBlanks = sentenceWithBlanks.replace(regex, `[${w.slot}]`);
   });
@@ -2955,7 +2961,7 @@ function renderCMInput(task) {
   }
 
   // Find next unanswered slot (sorted by slot number to process in order 1, 2, 3, 4)
-  const unanswered = task.words.filter(w => !s.answered.find(a => a.slot === w.slot)).sort((a, b) => a.slot - b.slot);
+  const unanswered = cmState.words.filter(w => !s.answered.find(a => a.slot === w.slot)).sort((a, b) => a.slot - b.slot);
   const currentWord = unanswered[0];
 
   let inputHtml = "";
@@ -3010,13 +3016,13 @@ function submitCMAnswer(slot, given, e) {
   e?.stopPropagation();
   if (!given) return;
   const task = cmTasks[cmRound % cmTasks.length];
-  const word = task.words.find(w => w.slot === slot);
+  const word = cmState.words.find(w => w.slot === slot);
   if (!word) return;
 
   cmState.answered.push({ slot, correct: word.correct, given: given.toLowerCase().trim() });
 
   // Move to next unanswered slot
-  const unanswered = task.words.filter(w => !cmState.answered.find(a => a.slot === w.slot));
+  const unanswered = cmState.words.filter(w => !cmState.answered.find(a => a.slot === w.slot));
   if (unanswered.length > 0) {
     cmState.activeSlot = unanswered[0].slot - 1;
     renderCMInput(task);
