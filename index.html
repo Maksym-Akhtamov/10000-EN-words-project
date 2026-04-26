@@ -2816,6 +2816,7 @@ function prevWord() {
 // ===================== FLIP =====================
 function flipCard() {
   if (activeMode === "choice" || activeMode === "truefalse" || activeMode === "matches" || activeMode === "ai" || activeMode === "audio") return;
+  if (activeMode === "study" && examState?.phase === 1) return;
   flipped = !flipped;
   document.getElementById("cardInner").classList.toggle("flipped", flipped);
 }
@@ -4545,7 +4546,7 @@ function startExam() {
   closeExamModal();
   examState = {
     phase: 0,
-    setId: currentSet,
+    setId: sets[currentSet].id,
     failed: false,
     aiErrors: [],
     audioPlayCounts: {},
