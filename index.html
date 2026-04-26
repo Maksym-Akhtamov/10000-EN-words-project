@@ -400,8 +400,8 @@
     }
     .set-btn:hover { border-color: var(--accent); color: var(--text); background: rgba(79,142,247,0.1); }
     .set-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-    .set-btn.done { border-color: var(--correct); color: var(--correct); }
-    .set-btn.done.active { background: var(--correct); color: #000; }
+    .set-btn.done { border-color: var(--gold); color: var(--gold); background: rgba(251,191,36,0.12); }
+    .set-btn.done.active { background: rgba(251,191,36,0.2); color: #000; border-color: var(--gold); }
 
     /* ===== CUSTOM SETS ===== */
     #customSetsPanel { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
@@ -1437,13 +1437,13 @@
 </button>
 
 <!-- ===================== AUTH MODAL ===================== -->
-<div id="authOverlay" onclick="closeAuth()" style="
+<div id="authOverlay" onclick="if(event.target===this) closeAuth()" style="
   display:none; position:fixed; inset:0; z-index:2000;
   background:rgba(0,0,0,0.75); backdrop-filter:blur(8px);
   -webkit-backdrop-filter:blur(8px);
 "></div>
 
-<div id="authModal" style="
+<div id="authModal" onclick="event.stopPropagation()" style="
   display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
   z-index:2001; width:min(420px, 92vw);
   background:#141820; border:1px solid rgba(255,255,255,0.1);
@@ -3958,7 +3958,7 @@ function updateAllUI() {
     activeMode === "choice" ? "block" : "none";
 
   document.getElementById("aiDifficultySetting").style.display =
-    activeMode === "ai" ? "block" : "none";
+    (activeMode === "ai" && !examState) ? "block" : "none";
 
   document.getElementById("cmDifficultySetting").style.display =
     activeMode === "contextmemory" ? "block" : "none";
@@ -4149,7 +4149,7 @@ function renderAuthModal() {
         </div>
       </button>
       <div class="auth-separator"></div>
-      <button class="auth-signout" onclick="signOut()">Sign Out</button>
+      <button type="button" class="auth-signout" onclick="event.stopPropagation(); signOut()">Sign Out</button>
     `;
     return;
   }
@@ -4500,8 +4500,8 @@ const EXAM_PHASES = [
   {
     num: 4, id: "ai", icon: "⚡",
     name: "Context Mode",
-    desc: "Fill in the blank. Up to 3 mistakes allowed (AI margin).",
-    rules: ["Autoplay every 10 seconds","Shuffle is on","Up to 3 mistakes allowed","4th mistake ends the exam","Review AI available after phase"]
+    desc: "Generate a fresh Medium-level AI task list and fill in the blanks. No autoplay.",
+    rules: ["Shuffle is on","Generate fresh Medium tasks","Type the missing word","Up to 3 mistakes allowed","4th mistake ends the exam"]
   }
 ];
 
@@ -4559,6 +4559,13 @@ function startExam() {
   // Pre-fetch AI tasks for phase 4 in background right now
   examPrefetchAI();
   examNextPhase();
+}
+
+function focusExamInput() {
+  const input = document.getElementById("answerInput");
+  if (input && input.offsetParent !== null) {
+    input.focus();
+  }
 }
 
 async function examPrefetchAI() {
@@ -4623,6 +4630,7 @@ function examStartPhase(phaseNum) {
     document.getElementById("autoBtn").classList.add("active");
     updateExamBar();
     render();
+    setTimeout(focusExamInput, 80);
   });
 }
 
@@ -4631,8 +4639,10 @@ function examStartPhase4() {
   examRunCountdown(() => {
     examState.phase4Started = true;
     render();
+    setTimeout(focusExamInput, 80);
   });
 }
+
 
 function updateExamBar() {
   if (!examState) return;
@@ -4706,8 +4716,15 @@ function examApplyPhaseSettings(phase) {
     autoDelay = 10;
     examState.aiErrorCount = 0;
     examState.aiErrors = [];
-    // Ensure AI tasks loaded
-    if (!aiTasks.length) loadAITasks();
+    // Force Medium difficulty and regenerate fresh phase-4 tasks.
+    aiDifficulty = "medium";
+    document.getElementById("aiEasyBtn").classList.remove("active");
+    document.getElementById("aiMediumBtn").classList.add("active");
+    document.getElementById("aiHardBtn").classList.remove("active");
+    localStorage.removeItem(getAIKey());
+    delete aiTasksCache[getAIKey()];
+    aiTasks = null;
+    startAIGeneration();
   }
   render();
 }
