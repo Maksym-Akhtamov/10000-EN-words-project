@@ -203,6 +203,128 @@
     .toggle-switch.on { background: var(--accent); }
     .toggle-switch.on::after { transform: translateX(16px); }
 
+    /* ===== EXAM ENTRY BUTTON ===== */
+    .exam-entry-btn {
+      width: 100%; margin-top: 18px;
+      background: linear-gradient(135deg, rgba(251,191,36,0.1), rgba(251,191,36,0.06));
+      border: 1px solid rgba(251,191,36,0.3);
+      color: var(--gold);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px; font-weight: 600;
+      padding: 11px 16px; border-radius: 12px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: all 0.2s;
+      -webkit-tap-highlight-color: transparent; user-select: none;
+    }
+    .exam-entry-btn svg { width: 15px; height: 15px; flex-shrink: 0; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .exam-entry-btn:hover { background: rgba(251,191,36,0.16); border-color: rgba(251,191,36,0.5); }
+
+    /* ===== EXAM STATUS BAR ===== */
+    #examBar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      background: rgba(12,15,20,0.96);
+      border-bottom: 1px solid rgba(251,191,36,0.25);
+      backdrop-filter: blur(10px);
+    }
+    #examBarInner {
+      max-width: 1100px; margin: 0 auto;
+      padding: 10px 24px;
+      display: flex; align-items: center; gap: 16px;
+    }
+    #examBarPhase { font-size: 13px; font-weight: 600; color: var(--gold); flex: 1; }
+    #examBarErrors { font-size: 12px; color: var(--muted); font-weight: 500; }
+    #examBar button {
+      background: transparent; border: 1px solid rgba(248,113,113,0.3);
+      color: var(--wrong); font-family: 'DM Sans', sans-serif;
+      font-size: 11px; font-weight: 600;
+      padding: 5px 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s;
+    }
+    #examBar button:hover { background: rgba(248,113,113,0.1); }
+    body.exam-active { padding-top: 46px; }
+    body.exam-active .shuffle-pill,
+    body.exam-active #kbBtn,
+    body.exam-active #dirSegWrap,
+    body.exam-active #autoBtn,
+    body.exam-active .delay-btn,
+    body.exam-active .panel-header,
+    body.exam-active #coreDropdown,
+    body.exam-active #aiDropdown,
+    body.exam-active .toggle-switch,
+    body.exam-active .exam-entry-btn { pointer-events: none; opacity: 0.35; }
+
+    /* ===== EXAM OVERLAY / MODAL ===== */
+    .exam-overlay {
+      position: fixed; inset: 0; z-index: 400;
+      background: rgba(0,0,0,0.75); backdrop-filter: blur(6px);
+      display: flex; align-items: center; justify-content: center; padding: 24px;
+    }
+    .exam-modal {
+      background: var(--surface); border: 1px solid rgba(251,191,36,0.2);
+      border-radius: 22px; padding: 36px 32px;
+      max-width: 520px; width: 100%;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+      max-height: 90vh; overflow-y: auto;
+    }
+    .exam-modal h2 { font-family: 'DM Serif Display', serif; font-size: 26px; color: var(--text); margin-bottom: 6px; }
+    .exam-subtitle { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+    .exam-phase-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+    .exam-phase-item {
+      display: flex; align-items: flex-start; gap: 12px;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 12px; padding: 12px 14px;
+    }
+    .exam-phase-num {
+      width: 24px; height: 24px; border-radius: 50%;
+      background: rgba(251,191,36,0.15); border: 1px solid rgba(251,191,36,0.3);
+      color: var(--gold); font-size: 11px; font-weight: 700;
+      display: grid; place-items: center; flex-shrink: 0; margin-top: 1px;
+    }
+    .exam-phase-name { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+    .exam-phase-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+    .exam-warning {
+      background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.2);
+      border-radius: 10px; padding: 10px 14px;
+      font-size: 12px; color: var(--wrong); margin-bottom: 24px; line-height: 1.5;
+    }
+    .exam-btn-row { display: flex; gap: 10px; }
+    .exam-btn-primary {
+      flex: 1; background: var(--gold); border: none; color: #0c0f14;
+      font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 700;
+      padding: 13px 20px; border-radius: 12px; cursor: pointer; transition: all 0.2s;
+    }
+    .exam-btn-primary:hover { filter: brightness(1.1); }
+    .exam-btn-secondary {
+      background: transparent; border: 1px solid var(--border); color: var(--muted);
+      font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+      padding: 13px 20px; border-radius: 12px; cursor: pointer; transition: all 0.2s;
+    }
+    .exam-btn-secondary:hover { border-color: var(--border2); color: var(--text); }
+    .exam-phase-start { text-align: center; }
+    .exam-phase-start .phase-icon { font-size: 48px; margin-bottom: 12px; }
+    .exam-phase-start h3 { font-family: 'DM Serif Display', serif; font-size: 24px; color: var(--text); margin-bottom: 8px; }
+    .exam-phase-start p { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 24px; }
+    .exam-phase-rules {
+      background: var(--surface2); border-radius: 12px; padding: 14px 16px;
+      text-align: left; margin-bottom: 24px; list-style: none;
+    }
+    .exam-phase-rules li {
+      font-size: 12px; color: var(--muted); line-height: 1.9;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .exam-phase-rules li::before { content: "·"; color: var(--gold); font-size: 18px; line-height: 1; }
+    .exam-verdict-card {
+      background: var(--surface2); border-radius: 12px; padding: 14px 16px;
+      margin-bottom: 10px; border-left: 3px solid transparent;
+    }
+    .exam-verdict-card.ai-error { border-left-color: var(--correct); }
+    .exam-verdict-card.user-error { border-left-color: var(--wrong); }
+    .exam-verdict-tag { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+    .exam-verdict-card.ai-error .exam-verdict-tag { color: var(--correct); }
+    .exam-verdict-card.user-error .exam-verdict-tag { color: var(--wrong); }
+    .exam-verdict-sentence { font-size: 13px; color: var(--text); margin-bottom: 4px; line-height: 1.5; }
+    .exam-verdict-explanation { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
     /* ===== REGEN BUTTONS ===== */
     .regen-btn {
       width: 100%;
@@ -1112,6 +1234,14 @@
           </div>
         </div>
 
+        <!-- EXAM BUTTON -->
+        <button class="exam-entry-btn" onclick="openExamModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+          </svg>
+          Exam Mode
+        </button>
+
       </div>
     </div>
   </aside>
@@ -1215,7 +1345,21 @@
 
 </div>
 
-<!-- ===================== CORNER AUTH ===================== -->
+<!-- ===================== EXAM STATUS BAR ===================== -->
+<div id="examBar" style="display:none">
+  <div id="examBarInner">
+    <span id="examBarPhase"></span>
+    <span id="examBarErrors"></span>
+    <button onclick="abortExam()">✕ Abort</button>
+  </div>
+</div>
+
+<!-- ===================== EXAM MODAL ===================== -->
+<div id="examModal" class="exam-overlay" style="display:none" onclick="if(event.target===this){}">
+  <div class="exam-modal">
+    <div id="examModalContent"></div>
+  </div>
+</div>
 <style>
   #cornerAuth {
     position: fixed; top: 18px; right: 22px; z-index: 500;
@@ -1728,10 +1872,20 @@ function buildTransHTML(word) {
 }
 
 function renderAudioMode(word) {
+  const playCount = examState?.phase === 3 ? (examState.audioPlayCounts[word.id] || 0) : 0;
+  const blocked = examState?.phase === 3 && playCount >= 2;
+
   document.getElementById("front").innerHTML =
-    `<div style="font-size:52px;opacity:.7">🔊</div>`;
+    `<div style="font-size:52px;opacity:${blocked ? 0.3 : 0.7}">🔊</div>
+     ${blocked ? `<div style="font-size:12px;color:var(--wrong);margin-top:8px">Max plays reached</div>` : ""}`;
   document.getElementById("back").innerHTML = buildTransHTML(word);
-  setTimeout(() => speak(word.en), 250);
+
+  if (!blocked) {
+    if (examState?.phase === 3) {
+      examState.audioPlayCounts[word.id] = playCount + 1;
+    }
+    setTimeout(() => speak(word.en), 250);
+  }
 }
 
 function renderTrueFalseMode(word, words) {
@@ -2309,8 +2463,11 @@ function handleChoice(selected, correct, container, wordId = null) {
   } else {
     showResult(`✗ Try again`, "wrong");
     scheduleTutorReview(wordId);
+    if (examState && examState.phase >= 1 && examState.phase <= 3) {
+      examOnWrongAnswer(wordId, `wrong option selected`);
+      return;
+    }
     flashWrong(wordId);
-    // Remove wrong class after a moment to allow retry
     setTimeout(() => {
       allBtns.forEach(b => {
         if (b.dataset.val === selected) b.classList.remove("wrong-ans");
@@ -2492,6 +2649,16 @@ function nextWord() {
   tfPrompt = null;
   matchesState = null;
   tickTutorQueue();
+
+  // Exam: when we wrap back to 0, phase is done
+  if (examState && examState.phase >= 1 && examState.phase <= 3 && current === 0) {
+    stopAuto();
+    autoPlay = false;
+    document.getElementById("autoBtn").classList.remove("active");
+    examNextPhase();
+    return;
+  }
+
   render();
   if (keyboardOn) {
     const inp = document.getElementById("answerInput");
@@ -2573,12 +2740,12 @@ function checkAnswer() {
     inp.className = "input-wrong";
     showResult(`✗  ${correct}`, "wrong");
     scheduleTutorReview(activeWord.id);
+    if (examState?.active !== false && examState?.phase >= 1 && examState?.phase <= 3) {
+      examOnWrongAnswer(activeWord.id, `"${inp.value || "(empty)"}" instead of "${correct}"`);
+      return;
+    }
     flashWrong(activeWord.id);
-
-    setTimeout(() => {
-      inp.value = "";
-      inp.className = "";
-    }, 700);
+    setTimeout(() => { inp.value = ""; inp.className = ""; }, 700);
   }
 }
 
@@ -3015,6 +3182,11 @@ function speakCurrent() {
   if (!words.length) return;
   const w = getCurrentWord(words);
   if (!w) return;
+  if (examState?.phase === 3) {
+    const count = examState.audioPlayCounts[w.id] || 0;
+    if (count >= 2) return; // blocked
+    examState.audioPlayCounts[w.id] = count + 1;
+  }
   speak(w.en);
 }
 
@@ -3545,6 +3717,21 @@ function renderCMResult(task) {
 
   if (!allCorrect) flashWrong(null);
 
+  // ── EXAM PHASE 4 HOOK ──
+  if (examState && examState.phase === 4) {
+    const wrongAnswers = cmState.answered.filter(a => a.given !== a.correct);
+    wrongAnswers.forEach(a => {
+      examOnCMResult(true, {
+        sentence: task.sentence,
+        slot: a.slot,
+        correct: a.correct,
+        userAnswer: a.given,
+        options: task.words.find(w => w.slot === a.slot)?.options || []
+      });
+    });
+    if (allCorrect) examOnCMResult(false, null);
+  }
+
   const rows = cmState.answered.map(a => {
     const ok = a.given === a.correct;
     return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
@@ -3585,6 +3772,11 @@ function startCMRound() {
 function nextCMRound() {
   cmRound++;
   cmState = null;
+  // In exam phase 4 check if all rounds done
+  if (examState && examState.phase === 4 && cmRound >= cmTasks.length) {
+    examPhase4Done();
+    return;
+  }
   render();
 }
 
@@ -4112,6 +4304,448 @@ function renderHelp() {
 document.addEventListener("keydown", e => {
   if (e.key === "Escape") { closeHelp(); closeAuth(); }
 });
+
+// ===================== EXAM =====================
+let examState = null;
+
+const EXAM_PHASES = [
+  {
+    num: 1, id: "study", icon: "⌨️",
+    name: "Study + Keyboard",
+    desc: "Type the English word from translation. Shuffle & Auto (5s) enabled.",
+    rules: ["Autoplay every 5 seconds","Shuffle is on","Type the EN word from translation","Any wrong answer ends the exam"]
+  },
+  {
+    num: 2, id: "truefalse", icon: "✅",
+    name: "True / False",
+    desc: "Decide if the translation is correct. Fast pace — 2s autoplay.",
+    rules: ["Autoplay every 2 seconds","Shuffle is on","Any wrong answer ends the exam"]
+  },
+  {
+    num: 3, id: "audio", icon: "🔊",
+    name: "Audio",
+    desc: "Listen and remember. Max 2 plays per word. 10s autoplay.",
+    rules: ["Max 2 listens per word","Autoplay every 10 seconds","Shuffle is on","Any wrong answer ends the exam"]
+  },
+  {
+    num: 4, id: "contextmemory", icon: "🔗",
+    name: "Context Memory",
+    desc: "Fill in the blanks. Up to 3 mistakes allowed (AI margin).",
+    rules: ["Autoplay every 10 seconds","Shuffle is on","Up to 3 mistakes allowed","4th mistake ends the exam","Review AI available after phase"]
+  }
+];
+
+function openExamModal() {
+  const words = getWords();
+  if (words.length < 4) {
+    alert("Need at least 4 words in the current set to take the Exam.");
+    return;
+  }
+  showExamModal(`
+    <h2>🎓 Exam Mode</h2>
+    <div class="exam-subtitle">Complete all 4 phases without failing to mark this set as learned.</div>
+    <div class="exam-phase-list">
+      ${EXAM_PHASES.map(p => `
+        <div class="exam-phase-item">
+          <div class="exam-phase-num">${p.num}</div>
+          <div>
+            <div class="exam-phase-name">${p.icon} ${p.name}</div>
+            <div class="exam-phase-desc">${p.desc}</div>
+          </div>
+        </div>`).join("")}
+    </div>
+    <div class="exam-warning">⚠️ Any mistake in phases 1–3 immediately ends the exam. Phase 4 allows up to 3 AI errors.</div>
+    <div class="exam-btn-row">
+      <button class="exam-btn-secondary" onclick="closeExamModal()">Cancel</button>
+      <button class="exam-btn-primary" onclick="startExam()">Start Exam →</button>
+    </div>
+  `);
+}
+
+function showExamModal(html) {
+  document.getElementById("examModalContent").innerHTML = html;
+  document.getElementById("examModal").style.display = "flex";
+}
+
+function closeExamModal() {
+  document.getElementById("examModal").style.display = "none";
+}
+
+function startExam() {
+  closeExamModal();
+  examState = {
+    phase: 0,
+    setId: currentSet,
+    failed: false,
+    aiErrors: [],
+    audioPlayCounts: {},
+    cmErrorCount: 0
+  };
+  document.body.classList.add("exam-active");
+  document.getElementById("examBar").style.display = "block";
+  // Ensure CM tasks are loaded before phase 4 needs them
+  if (!cmTasks.length) loadCMTasks();
+  examNextPhase();
+}
+
+function examNextPhase() {
+  examState.phase++;
+  if (examState.phase > 4) { examSuccess(); return; }
+
+  const ph = EXAM_PHASES[examState.phase - 1];
+  updateExamBar();
+
+  // Apply forced settings for this phase
+  examApplyPhaseSettings(examState.phase);
+
+  showExamModal(`
+    <div class="exam-phase-start">
+      <div class="phase-icon">${ph.icon}</div>
+      <h3>Phase ${ph.num} / 4 — ${ph.name}</h3>
+      <p>${ph.desc}</p>
+      <ul class="exam-phase-rules">
+        ${ph.rules.map(r => `<li>${r}</li>`).join("")}
+      </ul>
+      <div class="exam-btn-row">
+        <button class="exam-btn-primary" onclick="examStartPhase(${ph.num})">Ready — Start Phase ${ph.num}</button>
+      </div>
+    </div>
+  `);
+}
+
+function examApplyPhaseSettings(phase) {
+  // Reset common state
+  stopAuto();
+  shuffleOn = true;
+  current = 0;
+  frozenOrder = null;
+  tfPrompt = null;
+  resetMatchesProgress();
+  tutorQueue = []; tutorReviewWordId = null; tutorReviewStage = null; tutorReviewsShown = 0;
+  initOrder();
+
+  if (phase === 1) {
+    selectMode("study");
+    keyboardOn = true;
+    direction = "ru-en";
+    autoDelay = 5;
+  } else if (phase === 2) {
+    selectMode("truefalse");
+    keyboardOn = false;
+    direction = "all";
+    autoDelay = 2;
+  } else if (phase === 3) {
+    selectMode("audio");
+    keyboardOn = false;
+    direction = "all";
+    autoDelay = 10;
+    examState.audioPlayCounts = {};
+  } else if (phase === 4) {
+    selectMode("contextmemory");
+    keyboardOn = false;
+    direction = "all";
+    autoDelay = 10;
+    examState.cmErrorCount = 0;
+    examState.aiErrors = [];
+    cmRound = 0;
+    cmStarted = false;
+    cmState = null;
+  }
+  render();
+}
+
+function examStartPhase(phaseNum) {
+  closeExamModal();
+  // Start autoplay (except phase 4 which uses its own timer)
+  if (phaseNum !== 4) {
+    autoPlay = true;
+    startAuto();
+    document.getElementById("autoBtn").classList.add("active");
+  } else {
+    // Phase 4: start CM
+    cmStarted = true;
+    render();
+  }
+  updateExamBar();
+}
+
+function updateExamBar() {
+  if (!examState) return;
+  const ph = EXAM_PHASES[examState.phase - 1];
+  if (!ph) return;
+  document.getElementById("examBarPhase").textContent =
+    `🎓 Phase ${examState.phase} / 4 — ${ph.name}`;
+  const errText = examState.phase === 4
+    ? `Mistakes: ${examState.cmErrorCount} / 3`
+    : "Zero mistakes allowed";
+  document.getElementById("examBarErrors").textContent = errText;
+}
+
+function examFail(reason) {
+  if (!examState) return;
+  stopAuto();
+  examState.failed = true;
+  document.body.classList.remove("exam-active");
+  document.getElementById("examBar").style.display = "none";
+  autoPlay = false;
+  // Restore normal settings
+  examRestoreSettings();
+  showExamModal(`
+    <div class="exam-phase-start">
+      <div class="phase-icon">💔</div>
+      <h3>Exam Failed</h3>
+      <p style="color:var(--wrong)">${reason}</p>
+      <p style="margin-top:8px">Don't give up — review the words and try again!</p>
+      <div class="exam-btn-row" style="margin-top:24px">
+        <button class="exam-btn-secondary" onclick="closeExamModal(); examState=null;">Close</button>
+        <button class="exam-btn-primary" onclick="closeExamModal(); openExamModal();">Try Again</button>
+      </div>
+    </div>
+  `);
+}
+
+function abortExam() {
+  if (!confirm("Abort the exam? All progress will be lost.")) return;
+  stopAuto();
+  autoPlay = false;
+  examState = null;
+  document.body.classList.remove("exam-active");
+  document.getElementById("examBar").style.display = "none";
+  examRestoreSettings();
+  render();
+}
+
+function examRestoreSettings() {
+  keyboardOn = false;
+  direction = "all";
+  shuffleOn = false;
+  autoDelay = 3;
+  current = 0; frozenOrder = null;
+  initOrder(); render();
+  document.getElementById("autoBtn").classList.remove("active");
+  updateAllUI();
+}
+
+// Called from checkAnswer() when in exam
+function examOnWrongAnswer(wordId, reason) {
+  if (!examState || examState.phase === 4) return;
+  flashWrong(wordId);
+  examFail(`Phase ${examState.phase} failed: ${reason || "wrong answer"}.`);
+}
+
+// Called from renderCMResult / submitCMAnswer for phase 4
+function examOnCMResult(hasError, errorData) {
+  if (!examState || examState.phase !== 4) return;
+  if (!hasError) {
+    // Check if all rounds done → move to verdict
+    if (cmRound >= cmTasks.length - 1) {
+      examPhase4Done();
+    }
+    return;
+  }
+  examState.cmErrorCount++;
+  if (errorData) examState.aiErrors.push(errorData);
+  updateExamBar();
+  if (examState.cmErrorCount > 3) {
+    stopAuto();
+    examFail(`Phase 4 failed: too many mistakes (${examState.cmErrorCount}).`);
+    return;
+  }
+  if (cmRound >= cmTasks.length - 1) {
+    examPhase4Done();
+  }
+}
+
+// Called when CM phase words are exhausted
+function examPhase4Done() {
+  stopAuto();
+  autoPlay = false;
+  if (examState.aiErrors.length === 0) {
+    // Perfect — pass immediately
+    examSuccess();
+    return;
+  }
+  // Show Review AI screen
+  showExamModal(`
+    <div class="exam-phase-start">
+      <div class="phase-icon">🤖</div>
+      <h3>Phase 4 Complete</h3>
+      <p>You made <strong style="color:var(--wrong)">${examState.cmErrorCount}</strong> mistake${examState.cmErrorCount > 1 ? "s" : ""} in Context Memory.</p>
+      <p style="margin-top:8px;color:var(--muted)">Let AI review whether these were genuinely your errors or AI mistakes.</p>
+      <div class="exam-btn-row" style="margin-top:24px">
+        <button class="exam-btn-secondary" onclick="examSelfFail()">I made real mistakes</button>
+        <button class="exam-btn-primary" onclick="examRunReviewAI()">Review AI ⚡</button>
+      </div>
+    </div>
+  `);
+}
+
+function examSelfFail() {
+  examFail("You acknowledged your own mistakes in Phase 4.");
+}
+
+async function examRunReviewAI() {
+  showExamModal(`
+    <div class="exam-phase-start">
+      <div class="phase-icon">⏳</div>
+      <h3>Reviewing with AI...</h3>
+      <p>Checking ${examState.aiErrors.length} disputed answer${examState.aiErrors.length > 1 ? "s" : ""}...</p>
+    </div>
+  `);
+
+  const errorsPayload = examState.aiErrors.map((e, i) => ({
+    index: i,
+    sentence: e.sentence,
+    slot: e.slot,
+    correct: e.correct,
+    userAnswer: e.userAnswer,
+    options: e.options
+  }));
+
+  const prompt = `You are an exam auditor checking AI-generated fill-in-the-blank exercises.
+
+For each task below, determine:
+1. Was the stated correct answer genuinely the best fit in context?
+2. Could the user's answer also be valid in context?
+3. Were the distractor options fair (no valid answers disguised as wrong)?
+
+VERDICT rules:
+- "AI_ERROR": the task was flawed (wrong correct answer, user's answer was valid, or no correct option in list)
+- "USER_ERROR": the task was fair and the user's answer was clearly wrong
+
+Return ONLY a JSON array, no markdown:
+[{"index":0,"verdict":"AI_ERROR"|"USER_ERROR","explanation":"brief reason","correctAnswer":"word"}]
+
+Tasks:
+${JSON.stringify(errorsPayload)}`;
+
+  try {
+    const res = await fetch("/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ words: ["__exam_review__"], type: "exam_review", _prompt: prompt })
+    });
+
+    // Since our generate.js doesn't have exam_review type yet,
+    // we call the Anthropic API directly from frontend via our proxy
+    // Actually we POST with a special wrapper — see generate.js update needed.
+    // For now use the response:
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    const verdicts = Array.isArray(data) ? data : JSON.parse(data.content?.[0]?.text || "[]");
+    examShowVerdicts(verdicts);
+  } catch (e) {
+    showExamModal(`
+      <div class="exam-phase-start">
+        <div class="phase-icon">⚠️</div>
+        <h3>Review Failed</h3>
+        <p>Could not reach AI reviewer: ${e.message}</p>
+        <div class="exam-btn-row" style="margin-top:24px">
+          <button class="exam-btn-secondary" onclick="examSelfFail()">Fail Exam</button>
+          <button class="exam-btn-primary" onclick="examRunReviewAI()">Retry</button>
+        </div>
+      </div>
+    `);
+  }
+}
+
+function examShowVerdicts(verdicts) {
+  const allAIError = verdicts.every(v => v.verdict === "AI_ERROR");
+  const cards = verdicts.map((v, i) => {
+    const err = examState.aiErrors[v.index] || examState.aiErrors[i] || {};
+    const cls = v.verdict === "AI_ERROR" ? "ai-error" : "user-error";
+    const tag = v.verdict === "AI_ERROR" ? "✓ AI Error" : "✗ Your Error";
+    return `<div class="exam-verdict-card ${cls}">
+      <div class="exam-verdict-tag">${tag}</div>
+      <div class="exam-verdict-sentence">${err.sentence || ""}</div>
+      <div class="exam-verdict-explanation">
+        <strong>Your answer:</strong> ${err.userAnswer || "—"} &nbsp;·&nbsp;
+        <strong>Correct:</strong> ${v.correctAnswer || err.correct || "—"}<br>
+        ${v.explanation}
+      </div>
+    </div>`;
+  }).join("");
+
+  const outcomeIcon  = allAIError ? "🎉" : "😔";
+  const outcomeTitle = allAIError ? "All errors were on AI's side!" : "Some errors were yours.";
+  const outcomeColor = allAIError ? "var(--correct)" : "var(--wrong)";
+
+  showExamModal(`
+    <h2>${outcomeIcon} AI Review</h2>
+    <div class="exam-subtitle" style="color:${outcomeColor};font-weight:600;margin-bottom:16px">${outcomeTitle}</div>
+    <div style="margin-bottom:20px">${cards}</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6">
+      ${allAIError
+        ? "AI confirms all disputed answers were its fault. Do you agree with this verdict?"
+        : "AI found mistakes on your side. Do you agree with this verdict?"}
+    </div>
+    <div class="exam-btn-row">
+      <button class="exam-btn-secondary" onclick="examDisagree(${allAIError})">Disagree</button>
+      <button class="exam-btn-primary" onclick="examAgree(${allAIError})">Agree</button>
+    </div>
+  `);
+}
+
+function examAgree(allAIError) {
+  if (allAIError) {
+    examSuccess();
+  } else {
+    examFail("You agreed that some mistakes were yours in Phase 4.");
+  }
+}
+
+function examDisagree(aiSaidPass) {
+  if (aiSaidPass) {
+    // AI said you passed, you disagree → you self-fail
+    examFail("You chose to self-fail after disagreeing with the AI verdict.");
+  } else {
+    // AI said you failed, you disagree → you pass despite AI
+    examSuccess(true);
+  }
+}
+
+function examSuccess(disputed = false) {
+  stopAuto();
+  autoPlay = false;
+  const setId = examState?.setId ?? currentSet;
+  document.body.classList.remove("exam-active");
+  document.getElementById("examBar").style.display = "none";
+
+  // Mark set as completed
+  if (!completedSets.includes(setId)) {
+    completedSets.push(setId);
+    localStorage.setItem("completedSets", JSON.stringify(completedSets));
+    scheduleSyncToCloud();
+  }
+  renderSets();
+  examRestoreSettings();
+
+  const note = disputed ? `<div style="font-size:12px;color:var(--muted);margin-top:8px">Passed via dispute — you were confident in your answers.</div>` : "";
+  showExamModal(`
+    <div class="exam-phase-start">
+      <div class="phase-icon">🏆</div>
+      <h3>Exam Passed!</h3>
+      <p style="color:var(--correct)">Set ${setId + 1} is now marked as <strong>Learned</strong>.</p>
+      ${note}
+      <div class="exam-btn-row" style="margin-top:24px">
+        <button class="exam-btn-primary" onclick="closeExamModal(); examState=null;">Done</button>
+      </div>
+    </div>
+  `);
+  examState = null;
+}
+
+// Audio play count guard for exam phase 3
+let examOrigSpeak = null;
+function examGuardedSpeak(text, wordId) {
+  if (examState?.phase === 3) {
+    const counts = examState.audioPlayCounts;
+    counts[wordId] = (counts[wordId] || 0) + 1;
+    if (counts[wordId] > 2) return; // block 3rd play
+  }
+  speak(text);
+}
 
 init();
 </script>

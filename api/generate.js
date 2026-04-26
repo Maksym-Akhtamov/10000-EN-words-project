@@ -17,10 +17,44 @@ export default async function handler(req, res) {
     return res.status(403).json({ error: "Forbidden" });
   }
 
-  const { words, difficulty = "medium", type = "ai" } = req.body;
+  const { words, difficulty = "medium", type = "ai", _prompt } = req.body;
 
   if (!words || !Array.isArray(words) || words.length === 0) {
     return res.status(400).json({ error: "Invalid words array" });
+  }
+
+  // Special: exam review uses a custom prompt passed directly
+  if (type === "exam_review") {
+    if (!_prompt) return res.status(400).json({ error: "Missing _prompt for exam_review" });
+    try {
+      const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: "gpt-4o",
+          messages: [{ role: "user", content: _prompt }],
+          temperature: 0.2,
+          max_tokens: 1000,
+        }),
+      });
+      if (!openaiRes.ok) {
+        const err = await openaiRes.text();
+        return res.status(502).json({ error: "OpenAI error: " + err });
+      }
+      const data = await openaiRes.json();
+      const text = data.choices[0].message.content;
+      const start = text.indexOf("[");
+      const end = text.lastIndexOf("]");
+      if (start === -1 || end === -1) return res.status(502).json({ error: "Invalid AI response" });
+      const parsed = JSON.parse(text.slice(start, end + 1));
+      res.setHeader("Cache-Control", "no-store");
+      return res.status(200).json(parsed);
+    } catch (e) {
+      return res.status(500).json({ error: "exam_review failed: " + e.message });
+    }
   }
 
   if (words.length > 15) {
