@@ -247,6 +247,8 @@
     body.exam-active #dirSegWrap,
     body.exam-active #autoBtn,
     body.exam-active .delay-btn,
+    body.exam-active .mini-trigger,
+    body.exam-active .mini-dropdown,
     body.exam-active .panel-header,
     body.exam-active #coreDropdown,
     body.exam-active #aiDropdown,
@@ -1322,6 +1324,7 @@
           <div class="mini-option" onclick="setDelay(2)">2s</div>
           <div class="mini-option" onclick="setDelay(3)">3s</div>
           <div class="mini-option" onclick="setDelay(5)">5s</div>
+          <div class="mini-option" onclick="setDelay(10)">10s</div>
         </div>
       </div>
     </div>
@@ -1802,6 +1805,7 @@ function render() {
   document.getElementById("result").textContent = "";
   document.getElementById("result").className = "";
   isAnswerLocked = false;
+  if (examState) examState.interacted = false;
 
   // Star
   const starBtn = document.getElementById("starBtn");
@@ -1828,6 +1832,11 @@ function render() {
     renderChoiceMode(word, words);
   } else {
     renderStudyMode(word);
+  }
+
+  // Restore default card click unless audio exam mode sets its own
+  if (!(activeMode === "audio" && examState?.phase === 3)) {
+    document.getElementById("card").onclick = flipCard;
   }
 
   updateAllUI();
@@ -1872,15 +1881,24 @@ function buildTransHTML(word) {
 }
 
 function renderAudioMode(word) {
+  const examWaiting = examState?.phase === 3 && !autoPlay;
   const playCount = examState?.phase === 3 ? (examState.audioPlayCounts[word.id] || 0) : 0;
   const blocked = examState?.phase === 3 && playCount >= 2;
 
   document.getElementById("front").innerHTML =
     `<div style="font-size:52px;opacity:${blocked ? 0.3 : 0.7}">🔊</div>
-     ${blocked ? `<div style="font-size:12px;color:var(--wrong);margin-top:8px">Max plays reached</div>` : ""}`;
+     ${blocked ? `<div style="font-size:12px;color:var(--wrong);margin-top:8px">Max plays reached</div>` : ""}
+     ${examWaiting ? `<div style="font-size:12px;color:var(--muted);margin-top:8px">Press Start to begin</div>` : ""}
+     ${examState?.phase === 3 && !examWaiting ? `<div style="font-size:11px;color:var(--muted);margin-top:12px;opacity:0.7">Tap card to mark as recognised ✓</div>` : ""}`;
   document.getElementById("back").innerHTML = buildTransHTML(word);
 
-  if (!blocked) {
+  // In exam phase 3: card is tappable to mark recognised
+  const card = document.getElementById("card");
+  if (examState?.phase === 3 && !examWaiting) {
+    card.onclick = flipCardAudio;
+  }
+
+  if (!blocked && !examWaiting) {
     if (examState?.phase === 3) {
       examState.audioPlayCounts[word.id] = playCount + 1;
     }
@@ -2456,16 +2474,34 @@ function handleChoice(selected, correct, container, wordId = null) {
   if (selected === correct) {
     showResult("✓ Correct!", "correct");
     isAnswerLocked = true;
-    // Disable all after correct
+    if (examState) examState.interacted = true;
     allBtns.forEach(b => b.classList.add("disabled"));
     allBtns.forEach(b => b.onclick = null);
-    if (!autoPlay) setTimeout(() => nextWord(), 700);
+    // Always advance quickly; reset auto timer if running
+    setTimeout(() => {
+      nextWord();
+      if (autoPlay) { stopAuto(); startAuto(); }
+    }, 500);
   } else {
     showResult(`✗ Try again`, "wrong");
     scheduleTutorReview(wordId);
+    if (examState) examState.interacted = true; // attempted = interacted
     if (examState && examState.phase >= 1 && examState.phase <= 3) {
       examOnWrongAnswer(wordId, `wrong option selected`);
       return;
+    }
+    if (examState && examState.phase === 4) {
+      // Phase 4: track error, allow 3 before failing
+      const words = getWords();
+      const word = words.find(w => w.id === wordId);
+      const sentence = document.querySelector(".card-word")?.textContent || "";
+      examOnPhase4Error({
+        sentence: sentence,
+        wordId: wordId,
+        wordEn: word?.en || "",
+        userAnswer: selected,
+        correct: correct
+      });
     }
     flashWrong(wordId);
     setTimeout(() => {
@@ -2600,6 +2636,24 @@ function flashWrong(wordId) {
 function nextWord() {
   if (!order.length) return;
 
+  // Exam: if autoplay fires and user hasn't interacted — it's a fail (all phases 1-4)
+  if (examState && examState.phase >= 1 && !isAnswerLocked && !examState.interacted) {
+    const interactiveModes = ["study", "truefalse", "choice", "audio", "ai"];
+    if (interactiveModes.includes(activeMode)) {
+      const words = getWords();
+      const word = getCurrentWord(words);
+      if (examState.phase <= 3) {
+        examOnWrongAnswer(word?.id, "no answer given (time ran out)");
+        return;
+      } else {
+        // Phase 4: count as error
+        examOnPhase4Error({ wordId: word?.id, wordEn: word?.en || "", sentence: "", userAnswer: "(none)", correct: "(unknown)" });
+      }
+    }
+  }
+  // Reset interaction flag for next card
+  if (examState) examState.interacted = false;
+
   if (tutorMode && tutorReviewWordId !== null) {
     const justReviewedWordId = tutorReviewWordId;
     const justReviewedStage = tutorReviewStage;
@@ -2658,6 +2712,14 @@ function nextWord() {
     examNextPhase();
     return;
   }
+  // Phase 4 done when wrapped
+  if (examState && examState.phase === 4 && current === 0) {
+    stopAuto();
+    autoPlay = false;
+    document.getElementById("autoBtn").classList.remove("active");
+    examPhase4Done();
+    return;
+  }
 
   render();
   if (keyboardOn) {
@@ -2702,6 +2764,16 @@ function flipCard() {
   document.getElementById("cardInner").classList.toggle("flipped", flipped);
 }
 
+function flipCardAudio() {
+  // In audio exam mode: flipping = "I recognised it" = correct interaction
+  flipped = !flipped;
+  document.getElementById("cardInner").classList.toggle("flipped", flipped);
+  if (examState?.phase === 3 && flipped) {
+    isAnswerLocked = true;
+    examState.interacted = true;
+  }
+}
+
 // ===================== KEYBOARD =====================
 function handleEnter() {
   if (activeMode === "contextmemory" && cmState?.phase === "result") {
@@ -2727,15 +2799,13 @@ function checkAnswer() {
     inp.className = "input-correct";
     showResult("✓ Correct!", "correct");
     isAnswerLocked = true;
-
+    if (examState) examState.interacted = true;
+    setTimeout(() => { inp.value = ""; inp.className = ""; }, 500);
+    // Always advance quickly on correct — reset auto timer if running
     setTimeout(() => {
-      inp.value = "";
-      inp.className = "";
-    }, 700);
-
-    if (!autoPlay) setTimeout(() => {
       nextWord();
-    }, 700);
+      if (autoPlay) { stopAuto(); startAuto(); } // reset timer
+    }, 500);
   } else {
     inp.className = "input-wrong";
     showResult(`✗  ${correct}`, "wrong");
@@ -4126,8 +4196,15 @@ async function signInWithGoogle() {
 }
 
 async function signOut() {
-  await sb.auth.signOut();
+  try {
+    await sb.auth.signOut();
+  } catch(e) {
+    console.error("Sign out error:", e);
+  }
+  currentUser = null;
+  updateAuthBtn();
   closeAuth();
+  renderSets();
 }
 
 function updateAuthBtn() {
@@ -4328,9 +4405,9 @@ const EXAM_PHASES = [
     rules: ["Max 2 listens per word","Autoplay every 10 seconds","Shuffle is on","Any wrong answer ends the exam"]
   },
   {
-    num: 4, id: "contextmemory", icon: "🔗",
-    name: "Context Memory",
-    desc: "Fill in the blanks. Up to 3 mistakes allowed (AI margin).",
+    num: 4, id: "ai", icon: "⚡",
+    name: "Context Mode",
+    desc: "Fill in the blank. Up to 3 mistakes allowed (AI margin).",
     rules: ["Autoplay every 10 seconds","Shuffle is on","Up to 3 mistakes allowed","4th mistake ends the exam","Review AI available after phase"]
   }
 ];
@@ -4379,16 +4456,90 @@ function startExam() {
     failed: false,
     aiErrors: [],
     audioPlayCounts: {},
-    cmErrorCount: 0
+    aiErrorCount: 0,
+    aiPrefetched: false,
+    interacted: false
   };
   document.body.classList.add("exam-active");
   document.getElementById("examBar").style.display = "block";
-  // Ensure CM tasks are loaded before phase 4 needs them
-  if (!cmTasks.length) loadCMTasks();
+  // Pre-fetch AI tasks for phase 4 in background right now
+  examPrefetchAI();
   examNextPhase();
 }
 
+async function examPrefetchAI() {
+  if (!aiTasks.length) {
+    await loadAITasks();
+  }
+  if (examState) examState.aiPrefetched = true;
+}
+
+function examRunCountdown(onDone) {
+  let overlay = document.getElementById("examCountdownOverlay");
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.id = "examCountdownOverlay";
+    overlay.style.cssText = `
+      position:fixed;inset:0;z-index:300;
+      display:flex;align-items:center;justify-content:center;
+      background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);
+      pointer-events:none;
+    `;
+    document.body.appendChild(overlay);
+    // Inject animation
+    const s = document.createElement("style");
+    s.textContent = `@keyframes countPop {
+      0%  { transform:scale(0.4);opacity:0; }
+      45% { transform:scale(1.2);opacity:1; }
+      100%{ transform:scale(1);  opacity:1; }
+    }`;
+    document.head.appendChild(s);
+  }
+  overlay.style.display = "flex";
+  let count = 3;
+  function tick() {
+    if (count === 0) {
+      overlay.style.display = "none";
+      onDone();
+      return;
+    }
+    overlay.innerHTML = `<div style="
+      font-family:'DM Serif Display',serif;font-size:100px;
+      color:#fff;text-shadow:0 0 50px rgba(251,191,36,0.7);
+      animation:countPop 0.7s cubic-bezier(0.34,1.3,0.64,1);
+    ">${count}</div>`;
+    count--;
+    setTimeout(tick, 800);
+  }
+  tick();
+}
+
+function examStartPhase(phaseNum) {
+  closeExamModal();
+  if (examState) examState.interacted = false;
+  examRunCountdown(() => {
+    autoPlay = true;
+    startAuto();
+    document.getElementById("autoBtn").classList.add("active");
+    updateExamBar();
+    render(); // trigger first audio play / ai render after countdown
+  });
+}
+
+function updateExamBar() {
+  if (!examState) return;
+  const ph = EXAM_PHASES[examState.phase - 1];
+  if (!ph) return;
+  document.getElementById("examBarPhase").textContent =
+    `🎓 Phase ${examState.phase} / 4 — ${ph.name}`;
+  const errText = examState.phase === 4
+    ? `Mistakes: ${examState.aiErrorCount || 0} / 3`
+    : "Zero mistakes allowed";
+  document.getElementById("examBarErrors").textContent = errText;
+}
+
 function examNextPhase() {
+  if (!examState) return;
   examState.phase++;
   if (examState.phase > 4) { examSuccess(); return; }
 
@@ -4441,44 +4592,16 @@ function examApplyPhaseSettings(phase) {
     autoDelay = 10;
     examState.audioPlayCounts = {};
   } else if (phase === 4) {
-    selectMode("contextmemory");
+    selectMode("ai");
     keyboardOn = false;
     direction = "all";
     autoDelay = 10;
-    examState.cmErrorCount = 0;
+    examState.aiErrorCount = 0;
     examState.aiErrors = [];
-    cmRound = 0;
-    cmStarted = false;
-    cmState = null;
+    // Ensure AI tasks loaded
+    if (!aiTasks.length) loadAITasks();
   }
   render();
-}
-
-function examStartPhase(phaseNum) {
-  closeExamModal();
-  // Start autoplay (except phase 4 which uses its own timer)
-  if (phaseNum !== 4) {
-    autoPlay = true;
-    startAuto();
-    document.getElementById("autoBtn").classList.add("active");
-  } else {
-    // Phase 4: start CM
-    cmStarted = true;
-    render();
-  }
-  updateExamBar();
-}
-
-function updateExamBar() {
-  if (!examState) return;
-  const ph = EXAM_PHASES[examState.phase - 1];
-  if (!ph) return;
-  document.getElementById("examBarPhase").textContent =
-    `🎓 Phase ${examState.phase} / 4 — ${ph.name}`;
-  const errText = examState.phase === 4
-    ? `Mistakes: ${examState.cmErrorCount} / 3`
-    : "Zero mistakes allowed";
-  document.getElementById("examBarErrors").textContent = errText;
 }
 
 function examFail(reason) {
@@ -4533,27 +4656,21 @@ function examOnWrongAnswer(wordId, reason) {
   examFail(`Phase ${examState.phase} failed: ${reason || "wrong answer"}.`);
 }
 
-// Called from renderCMResult / submitCMAnswer for phase 4
-function examOnCMResult(hasError, errorData) {
+function examOnPhase4Error(errorData) {
   if (!examState || examState.phase !== 4) return;
-  if (!hasError) {
-    // Check if all rounds done → move to verdict
-    if (cmRound >= cmTasks.length - 1) {
-      examPhase4Done();
-    }
-    return;
-  }
-  examState.cmErrorCount++;
+  examState.aiErrorCount = (examState.aiErrorCount || 0) + 1;
   if (errorData) examState.aiErrors.push(errorData);
   updateExamBar();
-  if (examState.cmErrorCount > 3) {
+  if (examState.aiErrorCount > 3) {
     stopAuto();
-    examFail(`Phase 4 failed: too many mistakes (${examState.cmErrorCount}).`);
-    return;
+    examFail(`Phase 4 failed: too many mistakes (${examState.aiErrorCount}).`);
   }
-  if (cmRound >= cmTasks.length - 1) {
-    examPhase4Done();
-  }
+}
+
+// Legacy alias (for renderCMResult hook if still present)
+function examOnCMResult(hasError, errorData) {
+  if (!hasError) return;
+  examOnPhase4Error(errorData);
 }
 
 // Called when CM phase words are exhausted
@@ -4570,8 +4687,8 @@ function examPhase4Done() {
     <div class="exam-phase-start">
       <div class="phase-icon">🤖</div>
       <h3>Phase 4 Complete</h3>
-      <p>You made <strong style="color:var(--wrong)">${examState.cmErrorCount}</strong> mistake${examState.cmErrorCount > 1 ? "s" : ""} in Context Memory.</p>
-      <p style="margin-top:8px;color:var(--muted)">Let AI review whether these were genuinely your errors or AI mistakes.</p>
+      <p>You made <strong style="color:var(--wrong)">${examState.aiErrorCount || 0}</strong> mistake${(examState.aiErrorCount || 0) !== 1 ? "s" : ""} in Context Mode.</p>
+      <p style="margin-top:8px;color:var(--muted)">Let AI review whether these were genuinely your errors or AI task mistakes.</p>
       <div class="exam-btn-row" style="margin-top:24px">
         <button class="exam-btn-secondary" onclick="examSelfFail()">I made real mistakes</button>
         <button class="exam-btn-primary" onclick="examRunReviewAI()">Review AI ⚡</button>
@@ -4595,11 +4712,11 @@ async function examRunReviewAI() {
 
   const errorsPayload = examState.aiErrors.map((e, i) => ({
     index: i,
-    sentence: e.sentence,
-    slot: e.slot,
-    correct: e.correct,
-    userAnswer: e.userAnswer,
-    options: e.options
+    sentence: e.sentence || "",
+    word: e.wordEn || "",
+    correct: e.correct || "",
+    userAnswer: e.userAnswer || "",
+    wordId: e.wordId || ""
   }));
 
   const prompt = `You are an exam auditor checking AI-generated fill-in-the-blank exercises.
