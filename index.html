@@ -72,7 +72,17 @@
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 20px;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      cursor: pointer;
+      user-select: none;
+      min-height: 52px;
     }
 
     .panel-title {
@@ -80,9 +90,150 @@
       letter-spacing: 0.12em;
       text-transform: uppercase;
       color: var(--muted);
-      margin-bottom: 14px;
       font-weight: 600;
     }
+
+    .panel-collapse-btn {
+      width: 22px; height: 22px;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      color: var(--muted);
+      display: grid; place-items: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+    .panel-collapse-btn:hover { background: rgba(255,255,255,0.08); color: var(--text); }
+    .panel-collapse-btn svg {
+      width: 10px; height: 10px;
+      stroke: currentColor; fill: none;
+      stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round;
+      transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+    }
+    .panel.collapsed .panel-collapse-btn svg { transform: rotate(180deg); }
+
+    .panel-body {
+      padding: 14px 20px 20px;
+      overflow: hidden;
+      max-height: 1200px;
+      opacity: 1;
+      transition: max-height 0.4s cubic-bezier(0.4,0,0.2,1),
+                  opacity 0.28s ease,
+                  padding 0.32s ease;
+    }
+    .panel.collapsed .panel-body {
+      max-height: 0;
+      opacity: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+    }
+
+    /* ===== SHUFFLE PILL ===== */
+    .shuffle-pill {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px; font-weight: 600;
+      padding: 8px 18px;
+      border-radius: 22px;
+      cursor: pointer;
+      transition: all 0.2s;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .shuffle-pill svg {
+      width: 15px; height: 15px;
+      stroke: currentColor; fill: none;
+      stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+      flex-shrink: 0;
+    }
+    .shuffle-pill:hover { border-color: var(--border2); color: var(--text); }
+    .shuffle-pill.active { background: rgba(79,142,247,0.12); border-color: var(--accent); color: var(--accent); }
+    @keyframes shuffleIconSpin {
+      0%   { transform: rotate(0deg) scale(1); }
+      45%  { transform: rotate(200deg) scale(1.25); }
+      100% { transform: rotate(360deg) scale(1); }
+    }
+    .shuffle-pill.spinning svg { animation: shuffleIconSpin 0.45s cubic-bezier(0.4,0,0.2,1); }
+
+    /* ===== OPTIONS / TUTOR TOGGLE ===== */
+    .options-section { margin-top: 18px; }
+    .options-title {
+      font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: rgba(90,98,120,0.55);
+      margin-bottom: 8px;
+    }
+    .option-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 9px 0;
+      border-top: 1px solid rgba(255,255,255,0.04);
+    }
+    .option-label {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; color: #8a93a8;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .option-label svg {
+      width: 15px; height: 15px;
+      stroke: currentColor; fill: none;
+      stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+      opacity: 0.65;
+    }
+    .toggle-switch {
+      width: 36px; height: 20px; border-radius: 10px;
+      background: rgba(255,255,255,0.1); border: none;
+      cursor: pointer; position: relative;
+      transition: background 0.25s;
+      flex-shrink: 0;
+      outline: none; -webkit-tap-highlight-color: transparent;
+    }
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      width: 14px; height: 14px; border-radius: 50%;
+      background: #fff; top: 3px; left: 3px;
+      transition: transform 0.25s cubic-bezier(0.34,1.3,0.64,1);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+    }
+    .toggle-switch.on { background: var(--accent); }
+    .toggle-switch.on::after { transform: translateX(16px); }
+
+    /* ===== REGEN BUTTONS ===== */
+    .regen-btn {
+      width: 100%;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.07);
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px; font-weight: 500;
+      padding: 10px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      display: none;
+      align-items: center; justify-content: center; gap: 8px;
+      transition: all 0.2s;
+      outline: none; -webkit-tap-highlight-color: transparent;
+    }
+    .regen-btn.visible { display: flex; }
+    .regen-btn svg {
+      width: 14px; height: 14px;
+      stroke: var(--accent2); fill: none;
+      stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+      flex-shrink: 0;
+    }
+    .regen-btn:hover { border-color: rgba(110,231,192,0.3); color: var(--accent2); }
+    @keyframes lightningZap {
+      0%   { transform: scale(1) rotate(0deg); }
+      25%  { transform: scale(1.5) rotate(-12deg); filter: drop-shadow(0 0 4px rgba(110,231,192,0.9)); }
+      60%  { transform: scale(0.9) rotate(6deg); }
+      100% { transform: scale(1) rotate(0deg); filter: none; }
+    }
+    .regen-btn:hover svg { animation: lightningZap 0.5s ease; }
 
     /* ===== SETS GRID ===== */
     #sets {
@@ -736,12 +887,30 @@
       background: var(--surface2);
       border-radius: 2px;
       overflow: hidden;
+      position: relative;
     }
     .progress-bar-fill {
       height: 100%;
       background: linear-gradient(90deg, var(--accent), var(--accent2));
       border-radius: 2px;
-      transition: width 0.4s ease;
+      transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+      position: relative;
+    }
+    @keyframes progressPulse {
+      0%   { filter: brightness(1); }
+      50%  { filter: brightness(1.7); }
+      100% { filter: brightness(1); }
+    }
+    .progress-bar-fill.pulse {
+      animation: progressPulse 0.5s ease;
+    }
+    @keyframes progressWrong {
+      0%   { background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+      40%  { background: rgba(248,113,113,0.7); }
+      100% { background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+    }
+    .progress-bar-fill.flash-wrong {
+      animation: progressWrong 0.55s ease;
     }
 
     /* ===== ANIMATIONS ===== */
@@ -761,16 +930,60 @@
       animation: none;
     }
 
+    /* ===== WRONG FLASH on card ===== */
+    @keyframes cardWrongGlow {
+      0%   { box-shadow: inset 0 0 0px 0px rgba(248,113,113,0);
+             border-color: var(--border); }
+      35%  { box-shadow: inset 0 0 30px 8px rgba(248,113,113,0.18),
+                         0 0 20px 4px rgba(248,113,113,0.12);
+             border-color: rgba(248,113,113,0.5); }
+      100% { box-shadow: inset 0 0 0px 0px rgba(248,113,113,0);
+             border-color: var(--border); }
+    }
+    .card-face.flash-wrong {
+      animation: cardWrongGlow 0.6s ease;
+    }
+    /* Persistent tint for words in wrong set */
+    .card-face.in-wrong-set {
+      border-color: rgba(248,113,113,0.28) !important;
+      box-shadow: inset 0 0 20px 4px rgba(248,113,113,0.07);
+    }
+    /* Wrong set button in sidebar */
+    .wrong-set-btn {
+      width: 100%;
+      background: rgba(248,113,113,0.07);
+      border: 1px solid rgba(248,113,113,0.22);
+      color: var(--wrong);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px; font-weight: 600;
+      padding: 9px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex; align-items: center; gap: 8px;
+      transition: all 0.2s;
+      margin-top: 6px;
+    }
+    .wrong-set-btn:hover { background: rgba(248,113,113,0.14); }
+    .wrong-set-btn.active { background: rgba(248,113,113,0.18); border-color: var(--wrong); }
+
     /* ===== MOBILE ===== */
     @media (max-width: 960px) {
       .app { grid-template-columns: 1fr; padding: 16px; gap: 16px; }
       .main { order: 1; }
-      .sidebar-right { order: 2; flex-direction: row; flex-wrap: wrap; }
-      .sidebar-right > * { flex: 1 1 120px; }
+      .sidebar-right {
+        order: 2;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .sidebar-right .auto-row { flex: 1 1 160px; }
+      .sidebar-right .btn-clear { flex: 1 1 120px; }
+      .sidebar-right .regen-btn { flex: 1 1 120px; }
       .sidebar-left { order: 3; }
       .card { height: 240px; }
       .card-word { font-size: 32px; }
       #sets { grid-template-columns: repeat(6, 1fr); }
+      .shuffle-pill { font-size: 12px; padding: 7px 14px; }
     }
   </style>
 </head>
@@ -780,14 +993,27 @@
 
   <!-- LEFT SIDEBAR -->
   <aside class="sidebar-left">
-    <div class="panel">
-      <div class="panel-title">Sets</div>
-      <div id="sets"></div>
-      <div id="customSetsPanel"></div>
+    <div class="panel" id="setsPanel">
+      <div class="panel-header" onclick="togglePanelCollapse('setsPanel')">
+        <div class="panel-title">Sets</div>
+        <button class="panel-collapse-btn" aria-label="Toggle sets">
+          <svg viewBox="0 0 10 10"><polyline points="2,7 5,3 8,7"/></svg>
+        </button>
+      </div>
+      <div class="panel-body">
+        <div id="sets" style="margin-top:10px"></div>
+        <div id="customSetsPanel"></div>
+      </div>
     </div>
 
-    <div class="panel">
-      <div class="panel-title">Mode</div>
+    <div class="panel" id="modePanel" style="margin-top:14px">
+      <div class="panel-header" onclick="togglePanelCollapse('modePanel')">
+        <div class="panel-title">Mode</div>
+        <button class="panel-collapse-btn" aria-label="Toggle mode">
+          <svg viewBox="0 0 10 10"><polyline points="2,7 5,3 8,7"/></svg>
+        </button>
+      </div>
+      <div class="panel-body">
 
       <div class="mode-sub-label">
   <span class="mode-type core">Core</span>
@@ -873,6 +1099,20 @@
             <button class="lang-btn" id="cmTypeBtn" onclick="setCMInput('type')">Type</button>
           </div>
         </div>
+
+        <!-- OPTIONS / MODIFIERS -->
+        <div class="options-section">
+          <div class="options-title">Options</div>
+          <div class="option-row">
+            <div class="option-label" onclick="toggleTutorSwitch()">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+              Tutor
+            </div>
+            <button class="toggle-switch" id="tutorToggle" onclick="toggleTutorSwitch()"></button>
+          </div>
+        </div>
+
+      </div>
     </div>
   </aside>
 
@@ -923,21 +1163,26 @@
       <button class="nav-btn" onclick="nextWord()" aria-label="Next word">›</button>
     </div>
 
+    <!-- Shuffle pill sits just above the direction segment -->
+    <div style="display:flex; justify-content:center; margin-bottom:4px">
+      <button class="shuffle-pill" id="shuffleBtn" onclick="toggleShuffle()">
+        <svg viewBox="0 0 24 24"><path d="M16 3h5v5"/><path d="M4 20L21 3"/><path d="M21 16v5h-5"/><path d="M15 15l6 6"/><path d="M4 4l5 5"/></svg>
+        Shuffle
+      </button>
+    </div>
+
     <div class="bottom-settings" id="bottomSettings">
       <div class="dir-seg-wrap" id="dirSegWrap">
         <button class="dir-seg-btn active" id="dirAll"  onclick="setDir('all')">All</button>
         <button class="dir-seg-btn"        id="dirEnTr" onclick="setDir('en-ru')">EN → Tr</button>
         <button class="dir-seg-btn"        id="dirTrEn" onclick="setDir('ru-en')">Tr → EN</button>
       </div>
-      <button class="setting-btn" id="kbBtn"  onclick="toggleKeyboard()">⌨ Keyboard</button>
+      <button class="setting-btn" id="kbBtn" onclick="toggleKeyboard()">⌨ Keyboard</button>
     </div>
   </main>
 
   <!-- RIGHT SIDEBAR -->
   <aside class="sidebar-right">
-    <button class="ctrl-btn" id="shuffleBtn" onclick="toggleShuffle()">🔀 Shuffle</button>
-    <button class="ctrl-btn" id="tutorBtn" onclick="toggleTutor()">🧠 Tutor</button>
-
     <div class="auto-row">
       <button class="ctrl-btn" id="autoBtn" onclick="toggleAuto()">▶ Auto</button>
       <div class="mini-dropdown" id="delayDropdown">
@@ -952,9 +1197,20 @@
     </div>
 
     <button class="ctrl-btn btn-clear" id="clearBtn" onclick="clearCustomSet()">🗑 Clear Review</button>
-    <button class="ctrl-btn" id="regenBtn" onclick="regenerateAI()" style="display:none">🔄 Regen AI</button>
-    <button class="ctrl-btn" id="regenMemoryBtn" onclick="regenerateMemory()" style="display:none">🔄 Regen Memory</button>
-    <button class="ctrl-btn" id="regenCMBtn" onclick="regenerateCM()" style="display:none">🔄 Regen CM</button>
+    <button class="ctrl-btn" id="clearWrongBtn" onclick="clearWrongSet()" style="display:none;background:rgba(248,113,113,0.08);border-color:rgba(248,113,113,0.2);color:var(--wrong)">🗑 Clear Wrong</button>
+
+    <button class="regen-btn" id="regenBtn" onclick="regenerateAI()">
+      <svg viewBox="0 0 24 24"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      Regen AI
+    </button>
+    <button class="regen-btn" id="regenMemoryBtn" onclick="regenerateMemory()">
+      <svg viewBox="0 0 24 24"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      Regen Memory
+    </button>
+    <button class="regen-btn" id="regenCMBtn" onclick="regenerateCM()">
+      <svg viewBox="0 0 24 24"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      Regen CM
+    </button>
   </aside>
 
 </div>
@@ -999,6 +1255,8 @@
   }
   @media (max-width: 960px) {
     #cornerAuth { top: auto; bottom: 20px; right: 16px; width: 42px; height: 42px; }
+    /* Ensure last panel body content isn't hidden behind the floating auth button */
+    .sidebar-left .panel:last-child .panel-body { padding-bottom: 72px; }
   }
 </style>
 <button id="cornerAuth" class="signed-out" onclick="openAuth()" aria-label="Account">
@@ -1241,6 +1499,8 @@ let flipped = false;
 let shuffleOn = false;
 let order = [];
 let customSets = JSON.parse(localStorage.getItem("customSets") || "[]");
+let wrongSet = JSON.parse(localStorage.getItem("wrongSet") || "[]"); // word ids
+let wrongSetActive = false; // viewing wrong set
 let isAnswerLocked = false;  // true only when correct
 let autoPlay = false;
 let autoTimer = null;
@@ -1330,6 +1590,10 @@ function getWords() {
     const all = sets.flatMap(s => s.words);
     return all.filter(w => customSets[currentCustomSet].words.includes(w.id));
   }
+  if (filterMode === "wrong") {
+    const all = sets.flatMap(s => s.words);
+    return all.filter(w => wrongSet.includes(w.id));
+  }
   return sets[currentSet]?.words || [];
 }
 
@@ -1365,8 +1629,13 @@ function render() {
   const extraCounter = tutorMode ? ` · reviews ${tutorReviewsShown}` : "";
   document.getElementById("counter").textContent = counterValue + extraCounter;
 
-  // Progress bar
-  document.getElementById("progressFill").style.width = progressPct + "%";
+  // Progress bar with subtle pulse on advance
+  const fill = document.getElementById("progressFill");
+  fill.style.width = progressPct + "%";
+  fill.classList.remove("pulse");
+  void fill.offsetWidth;
+  fill.classList.add("pulse");
+  setTimeout(() => fill.classList.remove("pulse"), 550);
 
   if (!words.length) {
     document.getElementById("front").innerHTML = `<span style="color:var(--muted);font-size:18px">No words</span>`;
@@ -1378,6 +1647,13 @@ function render() {
   const inner = document.getElementById("cardInner");
   inner.classList.remove("flipped");
   flipped = false;
+
+  // Persistent wrong-set tint
+  const inWrong = word && isInWrongSet(word.id);
+  ["front","back"].forEach(id => {
+    const el = document.getElementById(id);
+    el.classList.toggle("in-wrong-set", !!inWrong);
+  });
 
   document.getElementById("result").textContent = "";
   document.getElementById("result").className = "";
@@ -1946,10 +2222,13 @@ function toggleTutor() {
     tutorReviewStage = null;
     tutorReviewsShown = 0;
   }
-  const btn = document.getElementById("tutorBtn");
-  btn.classList.toggle("active", tutorMode);
-  btn.textContent = tutorMode ? "🧠 Tutor ON" : "🧠 Tutor";
+  const sw = document.getElementById("tutorToggle");
+  if (sw) sw.classList.toggle("on", tutorMode);
   render();
+}
+
+function toggleTutorSwitch() {
+  toggleTutor();
 }
 
 function scheduleTutorReview(wordId) {
@@ -2030,6 +2309,7 @@ function handleChoice(selected, correct, container, wordId = null) {
   } else {
     showResult(`✗ Try again`, "wrong");
     scheduleTutorReview(wordId);
+    flashWrong(wordId);
     // Remove wrong class after a moment to allow retry
     setTimeout(() => {
       allBtns.forEach(b => {
@@ -2125,6 +2405,7 @@ function handleAIChoice(selected, correct, container) {
     const words = getWords();
     const word = getCurrentWord(words);
     scheduleTutorReview(word ? word.id : null);
+    flashWrong(word ? word.id : null);
     setTimeout(() => {
       allBtns.forEach(b => { if (b.dataset.val === selected) b.classList.remove("wrong-ans"); });
       showResult("", "");
@@ -2136,6 +2417,26 @@ function showResult(text, cls) {
   const el = document.getElementById("result");
   el.textContent = text;
   el.className = cls;
+}
+
+function flashWrong(wordId) {
+  // Flash card red
+  const front = document.getElementById("front");
+  const back  = document.getElementById("back");
+  [front, back].forEach(el => {
+    el.classList.remove("flash-wrong");
+    void el.offsetWidth;
+    el.classList.add("flash-wrong");
+    setTimeout(() => el.classList.remove("flash-wrong"), 620);
+  });
+  // Flash progress bar red
+  const fill = document.getElementById("progressFill");
+  fill.classList.remove("flash-wrong");
+  void fill.offsetWidth;
+  fill.classList.add("flash-wrong");
+  setTimeout(() => fill.classList.remove("flash-wrong"), 580);
+  // Add to wrong set
+  if (wordId) addToWrongSet(wordId);
 }
 
 // ===================== NAVIGATION =====================
@@ -2272,6 +2573,7 @@ function checkAnswer() {
     inp.className = "input-wrong";
     showResult(`✗  ${correct}`, "wrong");
     scheduleTutorReview(activeWord.id);
+    flashWrong(activeWord.id);
 
     setTimeout(() => {
       inp.value = "";
@@ -2314,6 +2616,8 @@ function checkMemoryAnswer() {
 
   const correctText = memoryState.chains.map(chain => chain.parts.slice(1).join(" → ")).join("  |  ");
   showResult(`✗ Correct: ${correctText}`, "wrong");
+  // flash card — no specific wordId for memory rounds
+  flashWrong(null);
 }
 
 // ===================== MODES =====================
@@ -2343,8 +2647,9 @@ function selectMode(m) {
     document.getElementById("aiDropdown").classList.remove("open");
   }
 
-  // Hide tutor button in matches and memory modes
-  document.getElementById("tutorBtn").style.display = (m === "matches" || m === "memory" || m === "contextmemory") ? "none" : "block";
+  // Hide tutor option in modes where it doesn't apply
+  const tutorRow = document.querySelector(".option-row");
+  if (tutorRow) tutorRow.style.display = (m === "matches" || m === "memory" || m === "contextmemory") ? "none" : "flex";
 
   if (m !== "study") { keyboardOn = false; }
   if (m === "ai") loadAITasks();
@@ -2365,6 +2670,11 @@ function selectMode(m) {
   current = 0;
   initOrder();
   render();
+}
+
+function togglePanelCollapse(panelId) {
+  const panel = document.getElementById(panelId);
+  panel.classList.toggle("collapsed");
 }
 
 function toggleDropdown(id) {
@@ -2431,7 +2741,7 @@ function setAIDifficulty(diff) {
 // ===================== SHUFFLE =====================
 function toggleShuffle() {
   shuffleOn = !shuffleOn;
-  frozenOrder = null; // reset frozen
+  frozenOrder = null;
   current = 0;
   resetMatchesProgress();
   tutorQueue = [];
@@ -2439,8 +2749,13 @@ function toggleShuffle() {
   tutorReviewStage = null;
   tutorReviewsShown = 0;
   initOrder();
-  document.getElementById("shuffleBtn").classList.toggle("active", shuffleOn);
-  document.getElementById("shuffleBtn").textContent = shuffleOn ? "🔀 Shuffle ON" : "🔀 Shuffle";
+  const btn = document.getElementById("shuffleBtn");
+  btn.classList.toggle("active", shuffleOn);
+  // Spin animation
+  btn.classList.remove("spinning");
+  void btn.offsetWidth; // reflow to restart
+  btn.classList.add("spinning");
+  setTimeout(() => btn.classList.remove("spinning"), 460);
   render();
 }
 
@@ -2595,6 +2910,63 @@ function renderCustomSets() {
     btn.onclick = () => openCustomSet(idx);
     c.appendChild(btn);
   });
+  renderWrongSetBtn();
+}
+
+// ===================== WRONG SET =====================
+function addToWrongSet(wordId) {
+  if (!wordId || wrongSet.includes(wordId)) return;
+  wrongSet.push(wordId);
+  localStorage.setItem("wrongSet", JSON.stringify(wrongSet));
+  renderWrongSetBtn();
+}
+
+function removeFromWrongSet(wordId) {
+  wrongSet = wrongSet.filter(id => id !== wordId);
+  localStorage.setItem("wrongSet", JSON.stringify(wrongSet));
+  renderWrongSetBtn();
+}
+
+function isInWrongSet(wordId) {
+  return wrongSet.includes(wordId);
+}
+
+function renderWrongSetBtn() {
+  const c = document.getElementById("customSetsPanel");
+  // Remove existing wrong-set button if any
+  const old = document.getElementById("wrongSetBtn");
+  if (old) old.remove();
+  if (!wrongSet.length) return;
+  const btn = document.createElement("button");
+  btn.id = "wrongSetBtn";
+  btn.className = "wrong-set-btn" + (wrongSetActive ? " active" : "");
+  btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> Wrong (${wrongSet.length})`;
+  btn.onclick = toggleWrongSet;
+  c.appendChild(btn);
+}
+
+function clearWrongSet() {
+  if (!confirm("Clear all Wrong answers?")) return;
+  wrongSet = [];
+  wrongSetActive = false;
+  filterMode = "all";
+  localStorage.setItem("wrongSet", JSON.stringify(wrongSet));
+  current = 0; frozenOrder = null;
+  initOrder(); render(); renderCustomSets(); updateAllUI();
+}
+
+function toggleWrongSet() {
+  wrongSetActive = !wrongSetActive;
+  if (wrongSetActive) {
+    filterMode = "wrong";
+    currentCustomSet = null;
+  } else {
+    filterMode = "all";
+  }
+  current = 0; frozenOrder = null; tfPrompt = null;
+  resetMatchesProgress(); tutorQueue = [];
+  tutorReviewWordId = null; tutorReviewStage = null; tutorReviewsShown = 0;
+  initOrder(); render(); renderWrongSetBtn(); updateAllUI();
 }
 
 function openCustomSet(idx) {
@@ -3171,6 +3543,8 @@ function renderCMResult(task) {
   const total = cmState.answered.length;
   const allCorrect = correct === total;
 
+  if (!allCorrect) flashWrong(null);
+
   const rows = cmState.answered.map(a => {
     const ok = a.given === a.correct;
     return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
@@ -3248,14 +3622,12 @@ function updateAllUI() {
   document.getElementById("clearBtn").style.display =
     (filterMode === "custom") ? "block" : "none";
 
-  document.getElementById("regenBtn").style.display =
-    activeMode === "ai" ? "block" : "none";
+  document.getElementById("clearWrongBtn").style.display =
+    (filterMode === "wrong") ? "block" : "none";
 
-  document.getElementById("regenMemoryBtn").style.display =
-    activeMode === "memory" ? "block" : "none";
-
-  document.getElementById("regenCMBtn").style.display =
-    activeMode === "contextmemory" ? "block" : "none";
+  document.getElementById("regenBtn").classList.toggle("visible", activeMode === "ai");
+  document.getElementById("regenMemoryBtn").classList.toggle("visible", activeMode === "memory");
+  document.getElementById("regenCMBtn").classList.toggle("visible", activeMode === "contextmemory");
 
   document.getElementById("memoryDifficultySetting").style.display =
     activeMode === "memory" ? "block" : "none";
