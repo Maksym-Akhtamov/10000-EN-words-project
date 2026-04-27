@@ -4279,7 +4279,7 @@ function confirmResetProgress() {
   const overlay = document.createElement("div");
   overlay.id = "resetConfirmOverlay";
   overlay.style.cssText = `
-    position:fixed;inset:0;z-index:600;
+    position:fixed;inset:0;z-index:3000;
     background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);
     display:flex;align-items:center;justify-content:center;padding:24px;
   `;
@@ -4362,7 +4362,7 @@ async function resetProgress() {
     color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;
     padding:10px 22px;border-radius:12px;z-index:700;
     box-shadow:0 8px 30px rgba(0,0,0,0.4);opacity:0;
-    transition:opacity 0.25s ease;
+    transition:opacity 0.25s ease;z-index:4000;
   `;
   document.body.appendChild(toast);
   requestAnimationFrame(() => toast.style.opacity = "1");
