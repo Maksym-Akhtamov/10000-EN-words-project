@@ -4479,28 +4479,31 @@ function spellingCheckType(correct, wordId) {
     render();
     setTimeout(() => { nextWord(); }, 700);
   } else {
-    // Wrong — shake input, clear it, let user retry (don't count score yet)
+    // Wrong — clear field, shake, let user retry (never block the input)
     spellingState.typed = "";
     const input = document.getElementById("spellingTypeInput");
     if (input) {
       input.value = "";
+      input.disabled = false;          // ensure never blocked
       input.style.borderColor = "var(--wrong)";
-      input.style.animation = "shake 0.3s";
+      input.style.animation = "none";
+      void input.offsetWidth;           // force reflow so animation restarts
+      input.style.animation = "shake 0.35s ease";
       setTimeout(() => {
-        input.style.borderColor = "";
-        input.style.animation = "";
-        input.focus();
-      }, 600);
+        if (input) {
+          input.style.borderColor = "";
+          input.style.animation = "";
+          input.focus();
+        }
+      }, 400);
     }
-    // Show brief "wrong" hint under the input
     const hint = document.getElementById("spellingTypeHint");
     if (hint) {
-      hint.textContent = `✗ Not quite — try again`;
+      hint.textContent = "✗ Not quite — try again";
       hint.style.color = "var(--wrong)";
       hint.style.opacity = "1";
-      setTimeout(() => { hint.style.opacity = "0"; }, 1500);
+      setTimeout(() => { if (hint) hint.style.opacity = "0"; }, 1400);
     }
-    // Count as wrong only on first attempt — track if already penalised
     if (!spellingState.wrongPenalised) {
       spellingState.wrongPenalised = true;
       spellingScore.total++;
@@ -5024,39 +5027,22 @@ function resetSetLoadingState(btn, text) {
   }
 }
 
-function dismissResetOverlay(toastMsg) {
+function dismissResetOverlay(toastMsg, reload = false) {
   const overlay = document.getElementById("resetConfirmOverlay");
-  if (!overlay) return;
-  overlay.style.transition = "opacity 0.25s ease";
-  overlay.style.opacity = "0";
-  setTimeout(() => {
-    overlay.remove();
-    closeAuth();
-    renderSets();
-    renderCustomSets();
-    render();
-
-    const toast = document.createElement("div");
-    toast.textContent = toastMsg;
-    toast.style.cssText = `
-      position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(8px);
-      background:var(--surface2);border:1px solid var(--border2);
-      color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;
-      padding:10px 22px;border-radius:12px;z-index:4000;
-      box-shadow:0 8px 30px rgba(0,0,0,0.4);opacity:0;
-      transition:opacity 0.2s ease, transform 0.2s ease;
-    `;
-    document.body.appendChild(toast);
-    requestAnimationFrame(() => {
-      toast.style.opacity = "1";
-      toast.style.transform = "translateX(-50%) translateY(0)";
-    });
-    setTimeout(() => {
-      toast.style.opacity = "0";
-      toast.style.transform = "translateX(-50%) translateY(4px)";
-      setTimeout(() => toast.remove(), 250);
-    }, 2500);
-  }, 250);
+  if (overlay) {
+    overlay.style.transition = "opacity 0.2s ease";
+    overlay.style.opacity = "0";
+    setTimeout(() => overlay.remove(), 220);
+  }
+  if (reload) {
+    // Small delay so user sees the overlay fade, then reload
+    setTimeout(() => { location.reload(); }, 350);
+    return;
+  }
+  closeAuth();
+  renderSets();
+  renderCustomSets();
+  render();
 }
 
 async function resetSelectedSets() {
@@ -5069,53 +5055,57 @@ async function resetSelectedSets() {
   const btn = document.querySelector("#resetConfirmOverlay .reset-selected-btn");
   if (btn) resetSetLoadingState(btn, "Resetting…");
 
-  const selectedIds = [...checkboxes].map(cb => parseInt(cb.value));
-  completedSets = completedSets.filter(id => !selectedIds.includes(id));
-  localStorage.setItem("completedSets", JSON.stringify(completedSets));
+  try {
+    const selectedIds = [...checkboxes].map(cb => parseInt(cb.value));
+    completedSets = completedSets.filter(id => !selectedIds.includes(id));
+    localStorage.setItem("completedSets", JSON.stringify(completedSets));
 
-  if (currentUser) {
-    try {
-      await sb.from("user_progress").upsert({
-        user_id: currentUser.id,
-        completed_sets: completedSets,
-        custom_sets: customSets,
-        updated_at: new Date().toISOString()
-      }, { onConflict: "user_id" });
-    } catch(e) { console.error("Cloud sync failed:", e); }
-  }
+    if (currentUser) {
+      try {
+        await sb.from("user_progress").upsert({
+          user_id: currentUser.id,
+          completed_sets: completedSets,
+          custom_sets: customSets,
+          updated_at: new Date().toISOString()
+        }, { onConflict: "user_id" });
+      } catch(e) { console.error("Cloud sync failed:", e); }
+    }
+  } catch(e) { console.error("Reset failed:", e); }
 
-  dismissResetOverlay(`✓ ${selectedIds.length} set${selectedIds.length !== 1 ? "s" : ""} reset`);
+  dismissResetOverlay(`✓ Reset done`, true);
 }
 
 async function resetProgress() {
   const btn = document.querySelector("#resetConfirmOverlay .reset-all-btn");
   if (btn) resetSetLoadingState(btn, "Resetting…");
 
-  completedSets = [];
-  customSets = [];
-  wrongSet = [];
+  try {
+    completedSets = [];
+    customSets = [];
+    wrongSet = [];
 
-  localStorage.removeItem("completedSets");
-  localStorage.removeItem("customSets");
-  localStorage.removeItem("wrongSet");
-  Object.keys(localStorage).forEach(k => {
-    if (k.startsWith("aiTasks_") || k.startsWith("memTasks_") || k.startsWith("cmTasks_")) {
-      localStorage.removeItem(k);
+    localStorage.removeItem("completedSets");
+    localStorage.removeItem("customSets");
+    localStorage.removeItem("wrongSet");
+    Object.keys(localStorage).forEach(k => {
+      if (k.startsWith("aiTasks_") || k.startsWith("memTasks_") || k.startsWith("cmTasks_")) {
+        localStorage.removeItem(k);
+      }
+    });
+
+    if (currentUser) {
+      try {
+        await sb.from("user_progress").upsert({
+          user_id: currentUser.id,
+          completed_sets: [],
+          custom_sets: [],
+          updated_at: new Date().toISOString()
+        }, { onConflict: "user_id" });
+      } catch(e) { console.error("Cloud reset failed:", e); }
     }
-  });
+  } catch(e) { console.error("Reset failed:", e); }
 
-  if (currentUser) {
-    try {
-      await sb.from("user_progress").upsert({
-        user_id: currentUser.id,
-        completed_sets: [],
-        custom_sets: [],
-        updated_at: new Date().toISOString()
-      }, { onConflict: "user_id" });
-    } catch(e) { console.error("Cloud reset failed:", e); }
-  }
-
-  dismissResetOverlay("✓ All progress reset");
+  dismissResetOverlay("✓ All progress reset", true);
 }
 
 function updateAuthBtn() {
