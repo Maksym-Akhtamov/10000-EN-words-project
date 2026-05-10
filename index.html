@@ -4914,7 +4914,7 @@ function confirmResetProgress() {
         </button>
       </div>
 
-      <button onclick="document.getElementById('resetConfirmOverlay').remove()" style="
+      <button onclick="dismissResetOverlay()" style="
         width:100%;background:transparent;border:1px solid var(--border);color:var(--muted);
         font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;
         padding:11px;border-radius:12px;cursor:pointer;transition:all 0.2s;
@@ -5008,104 +5008,72 @@ function resetSelectAll(checked) {
   document.querySelectorAll("#resetSetsList input[type=checkbox]").forEach(cb => cb.checked = checked);
 }
 
-function resetSetLoadingState(btn, text) {
-  btn.disabled = true;
-  btn.style.opacity = "0.6";
-  btn.style.cursor = "default";
-  btn.innerHTML = `<span style="display:inline-flex;align-items:center;gap:8px">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-      style="animation:resetSpin 0.7s linear infinite">
-      <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-    </svg>
-    ${text}
-  </span>`;
-  if (!document.getElementById("resetSpinStyle")) {
-    const s = document.createElement("style");
-    s.id = "resetSpinStyle";
-    s.textContent = "@keyframes resetSpin { to { transform: rotate(360deg); } }";
-    document.head.appendChild(s);
-  }
-}
-
-function dismissResetOverlay(toastMsg, reload = false) {
+function dismissResetOverlay() {
   const overlay = document.getElementById("resetConfirmOverlay");
   if (overlay) {
     overlay.style.transition = "opacity 0.2s ease";
     overlay.style.opacity = "0";
-    setTimeout(() => overlay.remove(), 220);
+    setTimeout(() => {
+      overlay.remove();
+      closeAuth();
+      renderSets();
+      renderCustomSets();
+      render();
+    }, 200);
   }
-  if (reload) {
-    // Small delay so user sees the overlay fade, then reload
-    setTimeout(() => { location.reload(); }, 350);
-    return;
-  }
-  closeAuth();
-  renderSets();
-  renderCustomSets();
-  render();
 }
 
 async function resetSelectedSets() {
   const checkboxes = document.querySelectorAll("#resetSetsList input[type=checkbox]:checked");
   if (!checkboxes.length) {
-    document.getElementById("resetConfirmOverlay")?.remove();
+    dismissResetOverlay();
     return;
   }
 
-  const btn = document.querySelector("#resetConfirmOverlay .reset-selected-btn");
-  if (btn) resetSetLoadingState(btn, "Resetting…");
+  const selectedIds = [...checkboxes].map(cb => parseInt(cb.value));
+  completedSets = completedSets.filter(id => !selectedIds.includes(id));
+  localStorage.setItem("completedSets", JSON.stringify(completedSets));
 
-  try {
-    const selectedIds = [...checkboxes].map(cb => parseInt(cb.value));
-    completedSets = completedSets.filter(id => !selectedIds.includes(id));
-    localStorage.setItem("completedSets", JSON.stringify(completedSets));
+  if (currentUser) {
+    try {
+      await sb.from("user_progress").upsert({
+        user_id: currentUser.id,
+        completed_sets: completedSets,
+        custom_sets: customSets,
+        updated_at: new Date().toISOString()
+      }, { onConflict: "user_id" });
+    } catch(e) { console.error("Cloud sync failed:", e); }
+  }
 
-    if (currentUser) {
-      try {
-        await sb.from("user_progress").upsert({
-          user_id: currentUser.id,
-          completed_sets: completedSets,
-          custom_sets: customSets,
-          updated_at: new Date().toISOString()
-        }, { onConflict: "user_id" });
-      } catch(e) { console.error("Cloud sync failed:", e); }
-    }
-  } catch(e) { console.error("Reset failed:", e); }
-
-  dismissResetOverlay(`✓ Reset done`, true);
+  dismissResetOverlay();
 }
 
 async function resetProgress() {
-  const btn = document.querySelector("#resetConfirmOverlay .reset-all-btn");
-  if (btn) resetSetLoadingState(btn, "Resetting…");
+  completedSets = [];
+  customSets = [];
+  wrongSet = [];
 
-  try {
-    completedSets = [];
-    customSets = [];
-    wrongSet = [];
-
-    localStorage.removeItem("completedSets");
-    localStorage.removeItem("customSets");
-    localStorage.removeItem("wrongSet");
-    Object.keys(localStorage).forEach(k => {
-      if (k.startsWith("aiTasks_") || k.startsWith("memTasks_") || k.startsWith("cmTasks_")) {
-        localStorage.removeItem(k);
-      }
-    });
-
-    if (currentUser) {
-      try {
-        await sb.from("user_progress").upsert({
-          user_id: currentUser.id,
-          completed_sets: [],
-          custom_sets: [],
-          updated_at: new Date().toISOString()
-        }, { onConflict: "user_id" });
-      } catch(e) { console.error("Cloud reset failed:", e); }
+  localStorage.removeItem("completedSets");
+  localStorage.removeItem("customSets");
+  localStorage.removeItem("wrongSet");
+  Object.keys(localStorage).forEach(k => {
+    if (k.startsWith("aiTasks_") || k.startsWith("memTasks_") || k.startsWith("cmTasks_")) {
+      localStorage.removeItem(k);
     }
-  } catch(e) { console.error("Reset failed:", e); }
+  });
 
-  dismissResetOverlay("✓ All progress reset", true);
+  if (currentUser) {
+    try {
+      await sb.from("user_progress").upsert({
+        user_id: currentUser.id,
+        completed_sets: [],
+        custom_sets: [],
+        updated_at: new Date().toISOString()
+      }, { onConflict: "user_id" });
+    } catch(e) { console.error("Cloud reset failed:", e); }
+  }
+
+  dismissResetOverlay();
 }
 
 function updateAuthBtn() {
