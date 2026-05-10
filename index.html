@@ -4347,7 +4347,8 @@ function buildSpellingState(task, sig) {
     answered: false,
     picked: null,
     typed: "",
-    inputResult: null
+    inputResult: null,
+    shuffledOptions: null
   };
 }
 
@@ -4376,7 +4377,11 @@ function renderSpellingCard(container, word, task) {
 
 function renderSpellingChoice(container, word, task, correct, translation, scoreHTML) {
   const { answered, picked } = spellingState;
-  const btns = task.options.map(opt => {
+  // Shuffle options once per card and store to avoid re-shuffling on re-render
+  if (!spellingState.shuffledOptions) {
+    spellingState.shuffledOptions = [...task.options].sort(() => Math.random() - 0.5);
+  }
+  const btns = spellingState.shuffledOptions.map(opt => {
     let cls = "spelling-btn";
     if (answered) {
       if (opt === correct) cls += " correct";
@@ -4395,7 +4400,6 @@ function renderSpellingChoice(container, word, task, correct, translation, score
   container.innerHTML = `
     <div class="spelling-wrap">
       <div class="ooo-phase-label">Pick the correct spelling</div>
-      <div class="spelling-translation">${translation}</div>
       <div class="spelling-options">${btns}</div>
       ${resultHTML}
       ${scoreHTML}
@@ -4418,7 +4422,6 @@ function renderSpellingType(container, word, task, correct, translation, scoreHT
   container.innerHTML = `
     <div class="spelling-wrap">
       <div class="ooo-phase-label">Fix the spelling</div>
-      <div class="spelling-translation">${translation}</div>
       <div style="font-size:28px;font-weight:700;color:var(--wrong);letter-spacing:0.04em;text-align:center;margin:4px 0">${wrong}</div>
       <div style="font-size:12px;color:var(--muted);text-align:center">This word is misspelled — type the correct version</div>
       <div style="display:flex;gap:10px;width:100%;margin-top:4px">
@@ -4822,6 +4825,7 @@ async function signOut() {
 }
 
 function confirmResetProgress() {
+  document.getElementById("resetConfirmOverlay")?.remove();
   const overlay = document.createElement("div");
   overlay.id = "resetConfirmOverlay";
   overlay.style.cssText = `
@@ -4829,38 +4833,182 @@ function confirmResetProgress() {
     background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);
     display:flex;align-items:center;justify-content:center;padding:24px;
   `;
+
+  const doneSets = sets.filter(s => completedSets.includes(s.id));
+
   overlay.innerHTML = `
     <div style="
       background:var(--surface);border:1px solid rgba(248,113,113,0.25);
-      border-radius:20px;padding:32px 28px;max-width:360px;width:100%;
+      border-radius:20px;padding:32px 28px;max-width:400px;width:100%;
       box-shadow:0 30px 80px rgba(0,0,0,0.6);text-align:center;
     ">
-      <div style="font-size:40px;margin-bottom:12px">⚠️</div>
-      <h3 style="font-family:'DM Serif Display',serif;font-size:22px;color:var(--text);margin-bottom:10px">Reset all progress?</h3>
+      <div style="font-size:40px;margin-bottom:12px">🗑️</div>
+      <h3 style="font-family:'DM Serif Display',serif;font-size:22px;color:var(--text);margin-bottom:8px">Reset Progress</h3>
       <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:24px">
-        This will permanently delete all your completed sets and saved data — both locally and in the cloud.<br>This cannot be undone.
+        Choose what to reset. This cannot be undone.
       </p>
-      <div style="display:flex;gap:10px;">
-        <button onclick="document.getElementById('resetConfirmOverlay').remove()" style="
-          flex:1;background:transparent;border:1px solid var(--border);color:var(--muted);
-          font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;
-          padding:12px;border-radius:12px;cursor:pointer;transition:all 0.2s;
-        " onmouseover="this.style.borderColor='var(--border2)';this.style.color='var(--text)'"
-           onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">
-          Cancel
+
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
+        <button onclick="showResetAllConfirm()" style="
+          width:100%;background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.3);color:var(--wrong);
+          font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;
+          padding:14px 16px;border-radius:12px;cursor:pointer;transition:all 0.2s;
+          display:flex;align-items:center;gap:12px;text-align:left;
+        " onmouseover="this.style.background='rgba(248,113,113,0.16)'"
+           onmouseout="this.style.background='rgba(248,113,113,0.08)'">
+          <span style="font-size:20px;">💥</span>
+          <div>
+            <div>Reset Everything</div>
+            <div style="font-size:11px;font-weight:400;color:rgba(248,113,113,0.7);margin-top:2px">All ${completedSets.length} completed set${completedSets.length !== 1 ? "s" : ""}, custom sets & saved data</div>
+          </div>
         </button>
-        <button onclick="resetProgress()" style="
-          flex:1;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.35);color:var(--wrong);
-          font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;
-          padding:12px;border-radius:12px;cursor:pointer;transition:all 0.2s;
-        " onmouseover="this.style.background='rgba(248,113,113,0.2)'"
-           onmouseout="this.style.background='rgba(248,113,113,0.1)'">
-          Yes, Reset
+
+        <button onclick="showResetSelectSets()" ${doneSets.length === 0 ? "disabled" : ""} style="
+          width:100%;background:rgba(79,142,247,0.08);border:1px solid rgba(79,142,247,${doneSets.length === 0 ? "0.15" : "0.3"});
+          color:${doneSets.length === 0 ? "var(--muted)" : "var(--accent)"};
+          font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;
+          padding:14px 16px;border-radius:12px;cursor:${doneSets.length === 0 ? "default" : "pointer"};transition:all 0.2s;
+          display:flex;align-items:center;gap:12px;text-align:left;opacity:${doneSets.length === 0 ? "0.5" : "1"};
+        " ${doneSets.length > 0 ? `onmouseover="this.style.background='rgba(79,142,247,0.16)'" onmouseout="this.style.background='rgba(79,142,247,0.08)'"` : ""}>
+          <span style="font-size:20px;">🎯</span>
+          <div>
+            <div>Select Specific Sets</div>
+            <div style="font-size:11px;font-weight:400;color:rgba(79,142,247,0.7);margin-top:2px">${doneSets.length === 0 ? "No completed sets yet" : `Choose from ${doneSets.length} completed set${doneSets.length !== 1 ? "s" : ""}`}</div>
+          </div>
         </button>
       </div>
+
+      <button onclick="document.getElementById('resetConfirmOverlay').remove()" style="
+        width:100%;background:transparent;border:1px solid var(--border);color:var(--muted);
+        font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;
+        padding:11px;border-radius:12px;cursor:pointer;transition:all 0.2s;
+      " onmouseover="this.style.borderColor='var(--border2)';this.style.color='var(--text)'"
+         onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">
+        Cancel
+      </button>
     </div>
   `;
   document.body.appendChild(overlay);
+}
+
+function showResetAllConfirm() {
+  const box = document.querySelector("#resetConfirmOverlay > div");
+  box.innerHTML = `
+    <div style="font-size:40px;margin-bottom:12px">⚠️</div>
+    <h3 style="font-family:'DM Serif Display',serif;font-size:22px;color:var(--text);margin-bottom:10px">Reset everything?</h3>
+    <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:24px">
+      This will permanently delete all ${completedSets.length} completed set${completedSets.length !== 1 ? "s" : ""}, custom sets and saved data — both locally and in the cloud.
+    </p>
+    <div style="display:flex;gap:10px;">
+      <button onclick="confirmResetProgress()" style="
+        flex:1;background:transparent;border:1px solid var(--border);color:var(--muted);
+        font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;
+        padding:12px;border-radius:12px;cursor:pointer;
+      " onmouseover="this.style.borderColor='var(--border2)';this.style.color='var(--text)'"
+         onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">← Back</button>
+      <button onclick="resetProgress()" style="
+        flex:1;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.35);color:var(--wrong);
+        font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;
+        padding:12px;border-radius:12px;cursor:pointer;
+      " onmouseover="this.style.background='rgba(248,113,113,0.2)'"
+         onmouseout="this.style.background='rgba(248,113,113,0.1)'">Yes, Reset All</button>
+    </div>
+  `;
+}
+
+function showResetSelectSets() {
+  const doneSets = sets.filter(s => completedSets.includes(s.id));
+  const box = document.querySelector("#resetConfirmOverlay > div");
+
+  const checkboxes = doneSets.map(s => `
+    <label style="
+      display:flex;align-items:center;gap:10px;
+      padding:9px 12px;border-radius:10px;cursor:pointer;
+      background:var(--surface2);border:1px solid var(--border);
+      transition:border-color 0.15s;
+    " onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
+      <input type="checkbox" value="${s.id}" checked style="
+        width:16px;height:16px;accent-color:var(--wrong);cursor:pointer;flex-shrink:0;
+      "/>
+      <span style="font-size:13px;color:var(--text);font-weight:500">Set ${s.id}</span>
+      <span style="font-size:11px;color:var(--muted);margin-left:auto">${s.words?.length || 0} words</span>
+    </label>
+  `).join("");
+
+  box.innerHTML = `
+    <div style="font-size:40px;margin-bottom:12px">🎯</div>
+    <h3 style="font-family:'DM Serif Display',serif;font-size:22px;color:var(--text);margin-bottom:8px">Select sets to reset</h3>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Uncheck any sets you want to keep.</p>
+
+    <div style="display:flex;justify-content:space-between;margin-bottom:10px;padding:0 2px;">
+      <button onclick="resetSelectAll(true)" style="font-size:12px;color:var(--accent);background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;">Select all</button>
+      <button onclick="resetSelectAll(false)" style="font-size:12px;color:var(--muted);background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;">Deselect all</button>
+    </div>
+
+    <div id="resetSetsList" style="
+      display:flex;flex-direction:column;gap:6px;
+      max-height:240px;overflow-y:auto;margin-bottom:20px;
+      padding-right:4px;
+    ">${checkboxes}</div>
+
+    <div style="display:flex;gap:10px;">
+      <button onclick="confirmResetProgress()" style="
+        flex:1;background:transparent;border:1px solid var(--border);color:var(--muted);
+        font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;
+        padding:12px;border-radius:12px;cursor:pointer;
+      " onmouseover="this.style.borderColor='var(--border2)';this.style.color='var(--text)'"
+         onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">← Back</button>
+      <button onclick="resetSelectedSets()" style="
+        flex:1;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.35);color:var(--wrong);
+        font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;
+        padding:12px;border-radius:12px;cursor:pointer;
+      " onmouseover="this.style.background='rgba(248,113,113,0.2)'"
+         onmouseout="this.style.background='rgba(248,113,113,0.1)'">Reset Selected</button>
+    </div>
+  `;
+}
+
+function resetSelectAll(checked) {
+  document.querySelectorAll("#resetSetsList input[type=checkbox]").forEach(cb => cb.checked = checked);
+}
+
+async function resetSelectedSets() {
+  const checkboxes = document.querySelectorAll("#resetSetsList input[type=checkbox]:checked");
+  if (!checkboxes.length) {
+    document.getElementById("resetConfirmOverlay")?.remove();
+    return;
+  }
+  const selectedIds = [...checkboxes].map(cb => parseInt(cb.value));
+  completedSets = completedSets.filter(id => !selectedIds.includes(id));
+  localStorage.setItem("completedSets", JSON.stringify(completedSets));
+
+  if (currentUser) {
+    try {
+      await sb.from("user_progress").upsert({
+        user_id: currentUser.id,
+        completed_sets: completedSets,
+        custom_sets: customSets,
+        updated_at: new Date().toISOString()
+      }, { onConflict: "user_id" });
+    } catch(e) { console.error("Cloud sync failed:", e); }
+  }
+
+  document.getElementById("resetConfirmOverlay")?.remove();
+  renderSets();
+  renderAuthModal();
+
+  const toast = document.createElement("div");
+  toast.textContent = `✓ ${selectedIds.length} set${selectedIds.length !== 1 ? "s" : ""} reset`;
+  toast.style.cssText = `
+    position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
+    background:var(--surface2);border:1px solid var(--border2);
+    color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;
+    padding:10px 22px;border-radius:12px;z-index:4000;
+    box-shadow:0 8px 30px rgba(0,0,0,0.4);opacity:0;transition:opacity 0.25s ease;
+  `;
+  document.body.appendChild(toast);
+  requestAnimationFrame(() => toast.style.opacity = "1");
+  setTimeout(() => { toast.style.opacity = "0"; setTimeout(() => toast.remove(), 300); }, 2500);
 }
 
 async function resetProgress() {
