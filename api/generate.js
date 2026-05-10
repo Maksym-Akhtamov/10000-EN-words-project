@@ -61,7 +61,79 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Too many words per request (max 15)" });
   }
 
-  const prompt = type === "contextmemory" ?
+  // ===== SPELLING TYPE =====
+  if (type === "spelling") {
+    const spellingPrompt = `You are an English spelling expert creating spelling recognition exercises.
+
+TASK:
+For each word, create a spelling challenge where the student must identify the correctly spelled version.
+
+FOR EACH word:
+1. The correct spelling is the word itself
+2. Create exactly 3 misspelled variants that look very similar to the correct word
+3. All 4 options should look plausible at a glance
+
+MISSPELLING RULES:
+- Misspellings must be SUBTLE — change 1-3 letters max
+- Common mistake types:
+  • Double/single letter confusion: "necessary" → "neccessary", "accomodate"
+  • Silent letters: "knowledge" → "knowlege"
+  • ie/ei confusion: "believe" → "beleive"
+  • Vowel swap: "separate" → "seperate"
+  • Consonant swap: "privilege" → "priviledge"
+- The word must still be RECOGNIZABLE as an attempt at the same word
+- Do NOT create completely different words
+
+CRITICAL: The word must be clearly recognizable despite misspelling.
+BAD: "cat" → "kgt" (unrecognizable)
+GOOD: "beautiful" → "beautifull", "beutiful", "beautyful"
+
+OUTPUT FORMAT:
+Return ONLY valid JSON array:
+[
+  {
+    "word": "necessary",
+    "correct": "necessary",
+    "options": ["necessary", "neccessary", "necesary", "neccesary"]
+  }
+]
+
+IMPORTANT:
+- Shuffle options so correct answer is NOT always first
+- Return ONLY the JSON array, no extra text
+
+WORDS: ${JSON.stringify(words)}`;
+
+    try {
+      const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: [{ role: "user", content: spellingPrompt }],
+          temperature: 0.7,
+          max_tokens: 1500,
+        }),
+      });
+      if (!openaiRes.ok) {
+        const err = await openaiRes.text();
+        return res.status(502).json({ error: "OpenAI error: " + err });
+      }
+      const data = await openaiRes.json();
+      const text = data.choices[0].message.content;
+      const start = text.indexOf("[");
+      const end = text.lastIndexOf("]");
+      if (start === -1 || end === -1) return res.status(502).json({ error: "Invalid AI response" });
+      const parsed = JSON.parse(text.slice(start, end + 1));
+      res.setHeader("Cache-Control", "no-store");
+      return res.status(200).json(parsed);
+    } catch (e) {
+      return res.status(500).json({ error: "spelling failed: " + e.message });
+    }
+  }
 `You are an expert English teacher creating memory-based exercises.
 
 TASK:

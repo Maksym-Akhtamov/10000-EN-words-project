@@ -346,6 +346,88 @@
     .exam-verdict-sentence { font-size: 13px; color: var(--text); margin-bottom: 4px; line-height: 1.5; }
     .exam-verdict-explanation { font-size: 12px; color: var(--muted); line-height: 1.5; }
 
+    /* ===== ODD ONE OUT MODE ===== */
+    .ooo-wrap {
+      width: 100%; max-width: 520px;
+      display: flex; flex-direction: column; align-items: center; gap: 20px;
+    }
+    .ooo-phase-label {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--muted);
+    }
+    .ooo-cards-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr);
+      gap: 10px; width: 100%;
+    }
+    .ooo-card-item {
+      background: var(--surface2); border: 1px solid var(--border2);
+      border-radius: 12px; padding: 16px 12px;
+      text-align: center; font-size: 15px; font-weight: 600; color: var(--text);
+      transition: all 0.2s; cursor: default;
+      min-height: 58px; display: flex; align-items: center; justify-content: center;
+    }
+    .ooo-card-item.reveal { animation: oooReveal 0.35s ease; }
+    @keyframes oooReveal {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .ooo-word-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 10px; width: 100%;
+    }
+    .ooo-word-btn {
+      background: var(--surface2); border: 1px solid var(--border2);
+      border-radius: 12px; padding: 14px 8px;
+      font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600;
+      color: var(--text); cursor: pointer; transition: all 0.2s;
+      text-align: center; min-height: 52px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .ooo-word-btn:hover { border-color: var(--accent); background: rgba(79,142,247,0.08); }
+    .ooo-word-btn.correct-pick { background: rgba(74,222,128,0.12); border-color: var(--correct); color: var(--correct); }
+    .ooo-word-btn.wrong-pick   { background: rgba(248,113,113,0.12); border-color: var(--wrong); color: var(--wrong); }
+    .ooo-word-btn.reveal-odd   { background: rgba(74,222,128,0.08); border-color: var(--correct); }
+    .ooo-timer-bar { width: 100%; height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+    .ooo-timer-fill {
+      height: 100%; border-radius: 2px; background: var(--accent2);
+      transition: width 0.1s linear, background 0.4s;
+    }
+    .ooo-timer-fill.warn   { background: #fbbf24; }
+    .ooo-timer-fill.danger { background: var(--wrong); animation: timerPulse 0.5s ease infinite; }
+    .ooo-result-banner {
+      font-size: 15px; font-weight: 700; padding: 12px 20px;
+      border-radius: 12px; text-align: center; width: 100%;
+    }
+    .ooo-result-banner.ok  { background: rgba(74,222,128,0.1); color: var(--correct); border: 1px solid rgba(74,222,128,0.25); }
+    .ooo-result-banner.err { background: rgba(248,113,113,0.1); color: var(--wrong);   border: 1px solid rgba(248,113,113,0.25); }
+    .ooo-score { font-size: 13px; color: var(--muted); }
+    .ooo-score strong { color: var(--text); }
+
+    /* ===== SPELLING MODE ===== */
+    .spelling-wrap {
+      width: 100%; max-width: 520px;
+      display: flex; flex-direction: column; align-items: center; gap: 18px;
+    }
+    .spelling-translation {
+      font-size: 22px; font-weight: 600; color: var(--text); text-align: center;
+    }
+    .spelling-hint { font-size: 13px; color: var(--muted); }
+    .spelling-options {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 10px; width: 100%;
+    }
+    .spelling-btn {
+      background: var(--surface2); border: 1px solid var(--border2);
+      border-radius: 12px; padding: 14px 12px;
+      font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600;
+      color: var(--text); cursor: pointer; transition: all 0.2s; text-align: center;
+      min-height: 56px; display: flex; align-items: center; justify-content: center;
+    }
+    .spelling-btn:hover { border-color: var(--accent); background: rgba(79,142,247,0.08); }
+    .spelling-btn.correct { background: rgba(74,222,128,0.12); border-color: var(--correct); color: var(--correct); }
+    .spelling-btn.wrong   { background: rgba(248,113,113,0.12); border-color: var(--wrong); color: var(--wrong); }
+    .spelling-btn.reveal  { background: rgba(74,222,128,0.06); border-color: var(--correct); }
+
     /* ===== REGEN BUTTONS ===== */
     .regen-btn {
       width: 100%;
@@ -1173,6 +1255,7 @@
           <div class="dropdown-item" onclick="selectMode('audio')">  <span class="icon">🔊</span> Audio</div>
           <div class="dropdown-item" onclick="selectMode('truefalse')"> <span class="icon">✅</span> True / False</div>
           <div class="dropdown-item" onclick="selectMode('matches')"> <span class="icon">🧩</span> Matches</div>
+          <div class="dropdown-item" onclick="selectMode('oddoneout')"> <span class="icon">🔍</span> Odd One Out</div>
         </div>
       </div>
 
@@ -1189,6 +1272,7 @@
           <div class="dropdown-item" onclick="selectMode('ai')">     <span class="icon">⚡</span> Context Mode</div>
           <div class="dropdown-item" onclick="selectMode('memory')"> <span class="icon">🧠</span> Memory Associations</div>
           <div class="dropdown-item" onclick="selectMode('contextmemory')"> <span class="icon">🔗</span> Context Memory</div>
+          <div class="dropdown-item" onclick="selectMode('spelling')"> <span class="icon">✍️</span> Spelling</div>
         </div>
       </div>
 
@@ -1240,6 +1324,13 @@
           <div class="lang-btns">
             <button class="lang-btn active" id="cmChoiceBtn" onclick="setCMInput('choice')">Choice</button>
             <button class="lang-btn" id="cmTypeBtn" onclick="setCMInput('type')">Type</button>
+          </div>
+        </div>
+        <div class="choice-setting" id="spellingInputSetting">
+          <div class="lang-label">Spelling Mode</div>
+          <div class="lang-btns">
+            <button class="lang-btn active" id="spellingChoiceBtn" onclick="setSpellingInput('choice')">Choice</button>
+            <button class="lang-btn" id="spellingTypeBtn" onclick="setSpellingInput('type')">Type</button>
           </div>
         </div>
 
@@ -1365,6 +1456,10 @@
     <button class="regen-btn" id="regenCMBtn" onclick="regenerateCM()">
       <svg viewBox="0 0 24 24"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
       Regen CM
+    </button>
+    <button class="regen-btn" id="regenSpellingBtn" onclick="regenerateSpelling()">
+      <svg viewBox="0 0 24 24"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      Regen Spelling
     </button>
   </aside>
 
@@ -1680,7 +1775,7 @@ let isAnswerLocked = false;  // true only when correct
 let autoPlay = false;
 let autoTimer = null;
 let autoDelay = 3;
-let activeMode = "study"; // study | choice | truefalse | matches | audio | ai | memory
+let activeMode = "study"; // study | choice | truefalse | matches | audio | ai | memory | oddoneout | spelling
 let direction = "all";  // en-ru | ru-en | all
 let keyboardOn = false;
 let langMode = "uk";     // both | uk | ru
@@ -1791,6 +1886,8 @@ function render() {
     ? (memoryTotalRounds ? `${memoryRound + 1} / ${memoryTotalRounds}` : "Memory Challenge")
     : activeMode === "contextmemory"
     ? (cmTotal ? `${cmRound + 1} / ${cmTotal}` : "Context Memory")
+    : activeMode === "oddoneout"
+    ? `Round ${oooRound + 1} / ${OOO_ROUNDS}`
     : (words.length ? `${current + 1} / ${order.length}` : "");
 
   const progressPct = activeMode === "matches"
@@ -1799,6 +1896,8 @@ function render() {
     ? (memoryTotalRounds ? ((memoryRound + 1) / memoryTotalRounds * 100) : 0)
     : activeMode === "contextmemory"
     ? (cmTotal ? ((cmRound + 1) / cmTotal * 100) : 0)
+    : activeMode === "oddoneout"
+    ? ((oooRound + 1) / OOO_ROUNDS * 100)
     : (words.length ? ((current + 1) / order.length * 100) : 0);
 
   const extraCounter = tutorMode ? ` · reviews ${tutorReviewsShown}` : "";
@@ -1842,7 +1941,7 @@ function render() {
   starBtn.className = "card-icon star-btn" + (inCustom ? " starred" : "");
 
   // Show card by default, unless we're in contextmemory mode
-  document.getElementById("card").style.display = activeMode === "contextmemory" ? "none" : "flex";
+  document.getElementById("card").style.display = (activeMode === "contextmemory" || activeMode === "oddoneout" || activeMode === "spelling") ? "none" : "flex";
 
   if (activeMode === "audio") {
     renderAudioMode(word);
@@ -1858,6 +1957,10 @@ function render() {
     renderTrueFalseMode(word, words);
   } else if (activeMode === "choice") {
     renderChoiceMode(word, words);
+  } else if (activeMode === "oddoneout") {
+    renderOddOneOutMode(words);
+  } else if (activeMode === "spelling") {
+    renderSpellingMode(word);
   } else {
     renderStudyMode(word);
   }
@@ -2821,7 +2924,7 @@ function prevWord() {
 
 // ===================== FLIP =====================
 function flipCard() {
-  if (activeMode === "choice" || activeMode === "truefalse" || activeMode === "matches" || activeMode === "ai" || activeMode === "audio") return;
+  if (activeMode === "choice" || activeMode === "truefalse" || activeMode === "matches" || activeMode === "ai" || activeMode === "audio" || activeMode === "oddoneout" || activeMode === "spelling") return;
   if (activeMode === "study" && examState?.phase === 1) return;
   flipped = !flipped;
   document.getElementById("cardInner").classList.toggle("flipped", flipped);
@@ -2929,14 +3032,16 @@ function selectMode(m) {
   memoryState = null;
   tutorReviewWordId = null;
   tutorReviewStage = null;
+  // Always clean up OOO timer when switching modes
+  if (oooTimer) { clearInterval(oooTimer); oooTimer = null; }
 
-  const coreIds = ["study","choice","truefalse","matches","audio"];
-  const aiIds   = ["ai","memory","contextmemory"];
+  const coreIds = ["study","choice","truefalse","matches","audio","oddoneout"];
+  const aiIds   = ["ai","memory","contextmemory","spelling"];
   const coreLabels = {
     study: "📖 Study", choice: "🎯 Choice", truefalse: "✅ True / False",
-    matches: "🧩 Matches", audio: "🔊 Audio"
+    matches: "🧩 Matches", audio: "🔊 Audio", oddoneout: "🔍 Odd One Out"
   };
-  const aiLabels = { ai: "⚡ Context Mode", memory: "🧠 Memory Associations", contextmemory: "🔗 Context Memory" };
+  const aiLabels = { ai: "⚡ Context Mode", memory: "🧠 Memory Associations", contextmemory: "🔗 Context Memory", spelling: "✍️ Spelling" };
 
   if (coreIds.includes(m)) {
     document.getElementById("coreTriggerLabel").textContent = coreLabels[m];
@@ -2966,6 +3071,17 @@ function selectMode(m) {
     cmState = null;
     cmRound = 0;
     loadCMTasks();
+  }
+  if (m === "oddoneout") {
+    if (oooTimer) { clearInterval(oooTimer); oooTimer = null; }
+    oooState = null;
+    oooStarted = false;
+    oooRound = 0;
+    oooScore = { correct: 0, total: 0 };
+  }
+  if (m === "spelling") {
+    spellingState = null;
+    loadSpellingTasks();
   }
 
   current = 0;
@@ -3931,9 +4047,435 @@ function startMemoryRound() {
 }
 
 
+// ===================== ODD ONE OUT MODE =====================
+let oooState = null;
+let oooStarted = false;
+let oooScore = { correct: 0, total: 0 };
+let oooTimer = null;
+let oooRound = 0;          // which round (0-9 for 10 rounds)
+const OOO_ROUNDS = 10;     // total rounds per session
+const OOO_SHOW_TIME = 800;   // ms to show cards
+const OOO_COUNT = 10;         // cards to show
+
+function renderOddOneOutMode(words) {
+  const container = document.getElementById("testOptions");
+  container.style.display = "block";
+
+  if (words.length < OOO_COUNT + 1) {
+    container.innerHTML = `
+      <div class="ooo-wrap">
+        <div style="color:var(--muted);font-size:15px;text-align:center">
+          Need at least ${OOO_COUNT + 1} words in this set for Odd One Out.
+        </div>
+      </div>`;
+    return;
+  }
+
+  if (!oooStarted) {
+    const isNewSession = oooRound === 0;
+    container.innerHTML = `
+      <div class="ooo-wrap">
+        <div style="font-size:48px;text-align:center">🔍</div>
+        <div class="card-word" style="font-size:22px;text-align:center">Odd One Out</div>
+        <div style="font-size:13px;color:var(--muted);text-align:center;line-height:1.7;max-width:380px">
+          ${isNewSession
+            ? `You'll see <strong style="color:var(--text)">${OOO_COUNT} words</strong> one by one.<br>Then find the <strong style="color:var(--wrong)">1 extra word</strong> that wasn't shown.<br><span style="color:var(--muted);font-size:12px">${OOO_ROUNDS} rounds total</span>`
+            : `Round <strong style="color:var(--text)">${oooRound + 1} / ${OOO_ROUNDS}</strong> — keep going!`
+          }
+        </div>
+        <button onclick="event.stopPropagation();startOddOneOut()" 
+          style="background:var(--accent);color:#fff;padding:13px 32px;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;border:none;cursor:pointer;margin-top:8px">
+          ${isNewSession ? "▶ Start" : "▶ Next Round"}
+        </button>
+        ${oooScore.total > 0 ? `<div class="ooo-score">Score: <strong>${oooScore.correct}/${oooScore.total}</strong></div>` : ""}
+      </div>`;
+    return;
+  }
+
+  if (!oooState) { oooStarted = false; render(); return; }
+
+  if (oooState.phase === "show") {
+    renderOooShowPhase(container);
+  } else if (oooState.phase === "pick") {
+    renderOooPickPhase(container);
+  } else if (oooState.phase === "result") {
+    renderOooResultPhase(container);
+  }
+}
+
+function startOddOneOut() {
+  const words = getWords();
+  if (words.length < OOO_COUNT + 1) return;
+
+  // Pick OOO_COUNT random words from set
+  const shuffled = [...words].sort(() => Math.random() - 0.5);
+  const shownWords = shuffled.slice(0, OOO_COUNT);
+
+  // Pick 1 "odd" word — from the set but NOT in shownWords
+  const remaining = words.filter(w => !shownWords.find(s => s.id === w.id));
+  const oddWord = remaining[Math.floor(Math.random() * remaining.length)];
+
+  oooState = {
+    phase: "show",
+    shownWords,
+    oddWord,
+    showIdx: 0,
+    timerPct: 100,
+    timerInterval: null,
+    answered: false
+  };
+  oooStarted = true;
+  render();
+  oooTickShow();
+}
+
+function oooTickShow() {
+  if (oooTimer) clearInterval(oooTimer);
+  const start = Date.now();
+  oooTimer = setInterval(() => {
+    if (!oooState || oooState.phase !== "show") { clearInterval(oooTimer); return; }
+    const elapsed = Date.now() - start;
+    oooState.timerPct = Math.max(0, 100 - (elapsed / OOO_SHOW_TIME) * 100);
+    if (elapsed >= OOO_SHOW_TIME) {
+      clearInterval(oooTimer);
+      oooState.showIdx++;
+      if (oooState.showIdx >= oooState.shownWords.length) {
+        oooState.phase = "pick";
+        oooState.timerPct = 100;
+        render();
+        return;
+      }
+      oooState.timerPct = 100;
+      render();
+      oooTickShow();
+    } else {
+      // Just update timer bar without full re-render
+      const fill = document.getElementById("oooTimerFill");
+      if (fill) {
+        fill.style.width = oooState.timerPct + "%";
+        fill.className = "ooo-timer-fill" + (oooState.timerPct < 30 ? " danger" : oooState.timerPct < 60 ? " warn" : "");
+      }
+    }
+  }, 100);
+}
+
+function renderOooShowPhase(container) {
+  const { shownWords, showIdx, timerPct } = oooState;
+  const word = shownWords[showIdx];
+  const timerClass = timerPct < 30 ? "danger" : timerPct < 60 ? "warn" : "";
+  container.innerHTML = `
+    <div class="ooo-wrap">
+      <div class="ooo-phase-label">Round ${oooRound + 1}/${OOO_ROUNDS} · Memorize — ${showIdx + 1} / ${shownWords.length}</div>
+      <div class="ooo-timer-bar"><div class="ooo-timer-fill ${timerClass}" id="oooTimerFill" style="width:${timerPct}%"></div></div>
+      <div style="text-align:center;padding:32px 0">
+        <div style="font-size:36px;font-weight:700;color:var(--text);letter-spacing:0.02em">${word.en}</div>
+        <div style="font-size:16px;color:var(--muted);margin-top:10px">${word.uk}</div>
+      </div>
+      <div class="ooo-score">Card <strong>${showIdx + 1}</strong> of ${shownWords.length}</div>
+    </div>`;
+}
+
+function renderOooPickPhase(container) {
+  const { shownWords, oddWord } = oooState;
+
+  // Build options: all shown + odd, shuffle
+  const options = [...shownWords, oddWord].sort(() => Math.random() - 0.5);
+  // Store shuffled order in state so clicks are stable
+  if (!oooState.options) oooState.options = options;
+
+  const btns = oooState.options.map((w, i) => {
+    const cls = oooState.answered
+      ? (w.id === oddWord.id ? "ooo-word-btn reveal-odd" : "ooo-word-btn")
+      : "ooo-word-btn";
+    return `<button class="${cls}" onclick="event.stopPropagation();oooPickAnswer(${i})" ${oooState.answered ? "disabled" : ""}>${w.en}</button>`;
+  }).join("");
+
+  container.innerHTML = `
+    <div class="ooo-wrap">
+      <div class="ooo-phase-label">Find the word that was NOT in the set!</div>
+      <div class="ooo-word-grid">${btns}</div>
+      ${oooState.answered ? `<div class="ooo-result-banner ${oooState.lastCorrect ? "ok" : "err"}">${oooState.lastCorrect ? "✓ Correct!" : "✗ Wrong! The odd word was: " + oddWord.en}</div>
+        <button onclick="event.stopPropagation();oooNext()" style="padding:11px 28px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer">Next Round →</button>` : ""}
+      ${oooScore.total > 0 ? `<div class="ooo-score">Score: <strong>${oooScore.correct}/${oooScore.total}</strong></div>` : ""}
+    </div>`;
+}
+
+function oooPickAnswer(idx) {
+  if (!oooState || oooState.answered) return;
+  const picked = oooState.options[idx];
+  const isCorrect = picked.id === oooState.oddWord.id;
+  oooState.answered = true;
+  oooState.lastCorrect = isCorrect;
+  oooScore.total++;
+  if (isCorrect) oooScore.correct++;
+  render();
+}
+
+function oooNext() {
+  if (oooTimer) clearInterval(oooTimer);
+  oooState = null;
+  oooRound++;
+  if (oooRound >= OOO_ROUNDS) {
+    // Session complete
+    oooRound = 0;
+    oooStarted = false;
+    const container = document.getElementById("testOptions");
+    container.innerHTML = `
+      <div class="ooo-wrap">
+        <div style="font-size:48px;text-align:center">🏁</div>
+        <div class="card-word" style="font-size:22px;text-align:center">Session Complete!</div>
+        <div style="font-size:13px;color:var(--muted);text-align:center;line-height:1.7">
+          Final score: <strong style="color:var(--text)">${oooScore.correct} / ${oooScore.total}</strong>
+        </div>
+        <button onclick="event.stopPropagation();oooScore={correct:0,total:0};oooStarted=false;render()" 
+          style="background:var(--accent);color:#fff;padding:13px 32px;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;border:none;cursor:pointer;margin-top:8px">
+          🔄 Play Again
+        </button>
+      </div>`;
+    return;
+  }
+  oooStarted = false;
+  render();
+}
+
+// ===================== SPELLING MODE =====================
+let spellingTasks = null;
+let spellingTasksCache = {};
+let spellingState = null;
+let spellingScore = { correct: 0, total: 0 };
+let spellingInputMode = "choice"; // choice | type
+
+function getSpellingKey() { return `spellingTasks_set_${sets[currentSet].id}`; }
+
+function loadSpellingCache() {
+  const key = getSpellingKey();
+  if (spellingTasksCache[key]) return spellingTasksCache[key];
+  const s = localStorage.getItem(key);
+  if (s) { try { const p = JSON.parse(s); spellingTasksCache[key] = p; return p; } catch(e){} }
+  return null;
+}
+
+function saveSpellingCache(tasks) {
+  const key = getSpellingKey();
+  spellingTasksCache[key] = tasks;
+  localStorage.setItem(key, JSON.stringify(tasks));
+}
+
+async function loadSpellingTasks() {
+  const cached = loadSpellingCache();
+  if (cached) { spellingTasks = cached; render(); return; }
+  spellingTasks = []; render();
+}
+
+async function generateSpellingBatch(words) {
+  const res = await fetch("/api/generate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ words: words.map(w => w.en), type: "spelling" })
+  });
+  if (!res.ok) throw new Error("Server " + res.status);
+  return res.json();
+}
+
+async function startSpellingGeneration() {
+  spellingTasks = null; render();
+  const words = getWords();
+  if (!words.length) { spellingTasks = []; render(); return; }
+  const batches = [];
+  for (let i = 0; i < words.length; i += 10) batches.push(words.slice(i, i + 10));
+  try {
+    const results = await Promise.all(batches.map(b => generateSpellingBatch(b)));
+    const all = results.flat();
+    if (!all.length) { spellingTasks = []; render(); return; }
+    const setId = sets[currentSet].id;
+    spellingTasks = all.map(t => ({ ...t, setId }));
+    saveSpellingCache(spellingTasks);
+    spellingState = null;
+    render();
+  } catch(e) {
+    console.error(e);
+    spellingTasks = []; render();
+  }
+}
+
+function regenerateSpelling() {
+  localStorage.removeItem(getSpellingKey());
+  delete spellingTasksCache[getSpellingKey()];
+  startSpellingGeneration();
+}
+
+function renderSpellingMode(word) {
+  const container = document.getElementById("testOptions");
+  container.style.display = "block";
+
+  if (spellingTasks === null) {
+    container.innerHTML = `<div style="text-align:center;padding:40px 0;color:var(--muted);font-size:17px">⏳ Generating…</div>`;
+    return;
+  }
+
+  const task = spellingTasks.find(t => t.word === word.en && t.setId === sets[currentSet].id);
+
+  if (!task) {
+    container.innerHTML = `
+      <div class="spelling-wrap">
+        <div style="font-size:48px;text-align:center">✍️</div>
+        <div class="card-word" style="font-size:20px;text-align:center">Spelling Challenge</div>
+        <div style="font-size:13px;color:var(--muted);text-align:center;line-height:1.7;max-width:380px">
+          AI generates misspelled variants of each word.<br>Pick the <strong style="color:var(--text)">correctly spelled</strong> one.
+        </div>
+        <button onclick="event.stopPropagation();startSpellingGeneration()"
+          style="background:var(--accent);color:#fff;padding:13px 28px;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;border:none;cursor:pointer;margin-top:4px">
+          ⚡ Generate Spelling Tasks
+        </button>
+        ${spellingScore.total > 0 ? `<div style="font-size:13px;color:var(--muted)">Score: <strong style="color:var(--text)">${spellingScore.correct}/${spellingScore.total}</strong></div>` : ""}
+      </div>`;
+    return;
+  }
+
+  // Build per-word state
+  const sig = word.id;
+  if (!spellingState || spellingState.sig !== sig) {
+    spellingState = buildSpellingState(task, sig);
+  }
+
+  renderSpellingCard(container, word, task);
+}
+
+function buildSpellingState(task, sig) {
+  return {
+    sig,
+    answered: false,
+    picked: null,
+    typed: "",
+    inputResult: null
+  };
+}
+
+function setSpellingInput(mode) {
+  spellingInputMode = mode;
+  document.getElementById("spellingChoiceBtn").classList.toggle("active", mode === "choice");
+  document.getElementById("spellingTypeBtn").classList.toggle("active", mode === "type");
+  // Reset current card state so it re-renders in new mode
+  if (spellingState) { spellingState.answered = false; spellingState.picked = null; spellingState.typed = ""; spellingState.inputResult = null; }
+  render();
+}
+
+function renderSpellingCard(container, word, task) {
+  const correct = task.correct;
+  const translation = word.uk && word.ru ? `${word.uk} / ${word.ru}` : word.uk || word.ru || "";
+  const scoreHTML = spellingScore.total > 0
+    ? `<div style="font-size:13px;color:var(--muted)">Score: <strong style="color:var(--text)">${spellingScore.correct}/${spellingScore.total}</strong></div>`
+    : "";
+
+  if (spellingInputMode === "choice") {
+    renderSpellingChoice(container, word, task, correct, translation, scoreHTML);
+  } else {
+    renderSpellingType(container, word, task, correct, translation, scoreHTML);
+  }
+}
+
+function renderSpellingChoice(container, word, task, correct, translation, scoreHTML) {
+  const { answered, picked } = spellingState;
+  const btns = task.options.map(opt => {
+    let cls = "spelling-btn";
+    if (answered) {
+      if (opt === correct) cls += " correct";
+      else if (opt === picked) cls += " wrong";
+    }
+    return `<button class="${cls}" onclick="event.stopPropagation();spellingPick('${opt.replace(/'/g,"\'")}','${correct.replace(/'/g,"\'")}',${word.id})"
+      ${answered ? "disabled" : ""}>${opt}</button>`;
+  }).join("");
+
+  const resultHTML = answered
+    ? `<div style="font-size:14px;font-weight:600;color:${picked === correct ? "var(--correct)" : "var(--wrong)"};text-align:center;margin-top:4px">
+        ${picked === correct ? "✓ Correct!" : `✗ Correct: <span style="color:var(--correct)">${correct}</span>`}
+       </div>`
+    : "";
+
+  container.innerHTML = `
+    <div class="spelling-wrap">
+      <div class="ooo-phase-label">Pick the correct spelling</div>
+      <div class="spelling-translation">${translation}</div>
+      <div class="spelling-options">${btns}</div>
+      ${resultHTML}
+      ${scoreHTML}
+    </div>`;
+}
+
+function renderSpellingType(container, word, task, correct, translation, scoreHTML) {
+  const { answered, inputResult } = spellingState;
+  // Pick one misspelled variant to show (not the correct one)
+  const wrong = task.options.find(o => o !== correct) || task.options[0];
+
+  let resultHTML = "";
+  if (answered) {
+    const isOk = inputResult === "correct";
+    resultHTML = `<div style="font-size:14px;font-weight:600;color:${isOk ? "var(--correct)" : "var(--wrong)"};text-align:center;margin-top:4px">
+      ${isOk ? "✓ Correct!" : `✗ Answer: <span style="color:var(--correct)">${correct}</span>`}
+    </div>`;
+  }
+
+  container.innerHTML = `
+    <div class="spelling-wrap">
+      <div class="ooo-phase-label">Fix the spelling</div>
+      <div class="spelling-translation">${translation}</div>
+      <div style="font-size:28px;font-weight:700;color:var(--wrong);letter-spacing:0.04em;text-align:center;margin:4px 0">${wrong}</div>
+      <div style="font-size:12px;color:var(--muted);text-align:center">This word is misspelled — type the correct version</div>
+      <div style="display:flex;gap:10px;width:100%;margin-top:4px">
+        <input id="spellingTypeInput" type="text"
+          value="${spellingState.typed || ""}"
+          placeholder="Type correct spelling…"
+          autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+          oninput="spellingState.typed=this.value"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();event.stopPropagation();spellingCheckType('${correct.replace(/'/g,"\'")}',${word.id})}"
+          style="flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;font-family:'DM Sans',sans-serif;font-size:15px;color:var(--text);outline:none;"
+          ${answered ? "disabled" : ""} />
+        <button onclick="event.stopPropagation();spellingCheckType('${correct.replace(/'/g,"\'")}',${word.id})"
+          ${answered ? "disabled" : ""}
+          style="padding:12px 18px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap">
+          Check
+        </button>
+      </div>
+      ${resultHTML}
+      ${scoreHTML}
+    </div>`;
+
+  if (!answered) {
+    setTimeout(() => {
+      const inp = document.getElementById("spellingTypeInput");
+      if (inp) inp.focus();
+    }, 50);
+  }
+}
+
+function spellingPick(picked, correct, wordId) {
+  if (!spellingState || spellingState.answered) return;
+  const isCorrect = picked === correct;
+  spellingState.answered = true;
+  spellingState.picked = picked;
+  spellingScore.total++;
+  if (isCorrect) spellingScore.correct++;
+  if (!isCorrect) scheduleTutorReview(wordId);
+  render();
+  if (isCorrect) setTimeout(() => { nextWord(); }, 700);
+}
+
+function spellingCheckType(correct, wordId) {
+  if (!spellingState || spellingState.answered) return;
+  const typed = (spellingState.typed || "").trim().toLowerCase();
+  const isCorrect = typed === correct.toLowerCase();
+  spellingState.answered = true;
+  spellingState.inputResult = isCorrect ? "correct" : "wrong";
+  spellingScore.total++;
+  if (isCorrect) spellingScore.correct++;
+  if (!isCorrect) scheduleTutorReview(wordId);
+  render();
+  if (isCorrect) setTimeout(() => { nextWord(); }, 700);
+}
+
 // ===================== UI STATE =====================
 function updateAllUI() {
-  const isTest = ["choice","truefalse","matches","ai","memory","contextmemory"].includes(activeMode);
+  const isTest = ["choice","truefalse","matches","ai","memory","contextmemory","oddoneout","spelling"].includes(activeMode);
   const isAudio = activeMode === "audio";
 
   const to = document.getElementById("testOptions");
@@ -3957,6 +4499,7 @@ function updateAllUI() {
   document.getElementById("regenBtn").classList.toggle("visible", activeMode === "ai");
   document.getElementById("regenMemoryBtn").classList.toggle("visible", activeMode === "memory");
   document.getElementById("regenCMBtn").classList.toggle("visible", activeMode === "contextmemory");
+  document.getElementById("regenSpellingBtn").classList.toggle("visible", activeMode === "spelling");
 
   document.getElementById("memoryDifficultySetting").style.display =
     activeMode === "memory" ? "block" : "none";
@@ -3972,6 +4515,9 @@ function updateAllUI() {
 
   document.getElementById("cmInputSetting").style.display =
     activeMode === "contextmemory" ? "block" : "none";
+
+  document.getElementById("spellingInputSetting").style.display =
+    activeMode === "spelling" ? "block" : "none";
 }
 
 // ===================== KEYBOARD SHORTCUTS =====================
@@ -5078,7 +5624,7 @@ function examSuccess(disputed = false) {
     <div class="exam-phase-start">
       <div class="phase-icon">🏆</div>
       <h3>Exam Passed!</h3>
-      <p style="color:var(--correct)">Set ${setId + 1} is now marked as <strong>Learned</strong>.</p>
+      <p style="color:var(--correct)">Set ${setId} is now marked as <strong>Learned</strong>.</p>
       ${note}
       <div class="exam-btn-row" style="margin-top:24px">
         <button class="exam-btn-primary" onclick="closeExamModal(); examState=null;">Done</button>
