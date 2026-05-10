@@ -3338,12 +3338,14 @@ function addToWrongSet(wordId) {
   if (!wordId || wrongSet.includes(wordId)) return;
   wrongSet.push(wordId);
   localStorage.setItem("wrongSet", JSON.stringify(wrongSet));
+  scheduleSyncToCloud();
   renderWrongSetBtn();
 }
 
 function removeFromWrongSet(wordId) {
   wrongSet = wrongSet.filter(id => id !== wordId);
   localStorage.setItem("wrongSet", JSON.stringify(wrongSet));
+  scheduleSyncToCloud();
   renderWrongSetBtn();
 }
 
@@ -3371,6 +3373,7 @@ function clearWrongSet() {
   wrongSetActive = false;
   filterMode = "all";
   localStorage.setItem("wrongSet", JSON.stringify(wrongSet));
+  scheduleSyncToCloud();
   current = 0; frozenOrder = null;
   initOrder(); render(); renderCustomSets(); updateAllUI();
 }
@@ -4633,6 +4636,7 @@ sb.auth.onAuthStateChange(async (event, session) => {
   currentUser = session?.user || null;
   updateAuthBtn();
   if (currentUser) {
+    // Load on any auth event — INITIAL_SESSION fires on page load when already logged in
     await loadProgressFromCloud();
   }
 });
@@ -4643,7 +4647,7 @@ async function loadProgressFromCloud() {
   try {
     const { data, error } = await sb
       .from("user_progress")
-      .select("completed_sets, custom_sets")
+      .select("completed_sets, custom_sets, wrong_set")
       .eq("user_id", currentUser.id)
       .single();
 
@@ -4653,29 +4657,23 @@ async function loadProgressFromCloud() {
     }
 
     if (data) {
-      // Merge: cloud wins for completedSets, union for customSets words
-      if (data.completed_sets?.length) {
+      // Cloud always wins — ensures resets and changes propagate across all devices
+      if (Array.isArray(data.completed_sets)) {
         completedSets = data.completed_sets;
         localStorage.setItem("completedSets", JSON.stringify(completedSets));
       }
-      if (data.custom_sets?.length) {
-        // Merge local and cloud custom sets by union of word ids
-        const cloudWords = data.custom_sets.flatMap(s => s.words);
-        const localWords = customSets.flatMap(s => s.words);
-        const allWords = [...new Set([...cloudWords, ...localWords])];
-        if (allWords.length) {
-          // Rebuild into chunks of 50
-          customSets = [];
-          for (let i = 0; i < allWords.length; i += 50) {
-            customSets.push({ id: customSets.length + 1, words: allWords.slice(i, i + 50) });
-          }
-        } else {
-          customSets = data.custom_sets;
-        }
+      if (Array.isArray(data.custom_sets)) {
+        customSets = data.custom_sets;
         localStorage.setItem("customSets", JSON.stringify(customSets));
+      }
+      if (Array.isArray(data.wrong_set)) {
+        wrongSet = data.wrong_set;
+        localStorage.setItem("wrongSet", JSON.stringify(wrongSet));
       }
       renderSets();
       renderCustomSets();
+      renderWrongSetBtn();
+      render();
     }
   } catch(e) {
     console.error("Cloud load failed:", e);
@@ -4695,6 +4693,7 @@ async function syncToCloud() {
       user_id: currentUser.id,
       completed_sets: completedSets,
       custom_sets: customSets,
+      wrong_set: wrongSet,
       updated_at: new Date().toISOString()
     }, { onConflict: "user_id" });
   } catch(e) {
@@ -5009,10 +5008,21 @@ function resetSelectAll(checked) {
 }
 
 function dismissResetOverlay() {
-  // Remove overlay immediately — no fade, no async, guaranteed to close
   const overlay = document.getElementById("resetConfirmOverlay");
-  if (overlay) overlay.remove();
-  // Close auth panel and refresh UI
+  if (!overlay) { _afterResetDismiss(); return; }
+  // Smooth scale+fade out
+  overlay.style.transition = "opacity 0.25s ease";
+  overlay.firstElementChild.style.transition = "opacity 0.25s ease, transform 0.25s ease";
+  overlay.style.opacity = "0";
+  overlay.firstElementChild.style.opacity = "0";
+  overlay.firstElementChild.style.transform = "scale(0.95)";
+  setTimeout(() => {
+    overlay.remove();
+    _afterResetDismiss();
+  }, 260);
+}
+
+function _afterResetDismiss() {
   const authOverlay = document.getElementById("authOverlay");
   if (authOverlay) authOverlay.style.display = "none";
   renderSets();
@@ -5038,6 +5048,7 @@ function resetSelectedSets() {
       user_id: currentUser.id,
       completed_sets: completedSets,
       custom_sets: customSets,
+      wrong_set: wrongSet,
       updated_at: new Date().toISOString()
     }, { onConflict: "user_id" }).catch(e => console.error("Cloud sync failed:", e));
   }
