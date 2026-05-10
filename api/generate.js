@@ -134,6 +134,8 @@ WORDS: ${JSON.stringify(words)}`;
       return res.status(500).json({ error: "spelling failed: " + e.message });
     }
   }
+
+  const prompt = type === "contextmemory" ?
 `You are an expert English teacher creating memory-based exercises.
 
 TASK:
