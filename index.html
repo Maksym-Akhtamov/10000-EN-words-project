@@ -5036,7 +5036,6 @@ function resetSelectAll(checked) {
 function dismissResetOverlay() {
   const overlay = document.getElementById("resetConfirmOverlay");
   if (!overlay) { _afterResetDismiss(); return; }
-  // Smooth scale+fade out
   overlay.style.transition = "opacity 0.25s ease";
   overlay.firstElementChild.style.transition = "opacity 0.25s ease, transform 0.25s ease";
   overlay.style.opacity = "0";
@@ -5049,14 +5048,14 @@ function dismissResetOverlay() {
 }
 
 function _afterResetDismiss() {
-  const authOverlay = document.getElementById("authOverlay");
-  if (authOverlay) authOverlay.style.display = "none";
+  // Do NOT close the auth modal — user may want to sign out after reset
   renderSets();
   renderCustomSets();
+  renderWrongSetBtn();
   render();
 }
 
-function resetSelectedSets() {
+async function resetSelectedSets() {
   const checkboxes = document.querySelectorAll("#resetSetsList input[type=checkbox]:checked");
   if (!checkboxes.length) { dismissResetOverlay(); return; }
 
@@ -5064,14 +5063,18 @@ function resetSelectedSets() {
   completedSets = completedSets.filter(id => !selectedIds.includes(id));
 
   if (currentUser) {
-    // Logged in: update cloud only
-    sb.from("user_progress").upsert({
-      user_id: currentUser.id,
-      completed_sets: completedSets,
-      custom_sets: customSets,
-      wrong_set: wrongSet,
-      updated_at: new Date().toISOString()
-    }, { onConflict: "user_id" }).catch(e => console.error("Cloud sync failed:", e));
+    // Logged in: await cloud update so it's guaranteed saved before dismiss
+    try {
+      await sb.from("user_progress").upsert({
+        user_id: currentUser.id,
+        completed_sets: completedSets,
+        custom_sets: customSets,
+        wrong_set: wrongSet,
+        updated_at: new Date().toISOString()
+      }, { onConflict: "user_id" });
+    } catch(e) {
+      console.error("Cloud sync failed:", e);
+    }
   } else {
     // Offline: update localStorage only
     localStorage.setItem("completedSets", JSON.stringify(completedSets));
@@ -5080,21 +5083,25 @@ function resetSelectedSets() {
   dismissResetOverlay();
 }
 
-function resetProgress() {
-  // Reset in-memory state
+async function resetProgress() {
+  // Reset in-memory state immediately
   completedSets = [];
   customSets    = [];
   wrongSet      = [];
 
   if (currentUser) {
-    // Logged in: reset cloud only, localStorage stays as offline snapshot
-    sb.from("user_progress").upsert({
-      user_id: currentUser.id,
-      completed_sets: [],
-      custom_sets: [],
-      wrong_set: [],
-      updated_at: new Date().toISOString()
-    }, { onConflict: "user_id" }).catch(e => console.error("Cloud reset failed:", e));
+    // Logged in: await cloud reset so it's guaranteed saved before dismiss
+    try {
+      await sb.from("user_progress").upsert({
+        user_id: currentUser.id,
+        completed_sets: [],
+        custom_sets: [],
+        wrong_set: [],
+        updated_at: new Date().toISOString()
+      }, { onConflict: "user_id" });
+    } catch(e) {
+      console.error("Cloud reset failed:", e);
+    }
   } else {
     // Offline: reset localStorage
     localStorage.removeItem("completedSets");
