@@ -56,6 +56,24 @@ let cmStarted = false;
 // show times: easy=7s, medium=5s, hard=3s; pause always 3s (easy=2s)
 const CM_TIMES = { easy:{show:7,pause:2}, medium:{show:5,pause:3}, hard:{show:3,pause:3} };
 
+// ===================== DUNGEON DROPDOWN =====================
+function renderDungeonDropdown() {
+  const menu = document.querySelector("#dungeonDropdown .dropdown-menu");
+  if (!menu) return;
+  const set = DUNGEON_CONFIG[1];
+  if (!set) return;
+  menu.innerHTML = Object.entries(set).map(([lvl, cfg]) => {
+    const gr = cfg.goldReward ?? [0, 0];
+    const goldText = gr.length === 1 ? `${gr[0]}` : `${gr[0]}–${gr[1]}`;
+    const icon = cfg.boss?.emoji ?? "⚔️";
+    return `<div class="dropdown-item dng-dropdown-item" onclick="enterDungeon(1,${lvl})">` +
+      `<span class="icon">${icon}</span>` +
+      ` Lv.${lvl} — ${cfg.name}` +
+      `<span class="dng-gold-range">🪙${goldText}</span>` +
+      `</div>`;
+  }).join("");
+}
+
 // ===================== INIT =====================
 async function init() {
   loadCompletion();
@@ -69,6 +87,7 @@ async function init() {
   render();
   setLang("uk");
   updateAllUI();
+  renderDungeonDropdown();
   // Init AI difficulty buttons
   document.getElementById("aiMediumBtn").classList.add("active");
 }

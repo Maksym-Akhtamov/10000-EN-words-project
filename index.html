@@ -96,6 +96,7 @@
             <div class="dropdown-item" onclick="enterDungeon(1,4)"><span class="icon">❄️</span> Lv.4 — Frozen Fortress</div>
             <div class="dropdown-item" onclick="enterDungeon(1,5)"><span class="icon">👁️</span> Lv.5 — Shadow Dungeon</div>
             <div class="dropdown-item" onclick="enterDungeon(1,6)"><span class="icon">🐉</span> Lv.6 — Dragon Mountain</div>
+            <div class="dropdown-item" onclick="enterDungeon(1,7)" style="color:#c084fc;border-top:1px solid rgba(167,139,250,0.2);margin-top:4px;padding-top:8px"><span class="icon">👿</span> Lv.7 — Boss Lair</div>
           </div>
         </div>
       </div>
@@ -375,18 +376,22 @@
 <!-- ===================== SHOP OVERLAY ===================== -->
 <div id="shopOverlay" class="shop-overlay" style="display:none" onclick="if(event.target===this) closeShop()">
   <div class="shop-modal" onclick="event.stopPropagation()">
-    <div class="shop-header">
-      <div class="shop-title">🏪 Shop</div>
-      <div class="shop-gold-badge">💰 <span id="shopGoldText">0</span></div>
-      <button class="shop-close" onclick="closeShop()">✕</button>
+    <div class="shop-modal-top">
+      <div class="shop-header">
+        <div class="shop-title">🏪 Shop</div>
+        <div class="shop-gold-badge">💰 <span id="shopGoldText">0</span></div>
+        <button class="shop-close" onclick="closeShop()">✕</button>
+      </div>
+      <div class="shop-tabs">
+        <button class="shop-tab active" id="shopTabAll"     onclick="setShopTab('all')">All</button>
+        <button class="shop-tab"        id="shopTabWeapons" onclick="setShopTab('weapons')">Weapons</button>
+        <button class="shop-tab"        id="shopTabArmor"   onclick="setShopTab('armor')">Armor</button>
+        <button class="shop-tab"        id="shopTabSell"    onclick="setShopTab('sell')">Sell</button>
+      </div>
     </div>
-    <div class="shop-tabs">
-      <button class="shop-tab active" id="shopTabAll"     onclick="setShopTab('all')">All</button>
-      <button class="shop-tab"        id="shopTabWeapons" onclick="setShopTab('weapons')">Weapons</button>
-      <button class="shop-tab"        id="shopTabArmor"   onclick="setShopTab('armor')">Armor</button>
-      <button class="shop-tab"        id="shopTabSell"    onclick="setShopTab('sell')">Sell</button>
+    <div class="shop-modal-body">
+      <div id="shopItemsList"></div>
     </div>
-    <div id="shopItemsList"></div>
   </div>
 </div>
 

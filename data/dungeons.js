@@ -4,6 +4,7 @@ const DUNGEON_CONFIG = {
     1: {
       name: "Goblin Cave", theme: "goblin",
       timerSec: 0,          // 0 = no timer
+      goldReward: [0, 7],
       monsters: [
         { name:"Goblin Scout",   emoji:"👺", maxHp:[1,3], armor:0, dodge:0, block:0, dmg:[10,20], count:[2,7] },
         { name:"Goblin Warrior", emoji:"👹", maxHp:[1,4], armor:0, dodge:0, block:0, dmg:[15,25], count:[3,6] }
@@ -14,6 +15,7 @@ const DUNGEON_CONFIG = {
       name: "Spider Nest", theme: "spider",
       timerSec: 8,
       timerDmg: 8,          // damage when timer runs out
+      goldReward: [1, 9],
       monsters: [
         { name:"Cave Spider",   emoji:"🕷️", maxHp:[2,5], armor:0, dodge:0.30, block:0, dmg:[12,18], poison:{dmg:[3,6],rounds:[2,4]}, count:[8,14] },
         { name:"Poison Spider", emoji:"🕸️", maxHp:[2,5], armor:0, dodge:0.30, block:0, dmg:[15,20], poison:{dmg:[4,8],rounds:[2,4]}, count:[6,12] },
@@ -24,6 +26,7 @@ const DUNGEON_CONFIG = {
       name: "Skeleton Crypt", theme: "skeleton",
       timerSec: 6,
       timerDmg: 0,    // timer expiry triggers monster attack (no fixed dmg)
+      goldReward: [2, 11],
       monsters: [
         // Pure armor — no shield, absorbs 1 hit
         { name:"Skeleton Warrior", emoji:"💀", maxHp:[2,4], armor:[0,3], dodge:0, block:0,          dmg:[14,22], count:[4,9] },
@@ -38,6 +41,7 @@ const DUNGEON_CONFIG = {
     4: {
       name: "Frozen Fortress", theme: "frozen",
       timerSec: 5,
+      goldReward: [3, 13],
       monsters: [
         { name:"Ice Mage",     emoji:"🧊", maxHp:[2,5], armor:0,     dodge:0,          block:0,          dmg:[16,50], freeze:{rounds:[1,3]}, count:[5,10] },
         { name:"Frozen Golem", emoji:"🗿", maxHp:[5,10], armor:[3,10], dodge:0,          block:0,          dmg:[18,26], freeze:{rounds:[2,3]}, count:[3,5] },
@@ -48,6 +52,7 @@ const DUNGEON_CONFIG = {
     5: {
       name: "Shadow Dungeon", theme: "shadow",
       timerSec: 5,
+      goldReward: [4, 15],
       monsters: [
         // Fast dodgy shades
         { name:"Shadow Sprite",  emoji:"👤", maxHp:[2,7], armor:0,     dodge:[0.15,0.25], block:0,          dmg:[18,26], count:[4,13] },
@@ -65,6 +70,7 @@ const DUNGEON_CONFIG = {
     6: {
       name: "Dragon Mountain", theme: "dragon",
       timerSec: 4,
+      goldReward: [5, 17],
       monsters: [
         // Heavy armored — need combos to break through
         { name:"Fire Drake",     emoji:"🦎", maxHp:[10,15], armor:[5,8], dodge:0,          block:0,          dmg:[20,40], count:[4,11] },
@@ -77,6 +83,23 @@ const DUNGEON_CONFIG = {
       boss: {
         name:"Ancient Dragon", emoji:"🐉", maxHp:[40,80], armor:[15,30], dodge:[0.10,0.20], block:[0.25,0.35],
         dmg:[28,38], isBoss:true
+      },
+    },
+    7: {
+      name: "❓❓❓", theme: "boss",
+      timerSec: 5,
+      goldReward: [100],
+      monsters: [],
+      boss: {
+        name: "Overlord", emoji: "👿",
+        maxHp: [200], armor: [100], dodge: [0.25], block: [0.25],
+        dmg: [25, 45], isBoss: true,
+        phases: true,
+        abilities: [
+          { type: "freeze",    chance: 0.25, trigger: "per_turn"  },
+          { type: "weaken",    chance: 0.35, trigger: "per_turn"  },
+          { type: "stun_hero", chance: 0.35, trigger: "on_attack", duration: 2 },
+        ],
       },
     },
   }

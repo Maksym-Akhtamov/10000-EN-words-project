@@ -919,4 +919,284 @@ const MONSTER_SVG = {
     <path d="M92 78 Q108 72 118 56 Q112 68 106 74 Q118 70 118 82 Q108 78 96 84 Z" fill="#991b1b"/>
     <path d="M118 56 L126 44 L120 58 Z" fill="#7f1d1d"/>
   </svg>`,
+
+  // ── Lv7 Boss Lair — Dark Lord (3 phases) ─────────────────────
+  "Overlord Phase 1": `<svg viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="ol1eye" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#f0abfc"/>
+        <stop offset="55%" stop-color="#a855f7"/>
+        <stop offset="100%" stop-color="#6b21a8" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="ol1sword" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#c084fc"/>
+        <stop offset="100%" stop-color="#1e1b4b"/>
+      </linearGradient>
+    </defs>
+    <!-- ground shadow -->
+    <ellipse cx="50" cy="109" rx="28" ry="4" fill="#000" opacity="0.5"/>
+    <!-- cape -->
+    <path d="M17 57 Q6 84 14 110 L86 110 Q94 84 83 57 Q67 67 50 65 Q33 67 17 57Z" fill="#09090b"/>
+    <path d="M20 62 Q13 88 18 110" stroke="#1e1b4b" stroke-width="1" fill="none" opacity="0.4"/>
+    <path d="M80 62 Q87 88 82 110" stroke="#1e1b4b" stroke-width="1" fill="none" opacity="0.4"/>
+    <!-- body armor -->
+    <path d="M31 53 Q50 48 69 53 L67 89 Q50 94 33 89Z" fill="#1e1b4b"/>
+    <!-- chest plate -->
+    <path d="M36 56 Q50 52 64 56 L62 73 Q50 77 38 73Z" fill="#16213e"/>
+    <path d="M36 56 Q50 52 64 56" stroke="#4c1d95" stroke-width="0.8" fill="none"/>
+    <line x1="50" y1="56" x2="50" y2="89" stroke="#312e81" stroke-width="0.9"/>
+    <path d="M36 69 Q50 72 64 69" stroke="#312e81" stroke-width="0.7" fill="none"/>
+    <path d="M36 79 Q50 82 64 79" stroke="#312e81" stroke-width="0.7" fill="none"/>
+    <!-- chest gem -->
+    <polygon points="50,60 55,67 50,74 45,67" fill="#7c3aed"/>
+    <polygon points="50,62 54,67 50,72 46,67" fill="#c084fc"/>
+    <circle cx="50" cy="67" r="1.8" fill="#f0abfc" opacity="0.9"/>
+    <!-- left pauldron -->
+    <ellipse cx="26" cy="56" rx="11" ry="8" fill="#1e1b4b"/>
+    <polygon points="19,51 22,43 26,51" fill="#09090b"/>
+    <polygon points="14,57 17,49 21,57" fill="#09090b"/>
+    <!-- right pauldron -->
+    <ellipse cx="74" cy="56" rx="11" ry="8" fill="#1e1b4b"/>
+    <polygon points="74,51 78,43 81,51" fill="#09090b"/>
+    <polygon points="79,57 83,49 86,57" fill="#09090b"/>
+    <!-- left arm -->
+    <path d="M19 61 Q12 75 14 90" stroke="#1e1b4b" stroke-width="9" stroke-linecap="round" fill="none"/>
+    <ellipse cx="14" cy="91" rx="7" ry="5" fill="#1e1b4b"/>
+    <!-- orb -->
+    <circle cx="11" cy="97" r="7" fill="#0f0c29"/>
+    <circle cx="11" cy="97" r="4" fill="#1e1b4b"/>
+    <circle cx="11" cy="97" r="2" fill="#7c3aed"/>
+    <circle cx="11" cy="95" r="1" fill="#f0abfc" opacity="0.7"/>
+    <!-- right arm -->
+    <path d="M81 61 Q88 75 86 88" stroke="#1e1b4b" stroke-width="9" stroke-linecap="round" fill="none"/>
+    <ellipse cx="86" cy="89" rx="7" ry="5" fill="#1e1b4b"/>
+    <!-- dark sword -->
+    <rect x="90" y="50" width="4" height="40" fill="#09090b" rx="1"/>
+    <rect x="90" y="50" width="4" height="40" fill="url(#ol1sword)" opacity="0.55" rx="1"/>
+    <rect x="84" y="64" width="16" height="3" fill="#312e81" rx="1"/>
+    <rect x="90" y="46" width="4" height="6" fill="#1e1b4b" rx="1"/>
+    <line x1="92" y1="52" x2="92" y2="87" stroke="#c084fc" stroke-width="0.6" opacity="0.55"/>
+    <circle cx="92" cy="69" r="2" fill="#7c3aed" opacity="0.7"/>
+    <!-- neck -->
+    <rect x="42" y="46" width="16" height="8" fill="#1e1b4b" rx="3"/>
+    <!-- helmet -->
+    <ellipse cx="50" cy="30" rx="20" ry="17" fill="#1e1b4b"/>
+    <path d="M32 31 Q50 27 68 31 L68 41 Q50 45 32 41Z" fill="#09090b"/>
+    <path d="M33 26 Q50 21 67 26" stroke="#312e81" stroke-width="1.2" fill="none"/>
+    <!-- horns -->
+    <path d="M30 22 Q26 10 24 3 L28 6 Q29 14 33 20" fill="#09090b"/>
+    <path d="M70 22 Q74 10 76 3 L72 6 Q71 14 67 20" fill="#09090b"/>
+    <line x1="26" y1="4" x2="30" y2="17" stroke="#4c1d95" stroke-width="0.6" opacity="0.5"/>
+    <line x1="74" y1="4" x2="70" y2="17" stroke="#4c1d95" stroke-width="0.6" opacity="0.5"/>
+    <!-- crown spikes -->
+    <polygon points="44,14 47,8 50,14" fill="#09090b"/>
+    <polygon points="50,13 53,7 56,13" fill="#09090b"/>
+    <polygon points="37,19 39,12 42,19" fill="#09090b"/>
+    <polygon points="58,19 61,12 64,19" fill="#09090b"/>
+    <circle cx="50" cy="10" r="2" fill="#9333ea" opacity="0.85"/>
+    <!-- eyes -->
+    <ellipse cx="41" cy="34" rx="6" ry="4.5" fill="url(#ol1eye)"/>
+    <ellipse cx="59" cy="34" rx="6" ry="4.5" fill="url(#ol1eye)"/>
+    <ellipse cx="41" cy="34" rx="2.5" ry="2" fill="#f0abfc"/>
+    <ellipse cx="59" cy="34" rx="2.5" ry="2" fill="#f0abfc"/>
+    <!-- legs -->
+    <rect x="37" y="89" width="11" height="18" fill="#1e1b4b" rx="3"/>
+    <rect x="52" y="89" width="11" height="18" fill="#1e1b4b" rx="3"/>
+    <line x1="42" y1="92" x2="42" y2="104" stroke="#312e81" stroke-width="0.8"/>
+    <line x1="57" y1="92" x2="57" y2="104" stroke="#312e81" stroke-width="0.8"/>
+    <ellipse cx="42" cy="107" rx="8" ry="4" fill="#09090b"/>
+    <ellipse cx="57" cy="107" rx="8" ry="4" fill="#09090b"/>
+  </svg>`,
+
+  "Overlord Phase 2": `<svg viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="ol2eye" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#fff"/>
+        <stop offset="40%" stop-color="#e879f9"/>
+        <stop offset="100%" stop-color="#86198f" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="ol2sword" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#e879f9"/>
+        <stop offset="100%" stop-color="#3b0764"/>
+      </linearGradient>
+      <radialGradient id="ol2aura" cx="50%" cy="60%" r="50%">
+        <stop offset="0%" stop-color="#7c3aed" stop-opacity="0.18"/>
+        <stop offset="100%" stop-color="#7c3aed" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <!-- aura glow bg -->
+    <ellipse cx="50" cy="65" rx="47" ry="42" fill="url(#ol2aura)"/>
+    <!-- aura rings -->
+    <ellipse cx="50" cy="65" rx="42" ry="34" fill="none" stroke="#7c3aed" stroke-width="1.2" opacity="0.35" stroke-dasharray="4 3"/>
+    <ellipse cx="50" cy="65" rx="48" ry="40" fill="none" stroke="#4c1d95" stroke-width="0.8" opacity="0.2" stroke-dasharray="6 4"/>
+    <!-- ground shadow -->
+    <ellipse cx="50" cy="109" rx="28" ry="4" fill="#000" opacity="0.5"/>
+    <!-- cape -->
+    <path d="M17 57 Q6 84 14 110 L86 110 Q94 84 83 57 Q67 67 50 65 Q33 67 17 57Z" fill="#09090b"/>
+    <!-- body armor with cracks -->
+    <path d="M31 53 Q50 48 69 53 L67 89 Q50 94 33 89Z" fill="#1e1b4b"/>
+    <!-- armor energy cracks -->
+    <path d="M44 56 L40 64 L46 67 L42 76" stroke="#c084fc" stroke-width="1.2" fill="none" opacity="0.8"/>
+    <path d="M58 58 L62 66 L57 70 L61 80" stroke="#c084fc" stroke-width="1" fill="none" opacity="0.7"/>
+    <path d="M48 75 L44 82 L52 85" stroke="#a855f7" stroke-width="0.9" fill="none" opacity="0.6"/>
+    <!-- chest plate -->
+    <path d="M36 56 Q50 52 64 56 L62 73 Q50 77 38 73Z" fill="#16213e"/>
+    <path d="M36 56 Q50 52 64 56" stroke="#7c3aed" stroke-width="1" fill="none"/>
+    <line x1="50" y1="56" x2="50" y2="89" stroke="#4c1d95" stroke-width="0.9"/>
+    <!-- chest gem — now pulsing bright -->
+    <polygon points="50,60 55,67 50,74 45,67" fill="#9333ea"/>
+    <polygon points="50,62 54,67 50,72 46,67" fill="#e879f9"/>
+    <circle cx="50" cy="67" r="2" fill="#fff" opacity="0.95"/>
+    <circle cx="50" cy="67" r="5" fill="#c084fc" opacity="0.2"/>
+    <!-- pauldrons -->
+    <ellipse cx="26" cy="56" rx="11" ry="8" fill="#1e1b4b"/>
+    <polygon points="19,51 22,43 26,51" fill="#09090b"/>
+    <polygon points="14,57 17,49 21,57" fill="#09090b"/>
+    <ellipse cx="74" cy="56" rx="11" ry="8" fill="#1e1b4b"/>
+    <polygon points="74,51 78,43 81,51" fill="#09090b"/>
+    <polygon points="79,57 83,49 86,57" fill="#09090b"/>
+    <!-- energy wisps from shoulders -->
+    <path d="M22 50 Q16 42 18 36" stroke="#7c3aed" stroke-width="1" fill="none" opacity="0.55" stroke-dasharray="2 2"/>
+    <path d="M78 50 Q84 42 82 36" stroke="#7c3aed" stroke-width="1" fill="none" opacity="0.55" stroke-dasharray="2 2"/>
+    <!-- left arm -->
+    <path d="M19 61 Q12 75 14 90" stroke="#1e1b4b" stroke-width="9" stroke-linecap="round" fill="none"/>
+    <ellipse cx="14" cy="91" rx="7" ry="5" fill="#1e1b4b"/>
+    <circle cx="11" cy="97" r="7" fill="#0f0c29"/>
+    <circle cx="11" cy="97" r="4" fill="#1e1b4b"/>
+    <circle cx="11" cy="97" r="3" fill="#9333ea"/>
+    <circle cx="11" cy="97" r="3" fill="#e879f9" opacity="0.5"/>
+    <circle cx="9" cy="95" r="1.2" fill="#fff" opacity="0.8"/>
+    <!-- right arm -->
+    <path d="M81 61 Q88 75 86 88" stroke="#1e1b4b" stroke-width="9" stroke-linecap="round" fill="none"/>
+    <ellipse cx="86" cy="89" rx="7" ry="5" fill="#1e1b4b"/>
+    <!-- sword brighter aura -->
+    <rect x="90" y="50" width="4" height="40" fill="#09090b" rx="1"/>
+    <rect x="90" y="50" width="4" height="40" fill="url(#ol2sword)" opacity="0.75" rx="1"/>
+    <ellipse cx="92" cy="65" rx="5" ry="25" fill="#7c3aed" opacity="0.12"/>
+    <rect x="84" y="64" width="16" height="3" fill="#4c1d95" rx="1"/>
+    <rect x="90" y="46" width="4" height="6" fill="#1e1b4b" rx="1"/>
+    <line x1="92" y1="52" x2="92" y2="87" stroke="#e879f9" stroke-width="0.7" opacity="0.7"/>
+    <!-- neck -->
+    <rect x="42" y="46" width="16" height="8" fill="#1e1b4b" rx="3"/>
+    <!-- helmet -->
+    <ellipse cx="50" cy="30" rx="20" ry="17" fill="#1e1b4b"/>
+    <path d="M32 31 Q50 27 68 31 L68 41 Q50 45 32 41Z" fill="#09090b"/>
+    <!-- helmet cracks -->
+    <path d="M38 28 L36 33 L40 35" stroke="#c084fc" stroke-width="0.9" fill="none" opacity="0.7"/>
+    <path d="M62 30 L64 36" stroke="#a855f7" stroke-width="0.8" fill="none" opacity="0.6"/>
+    <!-- horns with glow -->
+    <path d="M30 22 Q26 10 24 3 L28 6 Q29 14 33 20" fill="#09090b"/>
+    <path d="M70 22 Q74 10 76 3 L72 6 Q71 14 67 20" fill="#09090b"/>
+    <line x1="26" y1="4" x2="30" y2="17" stroke="#9333ea" stroke-width="0.8" opacity="0.7"/>
+    <line x1="74" y1="4" x2="70" y2="17" stroke="#9333ea" stroke-width="0.8" opacity="0.7"/>
+    <!-- crown -->
+    <polygon points="44,14 47,8 50,14" fill="#09090b"/>
+    <polygon points="50,13 53,7 56,13" fill="#09090b"/>
+    <polygon points="37,19 39,12 42,19" fill="#09090b"/>
+    <polygon points="58,19 61,12 64,19" fill="#09090b"/>
+    <circle cx="50" cy="10" r="2.5" fill="#e879f9" opacity="0.95"/>
+    <circle cx="50" cy="10" r="5" fill="#9333ea" opacity="0.25"/>
+    <!-- eyes — intense -->
+    <ellipse cx="41" cy="34" rx="7" ry="5.5" fill="url(#ol2eye)"/>
+    <ellipse cx="59" cy="34" rx="7" ry="5.5" fill="url(#ol2eye)"/>
+    <ellipse cx="41" cy="34" rx="3" ry="2.2" fill="#fff"/>
+    <ellipse cx="59" cy="34" rx="3" ry="2.2" fill="#fff"/>
+    <!-- eye outer glow -->
+    <ellipse cx="41" cy="34" rx="10" ry="7" fill="#9333ea" opacity="0.22"/>
+    <ellipse cx="59" cy="34" rx="10" ry="7" fill="#9333ea" opacity="0.22"/>
+    <!-- legs -->
+    <rect x="37" y="89" width="11" height="18" fill="#1e1b4b" rx="3"/>
+    <rect x="52" y="89" width="11" height="18" fill="#1e1b4b" rx="3"/>
+    <line x1="42" y1="92" x2="42" y2="104" stroke="#4c1d95" stroke-width="0.8"/>
+    <line x1="57" y1="92" x2="57" y2="104" stroke="#4c1d95" stroke-width="0.8"/>
+    <ellipse cx="42" cy="107" rx="8" ry="4" fill="#09090b"/>
+    <ellipse cx="57" cy="107" rx="8" ry="4" fill="#09090b"/>
+    <!-- floating energy motes -->
+    <circle cx="22" cy="40" r="1.5" fill="#c084fc" opacity="0.65"/>
+    <circle cx="78" cy="44" r="1.5" fill="#c084fc" opacity="0.6"/>
+    <circle cx="18" cy="70" r="1" fill="#a855f7" opacity="0.5"/>
+    <circle cx="82" cy="72" r="1" fill="#a855f7" opacity="0.5"/>
+    <circle cx="30" cy="28" r="1.2" fill="#e879f9" opacity="0.55"/>
+    <circle cx="70" cy="26" r="1.2" fill="#e879f9" opacity="0.5"/>
+  </svg>`,
+
+  "Overlord Phase 3": `<svg viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="ol3core" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#fff"/>
+        <stop offset="25%" stop-color="#e879f9"/>
+        <stop offset="65%" stop-color="#7c3aed"/>
+        <stop offset="100%" stop-color="#1e1b4b" stop-opacity="0"/>
+      </radialGradient>
+      <radialGradient id="ol3body" cx="50%" cy="55%" r="55%">
+        <stop offset="0%" stop-color="#4c1d95" stop-opacity="0.9"/>
+        <stop offset="70%" stop-color="#1e1b4b" stop-opacity="0.6"/>
+        <stop offset="100%" stop-color="#09090b" stop-opacity="0"/>
+      </radialGradient>
+      <radialGradient id="ol3eye" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#fff"/>
+        <stop offset="35%" stop-color="#f0abfc"/>
+        <stop offset="100%" stop-color="#9333ea" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <!-- outer aura -->
+    <ellipse cx="50" cy="60" rx="48" ry="46" fill="#4c1d95" opacity="0.06"/>
+    <ellipse cx="50" cy="60" rx="42" ry="40" fill="#7c3aed" opacity="0.07"/>
+    <!-- wispy body mass -->
+    <ellipse cx="50" cy="62" rx="28" ry="36" fill="url(#ol3body)"/>
+    <!-- extra wispy lobes -->
+    <ellipse cx="32" cy="55" rx="12" ry="18" fill="#3b0764" opacity="0.55"/>
+    <ellipse cx="68" cy="55" rx="12" ry="18" fill="#3b0764" opacity="0.55"/>
+    <ellipse cx="50" cy="85" rx="18" ry="14" fill="#1e1b4b" opacity="0.7"/>
+    <!-- chains floating -->
+    <path d="M8 50 Q14 44 12 52 Q18 46 16 54 Q22 48 20 56" stroke="#312e81" stroke-width="1.5" fill="none" opacity="0.7"/>
+    <path d="M92 48 Q86 42 88 50 Q82 44 84 52 Q78 46 80 54" stroke="#312e81" stroke-width="1.5" fill="none" opacity="0.7"/>
+    <!-- tendrils left -->
+    <path d="M30 65 Q16 58 10 48" stroke="#4c1d95" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.7"/>
+    <path d="M28 75 Q12 72 6 62" stroke="#3b0764" stroke-width="3.5" stroke-linecap="round" fill="none" opacity="0.6"/>
+    <path d="M26 85 Q10 86 4 78" stroke="#312e81" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.5"/>
+    <!-- tendrils right -->
+    <path d="M70 65 Q84 58 90 48" stroke="#4c1d95" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.7"/>
+    <path d="M72 75 Q88 72 94 62" stroke="#3b0764" stroke-width="3.5" stroke-linecap="round" fill="none" opacity="0.6"/>
+    <path d="M74 85 Q90 86 96 78" stroke="#312e81" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.5"/>
+    <!-- tendril tips — claws -->
+    <circle cx="10" cy="48" r="3" fill="#6d28d9" opacity="0.8"/>
+    <circle cx="6"  cy="62" r="2.5" fill="#6d28d9" opacity="0.7"/>
+    <circle cx="4"  cy="78" r="2" fill="#5b21b6" opacity="0.6"/>
+    <circle cx="90" cy="48" r="3" fill="#6d28d9" opacity="0.8"/>
+    <circle cx="94" cy="62" r="2.5" fill="#6d28d9" opacity="0.7"/>
+    <circle cx="96" cy="78" r="2" fill="#5b21b6" opacity="0.6"/>
+    <!-- upward tendril (crown) -->
+    <path d="M42 28 Q36 14 38 6" stroke="#4c1d95" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.6"/>
+    <path d="M50 24 Q50 10 52 3" stroke="#6d28d9" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.55"/>
+    <path d="M58 28 Q64 14 62 6" stroke="#4c1d95" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.6"/>
+    <circle cx="38" cy="6"  r="2.5" fill="#9333ea" opacity="0.8"/>
+    <circle cx="52" cy="3"  r="2" fill="#a855f7" opacity="0.7"/>
+    <circle cx="62" cy="6"  r="2.5" fill="#9333ea" opacity="0.8"/>
+    <!-- energy core -->
+    <ellipse cx="50" cy="58" rx="16" ry="18" fill="url(#ol3core)" opacity="0.85"/>
+    <!-- inner swirl hints -->
+    <path d="M40 52 Q50 44 60 52 Q52 60 44 56 Q50 50 56 54" stroke="#c084fc" stroke-width="0.7" fill="none" opacity="0.4"/>
+    <!-- face / eyes — large glowing -->
+    <ellipse cx="41" cy="50" rx="8" ry="6" fill="url(#ol3eye)"/>
+    <ellipse cx="59" cy="50" rx="8" ry="6" fill="url(#ol3eye)"/>
+    <!-- eye pupils -->
+    <ellipse cx="41" cy="50" rx="3.5" ry="3" fill="#fff" opacity="0.95"/>
+    <ellipse cx="59" cy="50" rx="3.5" ry="3" fill="#fff" opacity="0.95"/>
+    <!-- eye outer glow -->
+    <ellipse cx="41" cy="50" rx="12" ry="9" fill="#9333ea" opacity="0.2"/>
+    <ellipse cx="59" cy="50" rx="12" ry="9" fill="#9333ea" opacity="0.2"/>
+    <!-- mouth — dark grin  -->
+    <path d="M39 62 Q50 70 61 62" stroke="#1e1b4b" stroke-width="2" fill="none" opacity="0.7"/>
+    <!-- floating dark energy motes -->
+    <circle cx="25" cy="35" r="2" fill="#9333ea" opacity="0.6"/>
+    <circle cx="75" cy="38" r="2" fill="#9333ea" opacity="0.55"/>
+    <circle cx="18" cy="55" r="1.5" fill="#c084fc" opacity="0.5"/>
+    <circle cx="82" cy="58" r="1.5" fill="#c084fc" opacity="0.5"/>
+    <circle cx="30" cy="90" r="1.5" fill="#7c3aed" opacity="0.45"/>
+    <circle cx="70" cy="92" r="1.5" fill="#7c3aed" opacity="0.45"/>
+    <circle cx="50" cy="98" r="1.8" fill="#4c1d95" opacity="0.4"/>
+    <!-- bottom wisp/fade -->
+    <ellipse cx="50" cy="104" rx="20" ry="8" fill="#1e1b4b" opacity="0.35"/>
+  </svg>`,
 };

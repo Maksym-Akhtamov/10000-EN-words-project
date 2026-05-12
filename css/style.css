@@ -587,6 +587,8 @@
     }
     .dropdown-item:hover { background: rgba(255,255,255,0.05); }
     .dropdown-item .icon { font-size: 16px; width: 20px; }
+    .dng-dropdown-item { display: flex; align-items: center; }
+    .dng-gold-range { margin-left: auto; font-size: 11px; color: #f59e0b; opacity: 0.8; white-space: nowrap; }
 
     /* ===== LANG SETTING ===== */
     .lang-setting { margin-top: 16px; }
@@ -1333,9 +1335,12 @@
     }
     .shop-modal {
       background: var(--surface); border: 1px solid var(--border2);
-      border-radius: 20px; padding: 20px; width: 100%; max-width: 420px;
-      max-height: 88vh; overflow-y: auto; box-shadow: var(--shadow);
+      border-radius: 20px; padding: 0; width: 100%; max-width: 420px;
+      height: 88vh; max-height: 680px; overflow: hidden; box-shadow: var(--shadow);
+      display: flex; flex-direction: column;
     }
+    .shop-modal-top { padding: 20px 20px 0; flex-shrink: 0; }
+    .shop-modal-body { flex: 1; overflow-y: auto; padding: 0 20px 20px; min-height: 0; }
     .shop-header {
       display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
     }
@@ -1641,6 +1646,54 @@
     #dungeonScreen.theme-shadow .dng-opt-btn { border-color: rgba(167,139,250,0.3); }
     #dungeonScreen.theme-shadow .dng-opt-btn:hover { border-color: rgba(167,139,250,0.7); background: rgba(88,28,135,0.2); }
 
+    /* Boss Lair theme — dark ice */
+    #dungeonScreen.theme-boss { background: #04040f; }
+    #dungeonScreen.theme-boss .dungeon-arena { background: radial-gradient(ellipse at 50% 80%, rgba(76,29,149,0.18) 0%, rgba(30,30,80,0.10) 50%, transparent 75%); }
+    #dungeonScreen.theme-boss .dng-word-prompt { color: #d8b4fe; text-shadow: 0 0 18px rgba(168,85,247,0.4); }
+    #dungeonScreen.theme-boss .dng-opt-btn { border-color: rgba(139,92,246,0.3); }
+    #dungeonScreen.theme-boss .dng-opt-btn:hover:not(:disabled) { border-color: rgba(192,132,252,0.75); background: rgba(76,29,149,0.22); }
+    #dungeonScreen.theme-boss .dng-timer-bar { background: rgba(109,40,217,0.15); }
+    #dungeonScreen.theme-boss .dng-timer-fill { background: linear-gradient(90deg, #6d28d9, #c084fc); }
+    #dungeonScreen.theme-boss .dng-hp-track { background: rgba(109,40,217,0.12); }
+
+    /* Phase 1 — solid Dark Lord */
+    #dungeonScreen.boss-phase-1 .dng-monster-sprite {
+      filter: drop-shadow(0 0 18px rgba(139,92,246,0.55)) drop-shadow(0 0 6px rgba(192,132,252,0.3));
+    }
+    #dungeonScreen.boss-phase-1 .dungeon-arena {
+      background: radial-gradient(ellipse at 50% 80%, rgba(76,29,149,0.18) 0%, transparent 70%);
+    }
+
+    /* Phase 2 — awakened aura */
+    #dungeonScreen.boss-phase-2 .dng-monster-sprite {
+      filter: drop-shadow(0 0 28px rgba(168,85,247,0.75)) drop-shadow(0 0 10px rgba(232,121,249,0.45));
+      animation: bossPhase2Pulse 2.4s ease-in-out infinite;
+    }
+    #dungeonScreen.boss-phase-2 .dungeon-arena {
+      background: radial-gradient(ellipse at 50% 75%, rgba(109,40,217,0.28) 0%, rgba(76,29,149,0.12) 50%, transparent 75%);
+    }
+    @keyframes bossPhase2Pulse {
+      0%,100% { filter: drop-shadow(0 0 28px rgba(168,85,247,0.75)) drop-shadow(0 0 10px rgba(232,121,249,0.45)); }
+      50%      { filter: drop-shadow(0 0 42px rgba(192,132,252,0.95)) drop-shadow(0 0 16px rgba(232,121,249,0.65)); }
+    }
+
+    /* Phase 3 — ethereal spirit */
+    #dungeonScreen.boss-phase-3 .dng-monster-sprite {
+      filter: drop-shadow(0 0 40px rgba(192,132,252,1)) drop-shadow(0 0 18px rgba(232,121,249,0.7));
+      animation: bossPhase3Float 3s ease-in-out infinite, bossPhase3Pulse 1.8s ease-in-out infinite;
+    }
+    #dungeonScreen.boss-phase-3 .dungeon-arena {
+      background: radial-gradient(ellipse at 50% 65%, rgba(139,92,246,0.35) 0%, rgba(76,29,149,0.18) 45%, transparent 75%);
+    }
+    @keyframes bossPhase3Float {
+      0%,100% { transform: translateY(0px); }
+      50%     { transform: translateY(-7px); }
+    }
+    @keyframes bossPhase3Pulse {
+      0%,100% { filter: drop-shadow(0 0 40px rgba(192,132,252,1)) drop-shadow(0 0 18px rgba(232,121,249,0.7)); }
+      50%     { filter: drop-shadow(0 0 58px rgba(240,171,252,1)) drop-shadow(0 0 28px rgba(232,121,249,0.9)); }
+    }
+
     /* Prompt flip transition for shadow */
     .dng-word-prompt { transition: transform 0.3s ease; }
 
@@ -1856,8 +1909,27 @@
       font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 6px;
     }
     .dng-status.poison { background: rgba(167,139,250,0.2); color: #a78bfa; }
-    .dng-status.freeze { background: rgba(96,165,250,0.2); color: #60a5fa; }
+    .dng-status.freeze { background: rgba(96,165,250,0.2);  color: #60a5fa; }
     .dng-status.bleed  { background: rgba(248,113,113,0.2); color: #f87171; }
+    .dng-status.weaken { background: rgba(251,146,60,0.2);  color: #fb923c; }
+
+    /* ===== BOSS PHASE BANNER ===== */
+    .dng-phase-banner {
+      position: absolute; top: 68px; left: 50%; transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      background: linear-gradient(135deg, rgba(30,20,50,0.97), rgba(60,20,80,0.97));
+      border: 2px solid rgba(167,139,250,0.6); border-radius: 14px;
+      padding: 12px 28px; z-index: 120; white-space: nowrap;
+      animation: phaseBannerIn 0.35s ease forwards;
+      box-shadow: 0 0 32px rgba(167,139,250,0.35);
+    }
+    .dng-phase-banner .phase-icon  { font-size: 26px; }
+    .dng-phase-banner .phase-title { font-size: 15px; font-weight: 900; color: #c084fc; letter-spacing: 0.12em; }
+    .dng-phase-banner .phase-sub   { font-size: 11px; color: rgba(255,255,255,0.65); margin-top: 1px; }
+    @keyframes phaseBannerIn {
+      from { opacity: 0; transform: translateX(-50%) scale(0.85); }
+      to   { opacity: 1; transform: translateX(-50%) scale(1); }
+    }
 
     /* Equip / unequip buttons */
     .equip-unequip-btn, .equip-from-inv-btn {

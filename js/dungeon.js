@@ -1085,7 +1085,8 @@ function spendSkillPoint(skillId) {
 }
 
 // ===================== SKILL COMBAT HELPERS =====================
-function isMobStunned() { return dng && dng.mobStunEnd > Date.now(); }
+function isMobStunned()  { return dng && dng.mobStunEnd  > Date.now(); }
+function isHeroStunned() { return dng && dng.heroStunEnd > Date.now(); }
 
 const BASH_MAX_CHARGES  = 3;
 const BASH_STREAK_NEED  = 3;
@@ -1180,6 +1181,55 @@ function clearStunBar() {
   document.getElementById("dngStunBar")?.remove();
 }
 
+// ===================== HERO STUN =====================
+function applyHeroStun(sec) {
+  if (!dng) return;
+  dng.heroStunEnd      = Date.now() + sec * 1000;
+  dng.heroStunDuration = sec * 1000;
+  spawnFloater(`⚡ STUNNED ${sec}s!`, "miss-float", "heroHpBar");
+  showHeroStunOverlay();
+}
+
+function showHeroStunOverlay() {
+  clearHeroStunOverlay();
+  if (!dng) return;
+  const options = document.getElementById("dngOptions");
+  if (!options) return;
+  const remaining = (dng.heroStunEnd - Date.now()) / 1000;
+  if (remaining <= 0) return;
+  options.style.position = "relative";
+  const overlay = document.createElement("div");
+  overlay.id = "dngHeroStunOverlay";
+  overlay.style.cssText = [
+    "position:absolute;inset:0;z-index:30;display:flex;flex-direction:column;",
+    "align-items:center;justify-content:center;gap:6px;pointer-events:all;",
+    "background:rgba(12,13,16,0.80);border-radius:12px;",
+    "border:2px solid rgba(253,224,71,0.55);"
+  ].join("");
+  overlay.innerHTML = `
+    <div style="font-size:26px">⚡</div>
+    <div id="dngHeroStunText" style="font-size:13px;font-weight:800;color:#fde047;letter-spacing:0.1em">STUNNED</div>
+    <div style="width:72%;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;">
+      <div id="dngHeroStunFill" style="height:100%;background:#fde047;width:100%;transition:width 0.08s linear;border-radius:2px;"></div>
+    </div>
+  `;
+  options.appendChild(overlay);
+  const total = dng.heroStunDuration || 5000;
+  dng._heroStunBarInterval = setInterval(() => {
+    const rem = (dng?.heroStunEnd || 0) - Date.now();
+    const fill = document.getElementById("dngHeroStunFill");
+    const txt  = document.getElementById("dngHeroStunText");
+    if (!fill || rem <= 0) { clearHeroStunOverlay(); return; }
+    fill.style.width = Math.max(0, (rem / total) * 100) + "%";
+    if (txt) txt.textContent = `STUNNED ${(rem / 1000).toFixed(1)}s`;
+  }, 50);
+}
+
+function clearHeroStunOverlay() {
+  if (dng) { clearInterval(dng._heroStunBarInterval); dng._heroStunBarInterval = null; }
+  document.getElementById("dngHeroStunOverlay")?.remove();
+}
+
 // Monster DoT (bleed)
 function applyMonsterBleed(dmg) {
   if (!dng) return;
@@ -1193,14 +1243,16 @@ function tickMonsterStatuses() {
   let bleedTotal = 0, bleedCount = 0;
   dng.monsterStatuses = dng.monsterStatuses.map(s => {
     if (s.type === "bleed") {
-      m.hp -= s.dmg;
-      bleedTotal += s.dmg;
+      const dmg = m.armor > 0 ? Math.max(1, Math.floor(s.dmg / 2)) : s.dmg;
+      m.hp -= dmg;
+      bleedTotal += dmg;
       bleedCount++;
     }
     return { ...s, roundsLeft: s.roundsLeft - 1 };
   }).filter(s => s.roundsLeft > 0);
   if (bleedTotal > 0) {
-    const label = bleedCount > 1 ? `🩸-${bleedTotal} ×${bleedCount}` : `🩸-${bleedTotal}`;
+    const armorLabel = m.armor > 0 ? " (½)" : "";
+    const label = bleedCount > 1 ? `🩸-${bleedTotal}${armorLabel} ×${bleedCount}` : `🩸-${bleedTotal}${armorLabel}`;
     spawnFloater(label, "monster-dmg", "monsterZone");
   }
   updateMonsterHpBar();
@@ -1231,6 +1283,7 @@ let dngInputMode = "choice"; // "choice" | "type"
 // Integer bounds → random integer; float bounds → random float.
 function rollStat(val) {
   if (!Array.isArray(val)) return val ?? 0;
+  if (val.length === 1) return val[0];
   const [min, max] = val;
   if (Number.isInteger(min) && Number.isInteger(max)) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -1306,6 +1359,10 @@ function enterDungeon(setId, level) {
     combo: 0,
     comboTimerBonus: 0,
     mobStunEnd: 0,
+    heroStunEnd: 0,
+    heroStunDuration: 0,
+    bossPhase: 1,
+    phaseRoundCount: 0,
     bashCharges: 0,
     bashStreak: 0,
     locked: false,
@@ -1316,8 +1373,9 @@ function enterDungeon(setId, level) {
   document.getElementById("dungeonTriggerLabel").textContent = `⚔️ ${cfg.name} Lv.${level}`;
   const screen = document.getElementById("dungeonScreen");
   // Remove old theme classes
-  screen.className = screen.className.replace(/\btheme-\w+/g, "").trim();
+  screen.className = screen.className.replace(/\btheme-\S+/g, "").replace(/\bboss-phase-\d/g, "").trim();
   if (cfg.theme) screen.classList.add(`theme-${cfg.theme}`);
+  if (cfg.boss?.phases) screen.classList.add("boss-phase-1");
   screen.classList.add("active");
   document.getElementById("dngInputToggle").style.display = "flex";
 
@@ -1348,7 +1406,7 @@ function exitDungeon() {
   stopDngTimer();
   const screen = document.getElementById("dungeonScreen");
   screen.classList.remove("active");
-  screen.className = screen.className.replace(/\btheme-\w+/g, "").trim();
+  screen.className = screen.className.replace(/\btheme-\S+/g, "").replace(/\bboss-phase-\d/g, "").trim();
   screen.querySelector(".dng-result-screen")?.remove();
   dng = null;
 }
@@ -1386,8 +1444,9 @@ function renderDungeonStatuses() {
   const bleedStacks = dng.heroStatuses.filter(s => s.type === "bleed");
   const shown = new Set();
   el.innerHTML = dng.heroStatuses.map(s => {
-    if (s.type === "poison") return `<span class="dng-status poison" title="Poisoned: ${s.dmg} dmg for ${s.roundsLeft} rounds">☠️ ${s.dmg}×${s.roundsLeft}</span>`;
-    if (s.type === "freeze") return `<span class="dng-status freeze" title="Frozen: ${s.roundsLeft} rounds">❄️ ×${s.roundsLeft}</span>`;
+    if (s.type === "poison") return `<span class="dng-status poison"  title="Poisoned: ${s.dmg} dmg for ${s.roundsLeft} rounds">☠️ ${s.dmg}×${s.roundsLeft}</span>`;
+    if (s.type === "freeze") return `<span class="dng-status freeze"  title="Frozen: ${s.roundsLeft} rounds">❄️ ×${s.roundsLeft}</span>`;
+    if (s.type === "weaken") return `<span class="dng-status weaken"  title="Weakened: -50% damage for ${s.roundsLeft} rounds">💔 ×${s.roundsLeft}</span>`;
     if (s.type === "bleed" && !shown.has("bleed")) {
       shown.add("bleed");
       const totalDmg = bleedStacks.reduce((a, b) => a + b.dmg, 0);
@@ -1431,7 +1490,7 @@ function renderDungeonMonster() {
 
   zone.innerHTML = `
     ${m.isBoss ? '<div class="dng-boss-crown">👑</div>' : ''}
-    <div class="dng-monster-sprite" id="monsterSprite">${getMonsterSVG(m.name)}</div>
+    <div class="dng-monster-sprite" id="monsterSprite">${getMonsterSVG(m.phases && dng ? `${m.name} Phase ${dng.bossPhase}` : m.name)}</div>
     <div class="dng-fighter-name">${m.name}</div>
     ${badges.length ? `<div class="dng-badges">${badges.join("")}</div>` : ""}
     <div class="dng-hp-track">
@@ -1484,10 +1543,11 @@ function renderDungeonQuestion() {
     : "";
 
   const prompt = getTranslationLabel(word);
-  const isShadow = dng.cfg.theme === "shadow";
+  const _curMQ = dng.queue?.[dng.monsterIdx];
+  const isShadow = dng.cfg.theme === "shadow" || (_curMQ?.isBoss && _curMQ?.phases && dng.bossPhase >= 2);
   const promptEl = document.getElementById("dngWordPrompt");
   promptEl.textContent = prompt;
-  // In Shadow Dungeon type mode — show translation upside down (the challenge!)
+  // In Shadow Dungeon or Boss Phase 2+ type mode — show translation upside down
   if (isShadow && dngInputMode === "type") {
     promptEl.style.transform = "rotate(180deg)";
     promptEl.title = "Shadow Dungeon: translation is flipped!";
@@ -1507,6 +1567,8 @@ function renderDungeonQuestion() {
 
   dng.locked = false;
   startDngTimer();
+  // Re-apply hero stun overlay if stun is still active (persists across question renders)
+  if (isHeroStunned()) showHeroStunOverlay();
 }
 
 function renderDngChoiceOptions(word) {
@@ -1516,8 +1578,9 @@ function renderDngChoiceOptions(word) {
   const opts = [correct, ...pool.slice(0,3)];
   for (let i = opts.length-1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [opts[i],opts[j]]=[opts[j],opts[i]]; }
 
-  // Lv5 flipped options
-  const flip = dng.cfg.theme === "shadow";
+  // Shadow Dungeon or Boss Phase 2+ flips options
+  const _curM = dng.queue?.[dng.monsterIdx];
+  const flip = dng.cfg.theme === "shadow" || (_curM?.isBoss && _curM?.phases && dng.bossPhase >= 2);
 
   const container = document.getElementById("dngOptions");
   container.innerHTML = "";
@@ -1557,7 +1620,7 @@ function renderDngTypeInput(word) {
 }
 
 function submitDngType(correct) {
-  if (!dng || dng.locked || dng.done) return;
+  if (!dng || dng.locked || dng.done || isHeroStunned()) return;
   const input = document.getElementById("dngTypeInput");
   if (!input) return;
   const typed = input.value.trim().toLowerCase();
@@ -1628,6 +1691,7 @@ function onDngTimerExpired() {
   // Apply monster's status on hit (poison, freeze, etc.)
   if (m.poison)  applyStatus({ type: "poison", dmg: m.poison.dmg, roundsLeft: m.poison.rounds });
   if (m.freeze)  applyFreezeStatus(m.freeze.rounds);
+  if (m.isBoss)  triggerBossAbilities(m, "on_attack");
 
   tickStatuses();
   if (dng.heroHp <= 0) { setTimeout(() => dungeonFailed(), 500); return; }
@@ -1636,7 +1700,7 @@ function onDngTimerExpired() {
 
 // ===================== ANSWER HANDLING =====================
 function handleDungeonAnswer(selected, correct) {
-  if (!dng || dng.locked || dng.done) return;
+  if (!dng || dng.locked || dng.done || isHeroStunned()) return;
   dng.locked = true;
   stopDngTimer();
 
@@ -1681,6 +1745,7 @@ function handleDungeonAnswer(selected, correct) {
     monsterAttackHero(m);
     if (m.poison) applyStatus({ type:"poison", dmg:m.poison.dmg, roundsLeft:m.poison.rounds });
     if (m.freeze) applyFreezeStatus(m.freeze.rounds);
+    if (m.isBoss) triggerBossAbilities(m, "on_attack");
     tickStatuses();
     if (dng.heroHp <= 0) { setTimeout(() => dungeonFailed(), 500); return; }
     scheduleNextQuestion(650);
@@ -1897,6 +1962,12 @@ function dungeonHit() {
 
   dmg = Math.max(1, Math.round(dmg * critMult));
 
+  // Weaken debuff: boss ability reduces hero outgoing damage by 50%
+  if (dng.heroStatuses.some(s => s.type === "weaken")) {
+    dmg = Math.max(1, Math.round(dmg * 0.5));
+    spawnFloater("💔 -50%", "miss-float", "monsterZone");
+  }
+
   // Legacy combo bonus (Dragon Mountain comboSystem)
   const comboBonus = dng.cfg.comboSystem ? getComboBonus(dng.combo) : 0;
   if (comboBonus > 0) { dmg += comboBonus; spawnFloater(`🔥 COMBO x${dng.combo}`, "combo-float", "monsterZone"); }
@@ -1939,6 +2010,8 @@ function dungeonHit() {
       setTimeout(() => { sprite.classList.remove("hit", "shake"); }, 450);
     }
     if (critMult > 1) setTimeout(() => spawnCritEffect("monsterZone", "gold"), 330);
+    // Check boss phase transition after damage
+    if (m.isBoss) checkBossPhase(m);
   }
 
   // WM Sword bleed (only if sword equipped)
@@ -2107,6 +2180,74 @@ function tickStatuses() {
   if (!stillFrozen) updateFreezeOverlay(false);
   renderDungeonStatuses();
   dng.wordIdx++;
+
+  // Boss per-turn effects
+  const _bossM = dng.queue?.[dng.monsterIdx];
+  if (_bossM && _bossM.hp > 0 && _bossM.isBoss) {
+    triggerBossAbilities(_bossM, "per_turn");
+    // Phase 3: auto-freeze every 3 rounds — dungeon mechanic, ignores boss stun
+    if (dng.bossPhase === 3) {
+      dng.phaseRoundCount = (dng.phaseRoundCount || 0) + 1;
+      if (dng.phaseRoundCount % 3 === 0) {
+        applyFreezeStatus(1);
+        spawnFloater("❄️ Phase 3!", "miss-float", "heroHpBar");
+      }
+    }
+  }
+}
+
+// ===================== BOSS ABILITIES =====================
+function triggerBossAbilities(m, trigger) {
+  if (!m?.abilities || isMobStunned()) return;
+  for (const ability of m.abilities) {
+    if (ability.trigger !== trigger) continue;
+    if (Math.random() >= ability.chance) continue;
+    applyBossAbility(ability);
+  }
+}
+
+function applyBossAbility(ability) {
+  switch (ability.type) {
+    case "freeze":    applyFreezeStatus(ability.duration ?? 2); break;
+    case "weaken":
+      applyStatus({ type: "weaken", dmg: 0, roundsLeft: ability.duration ?? 3 });
+      spawnFloater("💔 Weaken!", "miss-float", "heroHpBar");
+      break;
+    case "stun_hero": applyHeroStun(ability.duration ?? 5); break;
+  }
+}
+
+// ===================== BOSS PHASES =====================
+function checkBossPhase(m) {
+  if (!m.isBoss || !m.phases) return;
+  const hpPct    = (m.hp / m.maxHp) * 100;
+  const newPhase = hpPct >= 70 ? 1 : hpPct >= 30 ? 2 : 3;
+  if (newPhase !== dng.bossPhase) {
+    dng.bossPhase       = newPhase;
+    dng.phaseRoundCount = 0;
+    setBossPhaseClass(newPhase);
+    showPhaseTransitionBanner(newPhase);
+  }
+}
+
+function setBossPhaseClass(phase) {
+  const screen = document.getElementById("dungeonScreen");
+  if (!screen) return;
+  screen.classList.remove("boss-phase-1", "boss-phase-2", "boss-phase-3");
+  screen.classList.add(`boss-phase-${phase}`);
+}
+
+function showPhaseTransitionBanner(phase) {
+  const info = {
+    2: { icon: "🌑", title: "PHASE 2", sub: "Words are now reversed!" },
+    3: { icon: "❄️", title: "PHASE 3", sub: "Eternal Frost — frozen every 3 rounds!" },
+  }[phase];
+  if (!info) return;
+  const el = document.createElement("div");
+  el.className = "dng-phase-banner";
+  el.innerHTML = `<span class="phase-icon">${info.icon}</span><span class="phase-title">${info.title}</span><span class="phase-sub">${info.sub}</span>`;
+  document.getElementById("dungeonScreen")?.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
 }
 
 function scheduleNextQuestion(delay) {
@@ -2162,9 +2303,7 @@ function dungeonVictory() {
   stopDngTimer();
 
   // Award gold
-  const goldMin = Math.max(0, dng.level - 1);
-  const goldMax = 5 + dng.level * 2;
-  const goldEarned = Math.floor(Math.random() * (goldMax - goldMin + 1)) + goldMin;
+  const goldEarned = rollStat(dng.cfg.goldReward ?? [0, 5]);
   awardGold(goldEarned);
 
   const screen = document.getElementById("dungeonScreen");
