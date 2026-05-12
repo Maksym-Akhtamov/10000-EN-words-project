@@ -403,9 +403,26 @@ function equipFromInventory(itemId) {
 
 // ===================== SHOP =====================
 const SHOP_SECTIONS = {
-  all:     null,
-  weapons: ['weapon', 'shield'],
-  armor:   ['helmet', 'armor', 'gloves', 'boots'],
+  all: [
+    { label: 'One-Handed',  slot: 'weapon', hand: 'one' },
+    { label: 'Two-Handed',  slot: 'weapon', hand: 'two' },
+    { label: 'Helmets',     slot: 'helmet'               },
+    { label: 'Chest Armor', slot: 'armor'                },
+    { label: 'Gloves',      slot: 'gloves'               },
+    { label: 'Boots',       slot: 'boots'                },
+    { label: 'Shields',     slot: 'shield'               },
+  ],
+  weapons: [
+    { label: 'One-Handed',  slot: 'weapon', hand: 'one' },
+    { label: 'Two-Handed',  slot: 'weapon', hand: 'two' },
+  ],
+  armor: [
+    { label: 'Helmets',     slot: 'helmet'  },
+    { label: 'Chest Armor', slot: 'armor'   },
+    { label: 'Gloves',      slot: 'gloves'  },
+    { label: 'Boots',       slot: 'boots'   },
+    { label: 'Shields',     slot: 'shield'  },
+  ],
 };
 
 let _shopTab = 'all';
@@ -439,24 +456,10 @@ function renderShop() {
     return;
   }
 
-  const inv   = new Set([...(hero?.inventory || []), ...Object.values(hero?.equipment || {})]);
-  const slots = SHOP_SECTIONS[_shopTab];
-
-  const list = document.getElementById('shopItemsList');
+  const inv    = new Set([...(hero?.inventory || []), ...Object.values(hero?.equipment || {})]);
+  const groups = SHOP_SECTIONS[_shopTab];
+  const list   = document.getElementById('shopItemsList');
   list.innerHTML = '';
-
-  // Group by section for "All" tab
-  const groups = _shopTab === 'all'
-    ? [
-        { label: 'One-Handed Swords', slot: 'weapon', hand: 'one' },
-        { label: 'Two-Handed Swords', slot: 'weapon', hand: 'two' },
-        { label: 'Shields',           slot: 'shield'               },
-        { label: 'Helmets',           slot: 'helmet'               },
-        { label: 'Chest Armor',       slot: 'armor'                },
-        { label: 'Gloves',            slot: 'gloves'               },
-        { label: 'Boots',             slot: 'boots'                },
-      ]
-    : null;
 
   const renderItem = (item) => {
     const owned     = inv.has(item.id);
@@ -483,24 +486,17 @@ function renderShop() {
     list.appendChild(div);
   };
 
-  if (groups) {
-    groups.forEach(g => {
-      const items = SHOP_CATALOG
-        .map(id => ITEMS_DB[id])
-        .filter(item => item && item.slot === g.slot && (!g.hand || item.handedness === g.hand));
-      if (!items.length) return;
-      const title = document.createElement('div');
-      title.className = 'shop-section-title';
-      title.textContent = g.label;
-      list.appendChild(title);
-      items.forEach(renderItem);
-    });
-  } else {
-    SHOP_CATALOG
+  groups.forEach(g => {
+    const items = SHOP_CATALOG
       .map(id => ITEMS_DB[id])
-      .filter(item => item && slots.includes(item.slot))
-      .forEach(renderItem);
-  }
+      .filter(item => item && item.slot === g.slot && (!g.hand || item.handedness === g.hand));
+    if (!items.length) return;
+    const title = document.createElement('div');
+    title.className = 'shop-section-title';
+    title.textContent = g.label;
+    list.appendChild(title);
+    items.forEach(renderItem);
+  });
 }
 
 function buyItem(itemId) {
@@ -577,10 +573,17 @@ function sellItem(itemId) {
 }
 
 function renderItemIcon(iconId, rarity = 'common', size = 36, muted = false) {
-  const d = ICON_PATHS[iconId];
-  if (!d) return `<span style="font-size:${size * 0.7}px;opacity:0.3">?</span>`;
+  const icon = ICON_PATHS[iconId];
+  if (!icon) return `<span style="font-size:${size * 0.7}px;opacity:0.3">?</span>`;
   const fill = muted ? 'rgba(255,255,255,0.12)' : (RARITY_COLORS[rarity] || RARITY_COLORS.common);
-  return `<svg viewBox="0 0 512 512" style="width:${size}px;height:${size}px;fill:${fill};display:block;flex-shrink:0"><path d="${d}"/></svg>`;
+  if (typeof icon === 'object' && icon.file) {
+    const url = icon.file.replace(/ /g, '%20');
+    return `<span style="display:inline-block;width:${size}px;height:${size}px;flex-shrink:0;background-color:${fill};-webkit-mask:url('${url}') center/contain no-repeat;mask:url('${url}') center/contain no-repeat"></span>`;
+  }
+  if (typeof icon === 'string') {
+    return `<svg viewBox="0 0 512 512" style="width:${size}px;height:${size}px;fill:${fill};display:block;flex-shrink:0"><path d="${icon}"/></svg>`;
+  }
+  return `<svg viewBox="${icon.vb}" style="width:${size}px;height:${size}px;fill:${fill};display:block;flex-shrink:0">${icon.svg}</svg>`;
 }
 
 // ===================== HERO SPRITES =====================
@@ -682,6 +685,161 @@ const HERO_SPRITE_PARTS = {
     <ellipse cx="63" cy="40" rx="1.2" ry="1.5" fill="#7a3a10" opacity="0.4"/>
     <ellipse cx="61" cy="55" rx="1.5" ry="1" fill="#7a3a10" opacity="0.5"/>
     <ellipse cx="62" cy="63" rx="1" ry="1.5" fill="#7a3a10" opacity="0.4"/>
+  </g>`,
+
+  // ── One-handed axes ──
+  weapon_steel_axe: `<g>
+    <rect x="60" y="57" width="5" height="24" rx="2" fill="#5c3a1a"/>
+    <ellipse cx="62.5" cy="82" rx="4" ry="3" fill="#9a8060"/>
+    <rect x="58" y="54" width="9" height="4" rx="2" fill="#8a7040"/>
+    <rect x="55" y="28" width="9" height="27" rx="2" fill="#7a8a9a"/>
+    <path d="M63,26 Q76,30 77,42 Q76,54 63,55 Z" fill="#9aaabb"/>
+    <path d="M74,31 Q78,42 74,53" stroke="#c5d5e5" stroke-width="1.5" fill="none" opacity="0.65" stroke-linecap="round"/>
+    <polygon points="57,28 65,26 63,22" fill="#8a9aaa"/>
+    <path d="M63,55 Q69,59 64,64 L59,55 Z" fill="#8a9aaa" opacity="0.8"/>
+  </g>`,
+  weapon_war_axe: `<g>
+    <rect x="60" y="57" width="5" height="24" rx="2" fill="#5c3a1a"/>
+    <ellipse cx="62.5" cy="82" rx="4" ry="3" fill="#9a8060"/>
+    <rect x="58" y="54" width="9" height="4" rx="2" fill="#8a7040"/>
+    <rect x="55" y="28" width="9" height="27" rx="2" fill="#7a8a9a"/>
+    <path d="M63,26 Q76,30 77,42 Q76,54 63,55 Z" fill="#9aaabb"/>
+    <path d="M74,31 Q78,42 74,53" stroke="#c5d5e5" stroke-width="1.5" fill="none" opacity="0.65" stroke-linecap="round"/>
+    <polygon points="57,28 65,26 63,22" fill="#8a9aaa"/>
+    <path d="M63,55 Q69,59 64,64 L59,55 Z" fill="#8a9aaa" opacity="0.8"/>
+    <ellipse cx="60" cy="40" rx="1.5" ry="2" fill="#5a6a7a" opacity="0.6"/>
+  </g>`,
+  weapon_masterwork_axe: `<g>
+    <rect x="60" y="57" width="5" height="24" rx="2" fill="#5c3a1a"/>
+    <ellipse cx="62.5" cy="82" rx="4" ry="3" fill="#c8a040"/>
+    <rect x="58" y="54" width="9" height="4" rx="2" fill="#8a7040"/>
+    <rect x="55" y="28" width="9" height="27" rx="2" fill="#7a8a9a"/>
+    <path d="M63,26 Q76,30 77,42 Q76,54 63,55 Z" fill="#aabccf"/>
+    <path d="M74,31 Q78,42 74,53" stroke="#ddeeff" stroke-width="1.5" fill="none" opacity="0.8" stroke-linecap="round"/>
+    <polygon points="57,28 65,26 63,22" fill="#9aaabb"/>
+    <path d="M63,55 Q69,59 64,64 L59,55 Z" fill="#9aaabb" opacity="0.9"/>
+    <ellipse cx="60" cy="37" rx="1.2" ry="1.2" fill="#c8a040" opacity="0.7"/>
+    <ellipse cx="60" cy="48" rx="1.2" ry="1.2" fill="#c8a040" opacity="0.7"/>
+  </g>`,
+
+  // ── Two-handed axes ──
+  weapon_steel_greataxe: `<g>
+    <rect x="59" y="64" width="6" height="30" rx="2" fill="#5c3a1a"/>
+    <ellipse cx="62" cy="95" rx="5" ry="4" fill="#9a8060"/>
+    <rect x="59" y="70" width="6" height="2" rx="1" fill="#3d2010" opacity="0.7"/>
+    <rect x="59" y="78" width="6" height="2" rx="1" fill="#3d2010" opacity="0.7"/>
+    <rect x="59" y="86" width="6" height="2" rx="1" fill="#3d2010" opacity="0.7"/>
+    <rect x="56" y="62" width="12" height="4" rx="2" fill="#8a7040"/>
+    <rect x="53" y="12" width="11" height="52" rx="3" fill="#7a8a9a"/>
+    <path d="M63,10 Q78,16 79,34 Q78,52 63,62 Z" fill="#9aaabb"/>
+    <path d="M76,17 Q80,34 76,51" stroke="#c5d5e5" stroke-width="2" fill="none" opacity="0.65" stroke-linecap="round"/>
+    <polygon points="55,12 65,12 63,6" fill="#8a9aaa"/>
+    <path d="M63,62 Q72,67 65,74 L55,62 Z" fill="#8a9aaa" opacity="0.85"/>
+  </g>`,
+  weapon_war_greataxe: `<g>
+    <rect x="59" y="64" width="6" height="30" rx="2" fill="#5c3a1a"/>
+    <ellipse cx="62" cy="95" rx="5" ry="4" fill="#9a8060"/>
+    <rect x="59" y="70" width="6" height="2" rx="1" fill="#3d2010" opacity="0.7"/>
+    <rect x="59" y="78" width="6" height="2" rx="1" fill="#3d2010" opacity="0.7"/>
+    <rect x="59" y="86" width="6" height="2" rx="1" fill="#3d2010" opacity="0.7"/>
+    <rect x="56" y="62" width="12" height="4" rx="2" fill="#8a7040"/>
+    <rect x="53" y="12" width="11" height="52" rx="3" fill="#7a8a9a"/>
+    <path d="M63,10 Q78,16 79,34 Q78,52 63,62 Z" fill="#9aaabb"/>
+    <path d="M76,17 Q80,34 76,51" stroke="#c5d5e5" stroke-width="2" fill="none" opacity="0.65" stroke-linecap="round"/>
+    <polygon points="55,12 65,12 63,6" fill="#8a9aaa"/>
+    <path d="M63,62 Q72,67 65,74 L55,62 Z" fill="#8a9aaa" opacity="0.85"/>
+    <ellipse cx="57" cy="38" rx="1.5" ry="2" fill="#5a6a7a" opacity="0.6"/>
+  </g>`,
+  weapon_masterwork_greataxe: `<g>
+    <rect x="59" y="64" width="6" height="30" rx="2" fill="#5c3a1a"/>
+    <ellipse cx="62" cy="95" rx="5" ry="4" fill="#c8a040"/>
+    <rect x="59" y="70" width="6" height="2" rx="1" fill="#3d2010" opacity="0.7"/>
+    <rect x="59" y="78" width="6" height="2" rx="1" fill="#3d2010" opacity="0.7"/>
+    <rect x="59" y="86" width="6" height="2" rx="1" fill="#3d2010" opacity="0.7"/>
+    <rect x="56" y="62" width="12" height="4" rx="2" fill="#8a7040"/>
+    <rect x="53" y="12" width="11" height="52" rx="3" fill="#7a8a9a"/>
+    <path d="M63,10 Q78,16 79,34 Q78,52 63,62 Z" fill="#aabccf"/>
+    <path d="M76,17 Q80,34 76,51" stroke="#ddeeff" stroke-width="2" fill="none" opacity="0.8" stroke-linecap="round"/>
+    <polygon points="55,12 65,12 63,6" fill="#9aaabb"/>
+    <path d="M63,62 Q72,67 65,74 L55,62 Z" fill="#9aaabb" opacity="0.9"/>
+    <ellipse cx="57" cy="32" rx="1.2" ry="1.2" fill="#c8a040" opacity="0.7"/>
+    <ellipse cx="57" cy="48" rx="1.2" ry="1.2" fill="#c8a040" opacity="0.7"/>
+  </g>`,
+
+  // ── One-handed maces ──
+  weapon_steel_mace: `<g>
+    <rect x="60" y="54" width="5" height="26" rx="2" fill="#5c3a1a"/>
+    <ellipse cx="62.5" cy="81" rx="4" ry="3" fill="#9a8060"/>
+    <rect x="58" y="52" width="9" height="4" rx="2" fill="#8a7040"/>
+    <rect x="57" y="33" width="11" height="20" rx="2" fill="#7a8a9a"/>
+    <path d="M57,37 L52,35 M57,43 L51,43 M57,49 L52,51" stroke="#9aaabb" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M68,37 L73,35 M68,43 L74,43 M68,49 L73,51" stroke="#9aaabb" stroke-width="2.5" stroke-linecap="round"/>
+    <ellipse cx="62.5" cy="33" rx="6" ry="3" fill="#8a9aaa"/>
+    <ellipse cx="62.5" cy="53" rx="5.5" ry="2.5" fill="#6a7a8a"/>
+  </g>`,
+  weapon_flanged_mace: `<g>
+    <rect x="60" y="54" width="5" height="26" rx="2" fill="#5c3a1a"/>
+    <ellipse cx="62.5" cy="81" rx="4" ry="3" fill="#9a8060"/>
+    <rect x="58" y="52" width="9" height="4" rx="2" fill="#8a7040"/>
+    <rect x="57" y="33" width="11" height="20" rx="2" fill="#7a8a9a"/>
+    <path d="M57,37 L51,34 M57,43 L50,43 M57,49 L51,52" stroke="#9aaabb" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M68,37 L74,34 M68,43 L75,43 M68,49 L74,52" stroke="#9aaabb" stroke-width="2.5" stroke-linecap="round"/>
+    <ellipse cx="62.5" cy="33" rx="6" ry="3" fill="#8a9aaa"/>
+    <ellipse cx="62.5" cy="53" rx="5.5" ry="2.5" fill="#6a7a8a"/>
+    <ellipse cx="62.5" cy="43" rx="4" ry="4" fill="#6a7a8a" opacity="0.4"/>
+  </g>`,
+  weapon_spiked_mace: `<g>
+    <rect x="60" y="54" width="5" height="26" rx="2" fill="#5c3a1a"/>
+    <ellipse cx="62.5" cy="81" rx="4" ry="3" fill="#c8a040"/>
+    <rect x="58" y="52" width="9" height="4" rx="2" fill="#8a7040"/>
+    <rect x="57" y="33" width="11" height="20" rx="2" fill="#7a8a9a"/>
+    <path d="M57,37 L50,33 M57,43 L49,43 M57,49 L50,53" stroke="#aabccf" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M68,37 L75,33 M68,43 L76,43 M68,49 L75,53" stroke="#aabccf" stroke-width="2.5" stroke-linecap="round"/>
+    <polygon points="62.5,30 60,33 65,33" fill="#9aaabb"/>
+    <polygon points="62.5,56 60,53 65,53" fill="#9aaabb"/>
+    <ellipse cx="62.5" cy="33" rx="5.5" ry="2.5" fill="#8a9aaa"/>
+    <ellipse cx="62.5" cy="53" rx="5" ry="2" fill="#6a7a8a"/>
+  </g>`,
+
+  // ── Two-handed maces ──
+  weapon_steel_warhammer: `<g>
+    <rect x="59" y="55" width="6" height="38" rx="2" fill="#5c3a1a"/>
+    <ellipse cx="62" cy="94" rx="5" ry="4" fill="#9a8060"/>
+    <rect x="59" y="62" width="6" height="2" rx="1" fill="#3d2010" opacity="0.7"/>
+    <rect x="59" y="72" width="6" height="2" rx="1" fill="#3d2010" opacity="0.7"/>
+    <rect x="59" y="82" width="6" height="2" rx="1" fill="#3d2010" opacity="0.7"/>
+    <rect x="56" y="52" width="12" height="5" rx="2" fill="#8a7040"/>
+    <rect x="45" y="10" width="30" height="43" rx="3" fill="#7a8a9a"/>
+    <path d="M48,12 Q62,9 72,12" stroke="#c5d5e5" stroke-width="1.5" fill="none" opacity="0.5" stroke-linecap="round"/>
+    <rect x="71" y="13" width="3" height="38" rx="1.5" fill="#9aaabb" opacity="0.65"/>
+    <rect x="45" y="14" width="8" height="35" rx="2" fill="#6a7a8a"/>
+  </g>`,
+  weapon_heavy_warhammer: `<g>
+    <rect x="59" y="55" width="6" height="38" rx="2" fill="#5c3a1a"/>
+    <ellipse cx="62" cy="94" rx="5" ry="4" fill="#9a8060"/>
+    <rect x="59" y="62" width="6" height="2" rx="1" fill="#3d2010" opacity="0.7"/>
+    <rect x="59" y="72" width="6" height="2" rx="1" fill="#3d2010" opacity="0.7"/>
+    <rect x="59" y="82" width="6" height="2" rx="1" fill="#3d2010" opacity="0.7"/>
+    <rect x="56" y="52" width="12" height="5" rx="2" fill="#8a7040"/>
+    <rect x="45" y="10" width="30" height="43" rx="3" fill="#7a8a9a"/>
+    <path d="M48,12 Q62,9 72,12" stroke="#c5d5e5" stroke-width="1.5" fill="none" opacity="0.5" stroke-linecap="round"/>
+    <rect x="71" y="13" width="3" height="38" rx="1.5" fill="#9aaabb" opacity="0.65"/>
+    <rect x="45" y="14" width="8" height="35" rx="2" fill="#6a7a8a"/>
+    <ellipse cx="57" cy="35" rx="2" ry="2" fill="#5a6a7a" opacity="0.6"/>
+  </g>`,
+  weapon_war_maul: `<g>
+    <rect x="59" y="55" width="6" height="38" rx="2" fill="#5c3a1a"/>
+    <ellipse cx="62" cy="94" rx="5" ry="4" fill="#c8a040"/>
+    <rect x="59" y="62" width="6" height="2" rx="1" fill="#3d2010" opacity="0.7"/>
+    <rect x="59" y="72" width="6" height="2" rx="1" fill="#3d2010" opacity="0.7"/>
+    <rect x="59" y="82" width="6" height="2" rx="1" fill="#3d2010" opacity="0.7"/>
+    <rect x="56" y="52" width="12" height="5" rx="2" fill="#8a7040"/>
+    <rect x="44" y="9" width="32" height="44" rx="3" fill="#7a8a9a"/>
+    <path d="M47,11 Q62,8 73,11" stroke="#ddeeff" stroke-width="1.5" fill="none" opacity="0.65" stroke-linecap="round"/>
+    <rect x="72" y="12" width="3" height="40" rx="1.5" fill="#aabccf" opacity="0.75"/>
+    <rect x="44" y="13" width="9" height="37" rx="2" fill="#6a7a8a"/>
+    <ellipse cx="57" cy="30" rx="1.5" ry="1.5" fill="#c8a040" opacity="0.7"/>
+    <ellipse cx="57" cy="42" rx="1.5" ry="1.5" fill="#c8a040" opacity="0.7"/>
   </g>`,
 
   shield_battered_shield: `<g>
@@ -824,6 +982,22 @@ const LPC_WEAPON = {
   steel_twohander:          { path:'weapon/sword/longsword_alt/walk/longsword_alt.png', sy:256, fw:128, fh:128 },
   honed_steel_twohander:    { path:'weapon/sword/katana/walk/katana.png',           sy:256, fw:128, fh:128 },
   balanced_steel_twohander: { path:'weapon/sword/scimitar/walk/scimitar.png',       sy:256, fw:128, fh:128 },
+  // One-handed axes
+  steel_axe:                { path:'weapon/blunt/waraxe/walk/waraxe.png',          sy:128, fw:64,  fh:64  },
+  war_axe:                  { path:'weapon/blunt/waraxe/walk/waraxe.png',          sy:128, fw:64,  fh:64  },
+  masterwork_axe:           { path:'weapon/blunt/waraxe/walk/waraxe.png',          sy:128, fw:64,  fh:64  },
+  // Two-handed axes
+  steel_greataxe:           { path:'weapon/blunt/waraxe/walk/waraxe.png',          sy:128, fw:64,  fh:64  },
+  war_greataxe:             { path:'weapon/blunt/waraxe/walk/waraxe.png',          sy:128, fw:64,  fh:64  },
+  masterwork_greataxe:      { path:'weapon/blunt/waraxe/walk/waraxe.png',          sy:128, fw:64,  fh:64  },
+  // One-handed maces
+  steel_mace:               { path:'weapon/blunt/mace/walk/mace.png',             sy:128, fw:64,  fh:64  },
+  flanged_mace:             { path:'weapon/blunt/mace/walk/mace.png',             sy:128, fw:64,  fh:64  },
+  spiked_mace:              { path:'weapon/blunt/mace/walk/mace.png',             sy:128, fw:64,  fh:64  },
+  // Two-handed maces
+  steel_warhammer:          { path:'weapon/blunt/mace/walk/mace.png',             sy:128, fw:64,  fh:64  },
+  heavy_warhammer:          { path:'weapon/blunt/mace/walk/mace.png',             sy:128, fw:64,  fh:64  },
+  war_maul:                 { path:'weapon/blunt/mace/walk/mace.png',             sy:128, fw:64,  fh:64  },
 };
 
 // Body/hair presets per gender — { label, body, hair, hairFilter }
