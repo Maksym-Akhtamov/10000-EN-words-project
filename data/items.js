@@ -2,11 +2,11 @@
 
 const SHOP_CATALOG = [
   // One-Handed
-  'steel_sword', 'honed_steel_sword', 'balanced_steel_sword',
+  'rusty_sword', 'steel_sword', 'honed_steel_sword', 'balanced_steel_sword',
   'steel_axe', 'war_axe', 'masterwork_axe',
   'steel_mace', 'flanged_mace', 'spiked_mace',
   // Two-Handed
-  'steel_twohander', 'honed_steel_twohander', 'balanced_steel_twohander',
+  'rusty_twohander', 'steel_twohander', 'honed_steel_twohander', 'balanced_steel_twohander',
   'steel_greataxe', 'war_greataxe', 'masterwork_greataxe',
   'steel_warhammer', 'heavy_warhammer', 'war_maul',
   'battered_shield',
