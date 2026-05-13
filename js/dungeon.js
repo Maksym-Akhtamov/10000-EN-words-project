@@ -249,110 +249,6 @@ function closeHeroProfile() {
   document.getElementById("heroProfileOverlay").style.display = "none";
 }
 
-function confirmResetHero() {
-  document.getElementById("resetHeroOverlay")?.remove();
-
-  const overlay = document.createElement("div");
-  overlay.id = "resetHeroOverlay";
-  overlay.style.cssText = `
-    position:fixed;inset:0;z-index:4000;
-    background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
-    display:flex;align-items:center;justify-content:center;padding:24px;
-  `;
-
-  overlay.innerHTML = `
-    <style>
-      @keyframes heroResetModalIn {
-        from { opacity:0; transform:scale(0.95) translateY(6px); }
-        to   { opacity:1; transform:scale(1)    translateY(0);   }
-      }
-    </style>
-    <div id="resetHeroBox" style="
-      background:#141820;border:1px solid rgba(248,113,113,0.2);
-      border-radius:20px;padding:32px 28px;max-width:380px;width:100%;
-      box-shadow:0 30px 80px rgba(0,0,0,0.7);text-align:center;
-      animation:heroResetModalIn 0.25s cubic-bezier(0.34,1.2,0.64,1);
-    ">
-      <div style="font-size:38px;margin-bottom:14px">\uD83D\uDDD1\uFE0F</div>
-      <div style="font-family:'DM Serif Display',serif;font-size:22px;color:#f1f3f8;margin-bottom:10px">Reset Hero?</div>
-      <p style="font-size:13px;color:rgba(255,255,255,0.45);line-height:1.7;margin-bottom:26px">
-        This will permanently delete your hero's level, XP, gold, skills, equipment and inventory. You'll start fresh from Lv.1.
-      </p>
-      <div style="display:flex;gap:10px;">
-        <button
-          onclick="document.getElementById('resetHeroOverlay').remove()"
-          style="flex:1;background:transparent;border:1px solid rgba(255,255,255,0.13);color:rgba(255,255,255,0.4);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:13px;border-radius:12px;cursor:pointer;transition:all 0.18s;"
-          onmouseover="this.style.borderColor='rgba(255,255,255,0.28)';this.style.color='rgba(255,255,255,0.75)'"
-          onmouseout="this.style.borderColor='rgba(255,255,255,0.13)';this.style.color='rgba(255,255,255,0.4)'"
-        >Cancel</button>
-        <button
-          onclick="confirmResetHeroFinal()"
-          style="flex:1;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.35);color:#f87171;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;padding:13px;border-radius:12px;cursor:pointer;transition:all 0.18s;"
-          onmouseover="this.style.background='rgba(248,113,113,0.22)'"
-          onmouseout="this.style.background='rgba(248,113,113,0.1)'"
-        >Reset Hero</button>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(overlay);
-}
-
-function confirmResetHeroFinal() {
-  const box = document.getElementById("resetHeroBox");
-  if (!box) return;
-  box.innerHTML = `
-    <div style="font-size:38px;margin-bottom:14px">\u26A0\uFE0F</div>
-    <div style="font-family:'DM Serif Display',serif;font-size:22px;color:#f1f3f8;margin-bottom:10px">Are you sure?</div>
-    <p style="font-size:13px;color:rgba(255,255,255,0.45);line-height:1.7;margin-bottom:26px">
-      All progress — level, gold, gear, skills — will be wiped both <strong style="color:#f1f3f8">locally and in the cloud</strong>. This cannot be undone.
-    </p>
-    <div style="display:flex;gap:10px;">
-      <button
-        onclick="document.getElementById('resetHeroOverlay').remove(); confirmResetHero()"
-        style="flex:1;background:transparent;border:1px solid rgba(255,255,255,0.13);color:rgba(255,255,255,0.4);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:13px;border-radius:12px;cursor:pointer;transition:all 0.18s;"
-        onmouseover="this.style.borderColor='rgba(255,255,255,0.28)';this.style.color='rgba(255,255,255,0.75)'"
-        onmouseout="this.style.borderColor='rgba(255,255,255,0.13)';this.style.color='rgba(255,255,255,0.4)'"
-      >← Back</button>
-      <button
-        onclick="resetHero()"
-        style="flex:1;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.35);color:#f87171;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;padding:13px;border-radius:12px;cursor:pointer;transition:all 0.18s;"
-        onmouseover="this.style.background='rgba(248,113,113,0.22)'"
-        onmouseout="this.style.background='rgba(248,113,113,0.1)'"
-      >Yes, Reset Everything</button>
-    </div>
-  `;
-}
-
-async function resetHero() {
-  document.getElementById("resetHeroOverlay")?.remove();
-
-  const key = getHeroKey();
-  if (heroData && key) {
-    delete heroData.classes[key];
-    heroData.active_class = null;
-    heroData.active_build = null;
-  }
-
-  saveHeroToLocal();
-
-  if (typeof currentUser !== "undefined" && currentUser) {
-    try {
-      await sb.from("user_progress").upsert({
-        user_id: currentUser.id,
-        hero_data: heroData,
-        updated_at: new Date().toISOString()
-      }, { onConflict: "user_id" });
-    } catch(e) { console.error("Hero reset cloud sync failed:", e); }
-  }
-
-  const dungeonScreen = document.getElementById("dungeonScreen");
-  if (dungeonScreen) dungeonScreen.style.display = "none";
-  document.getElementById("heroProfileFab")?.classList.remove("visible");
-  document.getElementById("shopFab")?.classList.remove("visible");
-
-  showClassSelect();
-}
-
 function renderHeroProfile() {
   const hero = getHero();
   const cls  = getHeroClass();
@@ -1280,7 +1176,7 @@ const SKILL_DEFS = [
     desc: (lv) => `+${lv*10} HP total${ironSkinMilestoneDesc(lv)}` },
   { id:"toughness",            icon:"🧱", name:"Toughness",          max:5,   reqLevel:1,  reqBuild:null,
     desc: (lv) => `-${lv*10}% enemy damage` },
-  { id:"shield_bash",          icon:"🛡️", name:"Shield Bash",        max:9,   reqLevel:3,  reqBuild:"sword_shield",
+  { id:"shield_bash",          icon:"🛡️", name:"Shield Bash",        max:9,   reqLevel:3,  reqBuild:null,           reqShield:true,
     desc: (lv) => `Stun ${shieldBashChance(lv)}% chance · ${lv+1}s duration` },
   { id:"combo_strike",         icon:"⚡", name:"Combo Strike",       max:3,   reqLevel:3,  reqBuild:null,
     desc: (lv) => comboDesc(lv) },
@@ -1321,7 +1217,9 @@ function renderSkillTree() {
   grid.innerHTML = "";
   SKILL_DEFS.forEach(def => {
     const lv = hero.skills[def.id] || 0;
+    const hasShield = !!(hero.equipment?.shield);
     const locked = hero.level < def.reqLevel || (def.reqBuild && hero.build !== def.reqBuild);
+    const shieldWarning = !locked && def.reqShield && !hasShield;
     const maxed  = def.max !== 999 && lv >= def.max;
     const canUp  = !locked && !maxed && sp > 0;
     const card = document.createElement("div");
@@ -1331,7 +1229,7 @@ function renderSkillTree() {
       ? (def.reqBuild && hero.build !== def.reqBuild
           ? `Requires ${def.reqBuild === "sword_shield" ? "Sword & Shield" : "Two-Hander"} build`
           : `Requires hero Lv${def.reqLevel}`)
-      : "";
+      : shieldWarning ? "⚠ Equip a shield to use in battle" : "";
     card.innerHTML = `
       <div class="skill-icon">${def.icon}</div>
       <div>
@@ -1673,7 +1571,7 @@ function enterDungeon(setId, level) {
 
   // Shield Bash skill bar (only sword_shield + skill > 0)
   const skillBar = document.getElementById("dngSkillBar");
-  const hasBash = hero && hero.build === "sword_shield" && (hero.skills.shield_bash || 0) > 0;
+  const hasBash = hero && (hero.skills.shield_bash || 0) > 0 && !!(hero.equipment?.shield);
   if (skillBar) skillBar.style.display = hasBash ? "flex" : "none";
   if (hasBash) updateBashSlot();
 
@@ -1995,7 +1893,7 @@ function handleDungeonAnswer(selected, correct) {
     updateComboHud();
 
     // Bash charge accumulation: every BASH_STREAK_NEED correct in a row
-    const hasBashSkill = (getHero()?.skills.shield_bash || 0) > 0 && getHero()?.build === "sword_shield";
+    const hasBashSkill = (getHero()?.skills.shield_bash || 0) > 0 && !!(getHero()?.equipment?.shield);
     if (hasBashSkill) {
       dng.bashStreak = (dng.bashStreak || 0) + 1;
       if (dng.bashStreak >= BASH_STREAK_NEED) {
