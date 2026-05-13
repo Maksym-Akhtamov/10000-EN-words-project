@@ -87,13 +87,13 @@ const DUNGEON_CONFIG = {
     },
     7: {
       name: "❓❓❓", theme: "boss",
-      timerSec: 5,
+      timerSec: 4,
       goldReward: [100],
       monsters: [],
       boss: {
         name: "Overlord", emoji: "👿",
         maxHp: [300], armor: [100], dodge: [0.25], block: [0.25],
-        dmg: [25, 45], isBoss: true,
+        dmg: [45, 75], isBoss: true,
         phases: true,
         abilities: [
           { type: "freeze",    chance: 0.25, trigger: "per_turn"  },
