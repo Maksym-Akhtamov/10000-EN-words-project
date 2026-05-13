@@ -249,6 +249,110 @@ function closeHeroProfile() {
   document.getElementById("heroProfileOverlay").style.display = "none";
 }
 
+function confirmResetHero() {
+  document.getElementById("resetHeroOverlay")?.remove();
+
+  const overlay = document.createElement("div");
+  overlay.id = "resetHeroOverlay";
+  overlay.style.cssText = `
+    position:fixed;inset:0;z-index:4000;
+    background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+    display:flex;align-items:center;justify-content:center;padding:24px;
+  `;
+
+  overlay.innerHTML = `
+    <style>
+      @keyframes heroResetModalIn {
+        from { opacity:0; transform:scale(0.95) translateY(6px); }
+        to   { opacity:1; transform:scale(1)    translateY(0);   }
+      }
+    </style>
+    <div id="resetHeroBox" style="
+      background:#141820;border:1px solid rgba(248,113,113,0.2);
+      border-radius:20px;padding:32px 28px;max-width:380px;width:100%;
+      box-shadow:0 30px 80px rgba(0,0,0,0.7);text-align:center;
+      animation:heroResetModalIn 0.25s cubic-bezier(0.34,1.2,0.64,1);
+    ">
+      <div style="font-size:38px;margin-bottom:14px">\uD83D\uDDD1\uFE0F</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:22px;color:#f1f3f8;margin-bottom:10px">Reset Hero?</div>
+      <p style="font-size:13px;color:rgba(255,255,255,0.45);line-height:1.7;margin-bottom:26px">
+        This will permanently delete your hero's level, XP, gold, skills, equipment and inventory. You'll start fresh from Lv.1.
+      </p>
+      <div style="display:flex;gap:10px;">
+        <button
+          onclick="document.getElementById('resetHeroOverlay').remove()"
+          style="flex:1;background:transparent;border:1px solid rgba(255,255,255,0.13);color:rgba(255,255,255,0.4);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:13px;border-radius:12px;cursor:pointer;transition:all 0.18s;"
+          onmouseover="this.style.borderColor='rgba(255,255,255,0.28)';this.style.color='rgba(255,255,255,0.75)'"
+          onmouseout="this.style.borderColor='rgba(255,255,255,0.13)';this.style.color='rgba(255,255,255,0.4)'"
+        >Cancel</button>
+        <button
+          onclick="confirmResetHeroFinal()"
+          style="flex:1;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.35);color:#f87171;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;padding:13px;border-radius:12px;cursor:pointer;transition:all 0.18s;"
+          onmouseover="this.style.background='rgba(248,113,113,0.22)'"
+          onmouseout="this.style.background='rgba(248,113,113,0.1)'"
+        >Reset Hero</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+}
+
+function confirmResetHeroFinal() {
+  const box = document.getElementById("resetHeroBox");
+  if (!box) return;
+  box.innerHTML = `
+    <div style="font-size:38px;margin-bottom:14px">\u26A0\uFE0F</div>
+    <div style="font-family:'DM Serif Display',serif;font-size:22px;color:#f1f3f8;margin-bottom:10px">Are you sure?</div>
+    <p style="font-size:13px;color:rgba(255,255,255,0.45);line-height:1.7;margin-bottom:26px">
+      All progress — level, gold, gear, skills — will be wiped both <strong style="color:#f1f3f8">locally and in the cloud</strong>. This cannot be undone.
+    </p>
+    <div style="display:flex;gap:10px;">
+      <button
+        onclick="document.getElementById('resetHeroOverlay').remove(); confirmResetHero()"
+        style="flex:1;background:transparent;border:1px solid rgba(255,255,255,0.13);color:rgba(255,255,255,0.4);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:13px;border-radius:12px;cursor:pointer;transition:all 0.18s;"
+        onmouseover="this.style.borderColor='rgba(255,255,255,0.28)';this.style.color='rgba(255,255,255,0.75)'"
+        onmouseout="this.style.borderColor='rgba(255,255,255,0.13)';this.style.color='rgba(255,255,255,0.4)'"
+      >← Back</button>
+      <button
+        onclick="resetHero()"
+        style="flex:1;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.35);color:#f87171;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;padding:13px;border-radius:12px;cursor:pointer;transition:all 0.18s;"
+        onmouseover="this.style.background='rgba(248,113,113,0.22)'"
+        onmouseout="this.style.background='rgba(248,113,113,0.1)'"
+      >Yes, Reset Everything</button>
+    </div>
+  `;
+}
+
+async function resetHero() {
+  document.getElementById("resetHeroOverlay")?.remove();
+
+  const key = getHeroKey();
+  if (heroData && key) {
+    delete heroData.classes[key];
+    heroData.active_class = null;
+    heroData.active_build = null;
+  }
+
+  saveHeroToLocal();
+
+  if (typeof currentUser !== "undefined" && currentUser) {
+    try {
+      await sb.from("user_progress").upsert({
+        user_id: currentUser.id,
+        hero_data: heroData,
+        updated_at: new Date().toISOString()
+      }, { onConflict: "user_id" });
+    } catch(e) { console.error("Hero reset cloud sync failed:", e); }
+  }
+
+  const dungeonScreen = document.getElementById("dungeonScreen");
+  if (dungeonScreen) dungeonScreen.style.display = "none";
+  document.getElementById("heroProfileFab")?.classList.remove("visible");
+  document.getElementById("shopFab")?.classList.remove("visible");
+
+  showClassSelect();
+}
+
 function renderHeroProfile() {
   const hero = getHero();
   const cls  = getHeroClass();
@@ -1256,72 +1360,6 @@ function spendSkillPoint(skillId) {
   hero.skillPoints--;
   renderSkillTree();
   scheduleHeroSave();
-}
-
-function confirmResetSkills() {
-  document.getElementById("resetSkillsOverlay")?.remove();
-  const hero = getHero();
-  if (!hero) return;
-
-  const spentPoints = Object.values(hero.skills).reduce((sum, lv) => sum + (lv || 0), 0);
-
-  const overlay = document.createElement("div");
-  overlay.id = "resetSkillsOverlay";
-  overlay.style.cssText = `
-    position:fixed;inset:0;z-index:4000;
-    background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
-    display:flex;align-items:center;justify-content:center;padding:24px;
-  `;
-
-  overlay.innerHTML = `
-    <div style="
-      background:#141820;border:1px solid rgba(248,113,113,0.2);
-      border-radius:20px;padding:32px 28px;max-width:380px;width:100%;
-      box-shadow:0 30px 80px rgba(0,0,0,0.7);text-align:center;
-      animation:helpIn 0.25s cubic-bezier(0.34,1.2,0.64,1);
-    ">
-      <div style="font-size:38px;margin-bottom:14px">🔄</div>
-      <div style="font-family:'DM Serif Display',serif;font-size:22px;color:#f1f3f8;margin-bottom:10px">Reset Skills?</div>
-      <p style="font-size:13px;color:rgba(255,255,255,0.45);line-height:1.7;margin-bottom:26px">
-        ${spentPoints === 0
-          ? "No skills have been upgraded yet."
-          : "All <strong style='color:#f1f3f8;font-weight:600'>" + spentPoints + " spent point" + (spentPoints !== 1 ? "s" : "") + "</strong> will be refunded. This cannot be undone."
-        }
-      </p>
-      <div style="display:flex;gap:10px;">
-        <button
-          onclick="document.getElementById('resetSkillsOverlay').remove()"
-          style="flex:1;background:transparent;border:1px solid rgba(255,255,255,0.13);color:rgba(255,255,255,0.4);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:13px;border-radius:12px;cursor:pointer;transition:all 0.18s;"
-          onmouseover="this.style.borderColor='rgba(255,255,255,0.28)';this.style.color='rgba(255,255,255,0.75)'"
-          onmouseout="this.style.borderColor='rgba(255,255,255,0.13)';this.style.color='rgba(255,255,255,0.4)'"
-        >Cancel</button>
-        <button
-          onclick="resetSkills()"
-          ${spentPoints === 0 ? "disabled" : ""}
-          style="flex:1;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.35);color:#f87171;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;padding:13px;border-radius:12px;cursor:${spentPoints === 0 ? "default" : "pointer"};opacity:${spentPoints === 0 ? "0.4" : "1"};transition:all 0.18s;"
-          ${spentPoints > 0 ? "onmouseover=\"this.style.background='rgba(248,113,113,0.22)'\" onmouseout=\"this.style.background='rgba(248,113,113,0.1)'\"" : ""}
-        >Reset Skills</button>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(overlay);
-}
-
-function resetSkills() {
-  document.getElementById("resetSkillsOverlay")?.remove();
-  const hero = getHero();
-  if (!hero) return;
-
-  const spentPoints = Object.values(hero.skills).reduce((sum, lv) => sum + (lv || 0), 0);
-  hero.skillPoints = (hero.skillPoints || 0) + spentPoints;
-  Object.keys(hero.skills).forEach(k => { hero.skills[k] = 0; });
-
-  scheduleHeroSave();
-  renderSkillTree();
-
-  const skillBar = document.getElementById("dngSkillBar");
-  if (skillBar) skillBar.style.display = "none";
-  if (typeof updateDungeonHeroUI === "function") updateDungeonHeroUI();
 }
 
 // ===================== SKILL COMBAT HELPERS =====================
