@@ -92,7 +92,7 @@ const DUNGEON_CONFIG = {
       monsters: [],
       boss: {
         name: "Overlord", emoji: "👿",
-        maxHp: [200], armor: [100], dodge: [0.25], block: [0.25],
+        maxHp: [300], armor: [100], dodge: [0.25], block: [0.25],
         dmg: [25, 45], isBoss: true,
         phases: true,
         abilities: [
