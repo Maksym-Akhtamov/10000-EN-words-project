@@ -1,0 +1,131 @@
+/* ===================== PORTAL MODAL ===================== */
+#portalModal {
+  position: fixed; inset: 0; z-index: 9000;
+  background: rgba(0,0,0,0.75);
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(4px);
+}
+#portalModal.hidden { display: none; }
+
+.portal-modal-inner {
+  background: #1e1b2e;
+  border: 1px solid #6d28d9;
+  border-radius: 16px;
+  padding: 24px;
+  width: min(420px, 92vw);
+  display: flex; flex-direction: column; gap: 14px;
+  box-shadow: 0 0 40px rgba(109,40,217,0.4);
+}
+
+.portal-header {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.portal-title { font-size: 1.2rem; font-weight: 700; color: #c4b5fd; }
+.portal-close {
+  background: none; border: none; color: #9ca3af;
+  font-size: 1.1rem; cursor: pointer; padding: 2px 6px;
+  border-radius: 6px; transition: color .2s;
+}
+.portal-close:hover { color: #f87171; }
+
+.portal-section-label {
+  font-size: 0.75rem; font-weight: 600;
+  color: #7c3aed; text-transform: uppercase; letter-spacing: .08em;
+}
+
+.portal-floor-grid {
+  display: flex; flex-wrap: wrap; gap: 8px;
+}
+.portal-floor-btn {
+  padding: 6px 14px; border-radius: 8px; font-size: 0.85rem;
+  background: #2d1f4e; border: 1px solid #4c1d95;
+  color: #c4b5fd; cursor: pointer; transition: all .15s;
+}
+.portal-floor-btn:hover { background: #3b1f6e; }
+.portal-floor-btn.portal-btn-active {
+  background: #6d28d9; border-color: #7c3aed; color: #fff;
+}
+
+.portal-diff-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+}
+.portal-diff-btn {
+  padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 600;
+  background: #2d1f4e; border: 2px solid transparent;
+  color: #e2e8f0; cursor: pointer; transition: all .15s;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.portal-diff-btn:hover { border-color: var(--diff-color); }
+.portal-diff-btn.portal-btn-active {
+  border-color: var(--diff-color); background: #1e1535;
+  color: var(--diff-color);
+}
+.portal-mult { font-size: 0.75rem; opacity: .75; }
+
+.portal-hint {
+  font-size: 0.75rem; color: #6b7280; font-style: italic; text-align: center;
+}
+.portal-hero-info {
+  text-align: center; font-size: 0.8rem; color: #9ca3af;
+  background: #111827; border-radius: 8px; padding: 6px 12px;
+}
+.portal-jump-btn {
+  width: 100%; padding: 12px; border-radius: 10px; font-size: 1rem; font-weight: 700;
+  background: linear-gradient(135deg, #6d28d9, #4f46e5);
+  border: none; color: #fff; cursor: pointer; transition: opacity .15s;
+  letter-spacing: .03em;
+}
+.portal-jump-btn:hover { opacity: .88; }
+
+/* Next Floor button in victory screen */
+.portal-next-btn {
+  background: linear-gradient(135deg, #6d28d9, #4f46e5) !important;
+  color: #fff !important;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  margin-bottom: 4px !important;
+  letter-spacing: .02em;
+}
+.portal-next-btn:hover { opacity: .88; }
+
+/* Gold floater animation */
+@keyframes goldFloat {
+  0%   { opacity:1; transform: translateY(0) scale(1); }
+  60%  { opacity:1; transform: translateY(-28px) scale(1.15); }
+  100% { opacity:0; transform: translateY(-48px) scale(0.9); }
+}
+.gold-floater {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fbbf24;
+  text-shadow: 0 1px 4px rgba(0,0,0,.8);
+  pointer-events: none;
+  z-index: 9999;
+  animation: goldFloat 0.9s ease forwards;
+}
+
+/* Session gold HUD (run balance) */
+.hero-session-gold {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 11px;
+  margin-top: 2px;
+  background: rgba(251,191,36,0.08);
+  border: 1px solid rgba(251,191,36,0.2);
+  border-radius: 6px;
+  padding: 2px 8px;
+}
+.sgold-label {
+  color: #9ca3af;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+.sgold-amount {
+  color: #fbbf24;
+  font-weight: 700;
+  transition: color .3s;
+}

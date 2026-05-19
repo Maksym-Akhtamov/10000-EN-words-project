@@ -53,7 +53,7 @@ const ITEMS_DB = {
   iron_warhammer:            { name:'Iron Warhammer',       dmg:2,               price:1,   id:'iron_warhammer',           rarity:'common',   slot:'weapon', weaponType:'mace', handedness:'two', iconId:'mace2h_t1',   desc:'A crude but heavy warhammer.' },
   steel_warhammer:           { name:'Steel Warhammer',      dmg:4,               price:20,  id:'steel_warhammer',          rarity:'uncommon', slot:'weapon', weaponType:'mace', handedness:'two', iconId:'mace2h_t1',   desc:'Heavy steel hammer that shatters bone and armor.' },
   heavy_warhammer:           { name:'Heavy Warhammer',      dmg:10,              price:40,  id:'heavy_warhammer',          rarity:'rare',     slot:'weapon', weaponType:'mace', handedness:'two', iconId:'mace2h_t2',   desc:'Massive head, devastating impact. Slow but sure.' },
-  war_maul:                  { name:'War Maul',             dmg:15,              price:80,  id:'war_maul',                 rarity:'epic',     slot:'weapon', weaponType:'mace', handedness:'two', iconId:'mace2h_t3',   desc:'A colossal maul. One hit ends any fight.' },
+  war_maul:                  { name:'War Maul',             dmg:10000,              price:80,  id:'war_maul',                 rarity:'epic',     slot:'weapon', weaponType:'mace', handedness:'two', iconId:'mace2h_t3',   desc:'A colossal maul. One hit ends any fight.' },
   // ── Shields ────────────────────────────────────────────────────────
   battered_shield:          { name:'Battered Shield',     block:0.25, armor:0, price:0,   id:'battered_shield',          rarity:'common',   slot:'shield',                                       iconId:'riot-shield',     desc:'Dented but still blocks 25% of hits.' },
   // ── Helmets ────────────────────────────────────────────────────────

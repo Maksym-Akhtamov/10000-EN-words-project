@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -n '^\\\\s*{$\\\\|name:\\\\|dungeonLevel\\\\|attack:\\\\|type:' /c/Users/MAX/Desktop/english-cards/js/dungeon.js)",
+      "Bash(grep -v '//')",
+      "Bash(node -e ' *)"
+    ]
+  }
+}

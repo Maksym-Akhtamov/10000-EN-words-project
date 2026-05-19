@@ -16,7 +16,7 @@ function initHeroData() {
   heroData = {
     active_class: null,
     active_build: null,
-    classes: {}
+    classes: {},
   };
 }
 
@@ -97,6 +97,57 @@ function awardGold(amount) {
   hero.gold = (hero.gold || 0) + amount;
   updateHeroHud();
   scheduleHeroSave();
+}
+
+// Gold reward per mob kill — scales with floor and difficulty
+function getMobGoldReward(isBoss) {
+  if (!dng?.cfg._generated) return 0; // legacy dungeons keep end-of-run gold
+  const floor = dng.cfg.floor ?? 1;
+  const DIFF_MULT = { easy:0.7, normal:1.0, hard:1.3, nightmare:1.8 };
+  const mult = DIFF_MULT[dng.cfg.difficulty] ?? 1.0;
+  const base = Math.round((1 + floor * 0.9) * mult);
+  if (isBoss) return base * 5;
+  // ~70% chance to drop gold, otherwise 0
+  return Math.random() < 0.70 ? base + Math.floor(Math.random() * 3) : 0;
+}
+
+// Update the "Run: Xg" display in the hero panel
+function updateSessionGoldHud() {
+  const hud = document.getElementById("sessionGoldHud");
+  const amt = document.getElementById("sessionGoldAmount");
+  if (!hud || !amt) return;
+  const gold = dng?.sessionGold ?? 0;
+  const isGenerated = !!dng?.cfg?._generated;
+  if (isGenerated && dng && !dng.done) {
+    hud.style.display = "flex";
+    amt.textContent = gold + "g";
+    // Turn red when player has a lot to lose (>30g) to add tension
+    amt.style.color = gold >= 30 ? "#f87171" : "#fbbf24";
+  } else {
+    hud.style.display = "none";
+  }
+}
+
+// Show a floating gold popup over a zone element
+function spawnGoldFloater(amount, zoneId) {
+  if (amount <= 0) return;
+  const zone = document.getElementById(zoneId);
+  if (!zone) return;
+  const el = document.createElement("div");
+  el.className = "gold-floater";
+  el.textContent = `+${amount}g`;
+  const rect = zone.getBoundingClientRect();
+  el.style.cssText = `
+    position:fixed;
+    left:${rect.left + rect.width/2 - 20 + (Math.random()*20-10)}px;
+    top:${rect.top + rect.height * 0.3}px;
+    font-size:13px;font-weight:700;color:#fbbf24;
+    text-shadow:0 1px 4px rgba(0,0,0,.8);
+    pointer-events:none;z-index:9999;
+    animation:goldFloat 0.9s ease forwards;
+  `;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 950);
 }
 
 function saveHeroToLocal() {
@@ -227,12 +278,15 @@ function confirmBuild() {
       equipment: _pendingBuild === 'sword_shield'
         ? { weapon: 'rusty_sword', shield: 'battered_shield' }
         : { weapon: 'rusty_twohander' },
-      inventory: []
+      inventory: [],
+      floorRecords: {},
+      portalsUnlocked: false,
     };
   }
 
   hideBuildSelect();
   scheduleHeroSave();
+  if (typeof updateDungeonUI === "function") updateDungeonUI();
   if (gameModeOn) {
     document.getElementById("heroProfileFab").classList.add("visible");
     document.getElementById("shopFab").classList.add("visible");
@@ -247,6 +301,41 @@ function openHeroProfile() {
 
 function closeHeroProfile() {
   document.getElementById("heroProfileOverlay").style.display = "none";
+}
+
+function confirmResetHero() {
+  document.getElementById("resetHeroDialog").classList.remove("hidden");
+}
+
+function closeResetHeroDialog() {
+  document.getElementById("resetHeroDialog").classList.add("hidden");
+}
+
+function doResetHero() {
+  closeResetHeroDialog();
+  closeHeroProfile();
+
+  // Full wipe: hero + portal progress + floor records
+  initHeroData(); // sets floorRecords:{}, portalsUnlocked:false
+
+  // Clear localStorage remnants (guests + legacy keys)
+  try {
+    localStorage.removeItem("heroData");
+    localStorage.removeItem("dng_floor_records");
+    localStorage.removeItem("portalsUnlocked");
+  } catch(e) {}
+
+  // Persist clean state locally
+  saveHeroToLocal();
+
+  // Wipe from server if logged in
+  try {
+    if (typeof syncHeroToServer === "function") syncHeroToServer();
+    else if (typeof scheduleHeroSave === "function") scheduleHeroSave();
+  } catch(e) {}
+
+  updateDungeonUI();
+  showClassSelect();
 }
 
 function renderHeroProfile() {
@@ -1296,7 +1385,7 @@ function applyShieldBash() {
     showStunBar(stunSec);
   } else {
     spawnFloater("🛡️ Missed!", "miss-float", "monsterZone");
-    const m = dng.queue[dng.monsterIdx];
+    const m = currentMob();
     const sprite = document.getElementById("monsterSprite");
     if (sprite) { sprite.classList.add("attack-left"); setTimeout(() => sprite.classList.remove("attack-left"), 400); }
     monsterAttackHero(m);
@@ -1415,7 +1504,7 @@ function applyMonsterBleed(dmg) {
 
 function tickMonsterStatuses() {
   if (!dng || !dng.monsterStatuses?.length) return;
-  const m = dng.queue[dng.monsterIdx];
+  const m = currentMob();
   let bleedTotal = 0, bleedCount = 0;
   dng.monsterStatuses = dng.monsterStatuses.map(s => {
     if (s.type === "bleed") {
@@ -1433,16 +1522,37 @@ function tickMonsterStatuses() {
   }
   updateMonsterHpBar();
   if (m.hp <= 0) {
+    // Award gold on DoT kill too
+    const goldDrop = getMobGoldReward(m.isBoss);
+    if (goldDrop > 0) {
+      dng.sessionGold = (dng.sessionGold || 0) + goldDrop;
+      dng.sessionGoldTotal = (dng.sessionGoldTotal || 0) + goldDrop;
+      spawnGoldFloater(goldDrop, "monsterZone");
+      updateSessionGoldHud();
+    }
+    const xpGain = m.isBoss ? (m.mobLevel||1)*10 : (m.mobLevel||1)*5;
+    setTimeout(() => awardXP(xpGain), 200);
     dng.monsterStatuses = [];
+    clearMobScopedStatuses();
+    const _bleedWave = currentWave();
+    const _bleedHasNext = _bleedWave && (_bleedWave.activeIdx + 1 < _bleedWave.mobs.length);
     setTimeout(() => {
-      dng.monsterIdx++;
       dng.mobStunEnd = 0;
       clearStunBar();
-      dng.combo = 0; updateComboHud();
-      if (dng.monsterIdx >= dng.queue.length) { dungeonVictory(); return; }
-      dng.wordIdx++;
-      renderDungeonMonster();
-      renderDungeonQuestion();
+      if (_bleedHasNext) {
+        _bleedWave.activeIdx++;
+        renderDungeonMonster();
+        renderDungeonQuestion();
+      } else {
+        dng.waveIdx++;
+        dng.combo = 0; updateComboHud();
+        if (dng.waveIdx >= dng.queue.length) { dungeonVictory(); return; }
+        dng.wordIdx++;
+        processBiomeEventsPerRound();
+        processBiomeEventsAlways();
+        renderDungeonMonster();
+        renderDungeonQuestion();
+      }
     }, 400);
     return true; // monster died from DoT
   }
@@ -1492,24 +1602,45 @@ function rollMob(template, extra = {}) {
 
 function buildMonsterQueue(cfg, dungeonLevel) {
   const mobLv = dungeonLevel || 1;
-  const queue = [];
+  const waves = [];
   cfg.monsters.forEach(m => {
     const count = rollStat(m.count);
     for (let i = 0; i < count; i++) {
-      queue.push(rollMob(m, { isBoss: false, mobLevel: mobLv }));
+      waves.push({ mobs: [rollMob(m, { isBoss: false, mobLevel: mobLv })], activeIdx: 0 });
     }
   });
-  for (let i = queue.length-1; i > 0; i--) {
+  for (let i = waves.length-1; i > 0; i--) {
     const j = Math.floor(Math.random()*(i+1));
-    [queue[i], queue[j]] = [queue[j], queue[i]];
+    [waves[i], waves[j]] = [waves[j], waves[i]];
   }
-  queue.push(rollMob(cfg.boss, { mobLevel: mobLv }));
-  return queue;
+  waves.push({ mobs: [rollMob(cfg.boss, { mobLevel: mobLv })], activeIdx: 0 });
+  return waves;
 }
 
+// Helpers — always use these instead of indexing dng.queue directly
+function currentWave() { return dng?.queue[dng.waveIdx]; }
+function currentMob()  { const w = currentWave(); return w?.mobs[w.activeIdx ?? 0]; }
+
 // ===================== ENTER / EXIT =====================
-function enterDungeon(setId, level) {
-  const cfg = DUNGEON_CONFIG[setId]?.[level];
+// ── Procedural entry point ────────────────────────────────────────────────────
+function enterDungeonFloor(setId, floor, difficulty = "normal") {
+  // Carry sessionGold forward into the next floor — it stays at risk until player exits
+  const carriedGold = dng?.cfg?._generated ? (dng.sessionGold || 0) : 0;
+  const carriedTotal = dng?.cfg?._generated ? (dng.sessionGoldTotal || 0) : 0;
+  const hero = getHero();
+  const heroLevel = hero?.level ?? 1;
+  const cfg = generateDungeon(setId, floor, heroLevel, difficulty);
+  enterDungeon(setId, floor, cfg);
+  // Restore carried gold into the new run
+  if (carriedGold > 0 && dng) {
+    dng.sessionGold = carriedGold;
+    dng.sessionGoldTotal = carriedTotal;
+    updateSessionGoldHud();
+  }
+}
+
+function enterDungeon(setId, level, _cfgOverride) {
+  const cfg = _cfgOverride ?? DUNGEON_CONFIG[setId]?.[level];
   if (!cfg) return;
 
   const setWords = sets.find(s => s.id === setId)?.words || [];
@@ -1528,9 +1659,10 @@ function enterDungeon(setId, level) {
     heroStats,
     words: [...setWords].sort(() => Math.random() - 0.5),
     wordIdx: 0,
-    queue: buildMonsterQueue(cfg, level),
-    monsterIdx: 0,
+    queue: buildMonsterQueue(cfg, cfg._generated ? cfg.floor : level),
+    waveIdx: 0,
     heroHp: heroStats.maxHp,
+    heroBaseMaxHp: heroStats.maxHp,   // baseline for hypothermia reduction
     heroStatuses: [],
     combo: 0,
     comboTimerBonus: 0,
@@ -1543,21 +1675,37 @@ function enterDungeon(setId, level) {
     bashStreak: 0,
     locked: false,
     done: false,
+    sessionGold: 0,         // gold earned this run (lost on death)
+    sessionGoldTotal: 0,    // running total for display
+    biomeEvents: cfg.biomeEvents ?? [],
+    biomeEventState: {},    // stateful event counters (heat_exhaustion, etc.)
+    hypothermiaStacks: 0,
   };
 
   document.getElementById("dungeonDropdown").classList.remove("open");
   document.getElementById("dungeonTriggerLabel").textContent = `⚔️ ${cfg.name} Lv.${level}`;
+  updateSessionGoldHud(); // show/hide run balance
   const screen = document.getElementById("dungeonScreen");
   // Remove old theme classes
-  screen.className = screen.className.replace(/\btheme-\S+/g, "").replace(/\bboss-phase-\d/g, "").trim();
+  screen.className = screen.className.replace(/\btheme-\S+/g, "").replace(/\bboss-phase-\d/g, "").replace(/\bloc-\S+/g, "").trim();
   if (cfg.theme) screen.classList.add(`theme-${cfg.theme}`);
+  const _locId = cfg.locationId || (cfg.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  if (_locId) screen.classList.add(`loc-${_locId}`);
   if (cfg.boss?.phases) screen.classList.add("boss-phase-1");
   screen.classList.add("active");
+  screen.classList.add("dng-entering");
+  showDungeonLocationBanner(cfg.name, cfg.theme || 'boss');
+  startBiomeParticles(cfg.theme);
+  setTimeout(() => screen.classList.remove("dng-entering"), 1500);
   document.getElementById("dngInputToggle").style.display = "flex";
 
   updateHeroSprite();
   renderDungeonHero();
   renderDungeonStatuses();
+  renderBiomeEventsHud();
+  // Fire per_round + always for the very first mob
+  processBiomeEventsPerRound();
+  processBiomeEventsAlways();
   renderDungeonMonster();
   const comboHud = document.getElementById("dngComboHud");
   if (comboHud) { comboHud.style.opacity = "0"; comboHud.innerHTML = ""; }
@@ -1579,16 +1727,26 @@ function enterDungeon(setId, level) {
 }
 
 function exitDungeon() {
+  stopBiomeParticles();
   stopDngTimer();
+  stopAllDotSeconds();
+  // Commit accumulated session gold to hero on safe exit
+  if (dng?.cfg?._generated && dng.sessionGold > 0) {
+    awardGold(dng.sessionGold);
+  }
+  const hudEl = document.getElementById("sessionGoldHud");
+  if (hudEl) hudEl.style.display = "none";
   const screen = document.getElementById("dungeonScreen");
   screen.classList.remove("active");
-  screen.className = screen.className.replace(/\btheme-\S+/g, "").replace(/\bboss-phase-\d/g, "").trim();
+  screen.className = screen.className.replace(/\btheme-\S+/g, "").replace(/\bboss-phase-\d/g, "").replace(/\bloc-\S+/g, "").trim();
   screen.querySelector(".dng-result-screen")?.remove();
   dng = null;
 }
 
 function replayDungeon() {
   const { setId, level } = dng;
+  // On replay after victory, gold was already committed via exitDungeon path — nothing to do
+  // On replay after death, goldSaved already awarded in dungeonFailed
   document.getElementById("dungeonScreen").querySelector(".dng-result-screen")?.remove();
   enterDungeon(setId, level);
 }
@@ -1620,15 +1778,36 @@ function renderDungeonStatuses() {
   const bleedStacks = dng.heroStatuses.filter(s => s.type === "bleed");
   const shown = new Set();
   el.innerHTML = dng.heroStatuses.map(s => {
-    if (s.type === "poison") return `<span class="dng-status poison"  title="Poisoned: ${s.dmg} dmg for ${s.roundsLeft} rounds">☠️ ${s.dmg}×${s.roundsLeft}</span>`;
-    if (s.type === "freeze") return `<span class="dng-status freeze"  title="Frozen: ${s.roundsLeft} rounds">❄️ ×${s.roundsLeft}</span>`;
-    if (s.type === "weaken") return `<span class="dng-status weaken"  title="Weakened: -50% damage for ${s.roundsLeft} rounds">💔 ×${s.roundsLeft}</span>`;
+    if (s.type === "poison")
+      return `<span class="dng-status poison" title="Poisoned: ${s.dmg} dmg for ${s.roundsLeft} rounds">☠️ ${s.dmg}×${s.roundsLeft}</span>`;
+    if (s.type === "freeze")
+      return `<span class="dng-status freeze" title="Frozen: ${s.roundsLeft} rounds">❄️ ×${s.roundsLeft}</span>`;
+    if (s.type === "weaken")
+      return `<span class="dng-status weaken" title="Weakened: -50% damage for ${s.roundsLeft} rounds">💔 ×${s.roundsLeft}</span>`;
     if (s.type === "bleed" && !shown.has("bleed")) {
       shown.add("bleed");
       const totalDmg = bleedStacks.reduce((a, b) => a + b.dmg, 0);
       const maxRounds = Math.max(...bleedStacks.map(b => b.roundsLeft));
       const stackLabel = bleedStacks.length > 1 ? ` ×${bleedStacks.length}` : "";
       return `<span class="dng-status bleed" title="Bleeding: ${totalDmg} dmg/round for up to ${maxRounds} rounds (${bleedStacks.length} stack${bleedStacks.length>1?"s":""})">🩸 ${totalDmg}${stackLabel}</span>`;
+    }
+    // ── Biome statuses ──
+    if (s.type === "slowed") {
+      const dur = s.mobScope ? "mob" : `×${s.roundsLeft}`;
+      return `<span class="dng-status slowed" title="Slowed: timer -${s.value}s">🐢 -${s.value}s ${dur}</span>`;
+    }
+    if (s.type === "miss_attack")
+      return `<span class="dng-status miss-attack" title="Miss chance: ${Math.round(s.chance*100)}% for ${s.roundsLeft} turns">💨 ${Math.round(s.chance*100)}%×${s.roundsLeft}</span>`;
+    if (s.type === "weakened") {
+      const dur = s.mobScope ? "mob" : `×${s.roundsLeft}`;
+      return `<span class="dng-status weakened" title="Weakened: -${Math.round(s.pct*100)}% damage">💔 -${Math.round(s.pct*100)}% ${dur}</span>`;
+    }
+    if (s.type === "cursed")
+      return `<span class="dng-status cursed" title="Cursed ${s.stat}: -${s.value} for ${s.roundsLeft} turns">☠️ ${s.stat}-${s.value}×${s.roundsLeft}</span>`;
+    if (s.type === "hypothermia" && !shown.has("hypothermia")) {
+      shown.add("hypothermia");
+      const pct = Math.round(Math.min(0.80, (dng.hypothermiaStacks||0) * 0.03) * 100);
+      return `<span class="dng-status hypothermia" title="Hypothermia: -${pct}% max HP">🥶 -${pct}%HP</span>`;
     }
     return "";
   }).join("");
@@ -1648,25 +1827,23 @@ function getMonsterSVG(name) {
     <path d="M40 46 Q50 54 60 46" stroke="#1f2937" stroke-width="2" fill="none"/>
   </svg>`;
 }
-function renderDungeonMonster() {
-  if (!dng) return;
-  const m = dng.queue[dng.monsterIdx];
-  const zone = document.getElementById("monsterZone");
+function _renderSingleMob(zone, m) {
   const hpPct = Math.max(0, m.hp / m.maxHp * 100);
-
-  // Detach stun bar before innerHTML wipe, re-attach after
-  const stunBar = document.getElementById("dngStunBar");
-  if (stunBar) stunBar.remove();
-
   const badges = [];
   if (m.currentArmor > 0) badges.push(`<span class="dng-badge armor">🛡️ ${m.currentArmor}</span>`);
   if (m.dodge > 0)         badges.push(`<span class="dng-badge dodge">💨 ${Math.round(m.dodge*100)}%</span>`);
   if (m.block > 0)         badges.push(`<span class="dng-badge block">🔰 ${Math.round(m.block*100)}%</span>`);
   if (m.poison)            badges.push(`<span class="dng-badge poison">☠️</span>`);
 
+  zone.classList.toggle("is-illusion", !!m.isIllusion);
+  zone.classList.remove("wave-multi");
   zone.innerHTML = `
     ${m.isBoss ? '<div class="dng-boss-crown">👑</div>' : ''}
-    <div class="dng-monster-sprite" id="monsterSprite">${getMonsterSVG(m.phases && dng ? `${m.name} Phase ${dng.bossPhase}` : m.name)}</div>
+    ${m.isIllusion ? '<div class="dng-illusion-badge">👻 Illusion</div>' : ''}
+    <div class="dng-monster-sprite${m.isGuardian ? ' dng-guardian-sprite' : ''}" id="monsterSprite"
+      ${m.isGuardian ? `style="--guardian-color:${m.guardianColor};--guardian-glow:${m.guardianGlow}"` : ''}
+    >${getMonsterSVG(m.isGuardian ? 'Portal Guardian' : (m.phases && dng ? `${m.name} Phase ${dng.bossPhase}` : m.name))}</div>
+    ${m.isGuardian ? `<div class="dng-guardian-aura dng-guardian-aura--${m.guardianAura}"></div>` : ''}
     <div class="dng-fighter-name">${m.name}</div>
     ${badges.length ? `<div class="dng-badges">${badges.join("")}</div>` : ""}
     <div class="dng-hp-track">
@@ -1674,6 +1851,47 @@ function renderDungeonMonster() {
     </div>
     <div class="dng-hp-text" id="monsterHpText">${m.hp} / ${m.maxHp} HP${m.currentArmor > 0 ? ` + 🛡️${m.currentArmor}` : ""}</div>
   `;
+}
+
+function _renderWaveMobs(zone, wave) {
+  zone.classList.remove("is-illusion");
+  zone.classList.add("wave-multi");
+  zone.innerHTML = wave.mobs.map((mob, i) => {
+    const isActive = i === wave.activeIdx;
+    const isDead   = mob.hp <= 0;
+    const hpPct    = Math.max(0, mob.hp / mob.maxHp * 100);
+    const badges = [];
+    if (mob.currentArmor > 0) badges.push(`<span class="dng-badge armor">🛡️${mob.currentArmor}</span>`);
+    if (mob.dodge > 0)         badges.push(`<span class="dng-badge dodge">💨${Math.round(mob.dodge*100)}%</span>`);
+    return `
+      <div class="dng-mob-card${isActive ? ' mob-active' : ''}${isDead ? ' mob-dead' : ''}" data-mob-idx="${i}">
+        <div class="dng-monster-sprite" ${isActive ? 'id="monsterSprite"' : ''}>${getMonsterSVG(mob.name)}</div>
+        <div class="dng-fighter-name dng-mob-name">${mob.name}</div>
+        ${badges.length ? `<div class="dng-badges">${badges.join("")}</div>` : ''}
+        <div class="dng-hp-track">
+          <div class="dng-monster-hp-fill" ${isActive ? 'id="monsterHpFill"' : ''} style="width:${hpPct}%${isDead?';background:#374151':''}"></div>
+        </div>
+        <div class="dng-hp-text" ${isActive ? 'id="monsterHpText"' : ''}>${isDead ? '💀' : `${Math.max(0,mob.hp)}/${mob.maxHp}`}</div>
+      </div>`;
+  }).join('');
+}
+
+function renderDungeonMonster() {
+  if (!dng) return;
+  const wave = currentWave();
+  if (!wave) return;
+  const m = currentMob();
+  const zone = document.getElementById("monsterZone");
+
+  // Detach stun bar before innerHTML wipe, re-attach after
+  const stunBar = document.getElementById("dngStunBar");
+  if (stunBar) stunBar.remove();
+
+  if (wave.mobs.length === 1) {
+    _renderSingleMob(zone, m);
+  } else {
+    _renderWaveMobs(zone, wave);
+  }
 
   // Re-attach stun bar so it stays visible during the stun duration
   if (stunBar && isMobStunned()) zone.appendChild(stunBar);
@@ -1681,7 +1899,7 @@ function renderDungeonMonster() {
 
 function updateMonsterHpBar() {
   if (!dng) return;
-  const m = dng.queue[dng.monsterIdx];
+  const m = currentMob();
   const hpPct = Math.max(0, m.hp / m.maxHp * 100);
   const fill = document.getElementById("monsterHpFill");
   if (fill) fill.style.width = hpPct + "%";
@@ -1719,7 +1937,7 @@ function renderDungeonQuestion() {
     : "";
 
   const prompt = getTranslationLabel(word);
-  const _curMQ = dng.queue?.[dng.monsterIdx];
+  const _curMQ = currentMob();
   const isShadow = dng.cfg.theme === "shadow" || (_curMQ?.isBoss && _curMQ?.phases && dng.bossPhase >= 2);
   const promptEl = document.getElementById("dngWordPrompt");
   promptEl.textContent = prompt;
@@ -1755,7 +1973,7 @@ function renderDngChoiceOptions(word) {
   for (let i = opts.length-1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [opts[i],opts[j]]=[opts[j],opts[i]]; }
 
   // Shadow Dungeon or Boss Phase 2+ flips options
-  const _curM = dng.queue?.[dng.monsterIdx];
+  const _curM = currentMob();
   const flip = dng.cfg.theme === "shadow" || (_curM?.isBoss && _curM?.phases && dng.bossPhase >= 2);
 
   const container = document.getElementById("dngOptions");
@@ -1816,7 +2034,10 @@ function startDngTimer() {
   // Combo Strike: -1s per hit in chain (not during mob stun)
   const comboReduction = isMobStunned() ? 0 : (dng.comboTimerBonus || 0);
   let totalSec = isFrozen ? Math.max(2, dng.cfg.timerSec / 2) : dng.cfg.timerSec;
-  totalSec = Math.max(2, totalSec - comboReduction);
+  const slowedPenalty = dng.heroStatuses
+    .filter(s => s.type === 'slowed')
+    .reduce((sum, s) => sum + (s.value || 0), 0);
+  totalSec = Math.max(2, totalSec - comboReduction - slowedPenalty);
   const total = totalSec * 1000;
   updateFreezeOverlay(isFrozen);
   const start = Date.now();
@@ -1840,6 +2061,49 @@ function stopDngTimer() {
   if (dngTimerInterval) { clearInterval(dngTimerInterval); dngTimerInterval = null; }
 }
 
+// ── dot_second: real-time damage ticking every 1s ────────────────────────────
+// Each active dot_second entry: { id, sourceId, dmg, roundsLeft, dotEmoji, interval }
+//   roundsLeft === null → mob-scoped (stops when mob dies)
+//   roundsLeft > 0     → decremented on each mob death; stops at 0
+//   sourceId           → event id; re-firing the same event adds rounds instead of stacking
+// Separate from heroStatuses (real-time, not turn-based).
+let _dotSecondIntervals = [];
+
+function startDotSecond(dmg, roundsLeft, dotEmoji = '🔥', sourceId = null) {
+  if (!dng) return;
+  // Same event already ticking — just extend by adding rounds
+  if (sourceId && roundsLeft !== null) {
+    const existing = _dotSecondIntervals.find(d => d.sourceId === sourceId);
+    if (existing) {
+      existing.roundsLeft += roundsLeft;
+      spawnFloater(`${dotEmoji} +${roundsLeft} (${existing.roundsLeft})`, "miss-float", "heroHpBar");
+      return;
+    }
+  }
+  const id = Date.now() + Math.random();
+  _dotSecondIntervals.push({ id, sourceId, dmg, roundsLeft, dotEmoji,
+    interval: setInterval(() => {
+      if (!dng || dng.done || dng.locked) return;
+      applyHeroDamage(dmg, dotEmoji);
+      spawnFloater(`${dotEmoji}-${dmg}`, "hero-dmg", "heroHpBar");
+      renderDungeonHero();
+      if (dng.heroHp <= 0) { stopAllDotSeconds(); setTimeout(() => dungeonFailed(), 100); }
+    }, 1000)
+  });
+}
+
+function stopDotSecond(id) {
+  const idx = _dotSecondIntervals.findIndex(d => d.id === id);
+  if (idx === -1) return;
+  clearInterval(_dotSecondIntervals[idx].interval);
+  _dotSecondIntervals.splice(idx, 1);
+}
+
+function stopAllDotSeconds() {
+  _dotSecondIntervals.forEach(d => clearInterval(d.interval));
+  _dotSecondIntervals = [];
+}
+
 function onDngTimerExpired() {
   if (!dng || dng.locked || dng.done) return;
   dng.locked = true;
@@ -1855,19 +2119,13 @@ function onDngTimerExpired() {
     return;
   }
 
-  const m = dng.queue[dng.monsterIdx];
   const sprite = document.getElementById("monsterSprite");
   if (sprite) {
     sprite.classList.add("attack-left");
     setTimeout(() => { sprite.classList.remove("attack-left"); sprite.classList.add("shake"); setTimeout(() => sprite.classList.remove("shake"), 320); }, 380);
   }
 
-  monsterAttackHero(m);
-
-  // Apply monster's status on hit (poison, freeze, etc.)
-  if (m.poison)  applyStatus({ type: "poison", dmg: m.poison.dmg, roundsLeft: m.poison.rounds });
-  if (m.freeze)  applyFreezeStatus(m.freeze.rounds);
-  if (m.isBoss)  triggerBossAbilities(m, "on_attack");
+  waveAttackHero();
 
   tickStatuses();
   if (dng.heroHp <= 0) { setTimeout(() => dungeonFailed(), 500); return; }
@@ -1915,13 +2173,7 @@ function handleDungeonAnswer(selected, correct) {
       scheduleNextQuestion(500);
       return;
     }
-    const m = dng.queue[dng.monsterIdx];
-    const monSpr = document.getElementById("monsterSprite");
-    if (monSpr) { monSpr.classList.add("attack-left"); setTimeout(() => monSpr.classList.remove("attack-left"), 400); }
-    monsterAttackHero(m);
-    if (m.poison) applyStatus({ type:"poison", dmg:m.poison.dmg, roundsLeft:m.poison.rounds });
-    if (m.freeze) applyFreezeStatus(m.freeze.rounds);
-    if (m.isBoss) triggerBossAbilities(m, "on_attack");
+    waveAttackHero();
     tickStatuses();
     if (dng.heroHp <= 0) { setTimeout(() => dungeonFailed(), 500); return; }
     scheduleNextQuestion(650);
@@ -1977,7 +2229,33 @@ function spawnCritEffect(targetId, color) {
   }
 }
 
+// All alive mobs in the current wave attack the hero (used on wrong answer / timer expiry).
+function waveAttackHero() {
+  const wave = currentWave();
+  if (!wave) return;
+  const alive = wave.mobs.map((mob, i) => ({ mob, i })).filter(({ mob }) => mob.hp > 0);
+
+  // Animate every alive mob card
+  const zone = document.getElementById("monsterZone");
+  for (const { i } of alive) {
+    const card = zone?.querySelector(`[data-mob-idx="${i}"]`);
+    const spr  = card ? card.querySelector(".dng-monster-sprite") : (i === wave.activeIdx ? document.getElementById("monsterSprite") : null);
+    if (spr) {
+      spr.classList.add("attack-left");
+      setTimeout(() => spr.classList.remove("attack-left"), 400);
+    }
+  }
+
+  for (const { mob } of alive) {
+    monsterAttackHero(mob);
+    if (mob.poison) applyStatus({ type:"poison", dmg:mob.poison.dmg, roundsLeft:mob.poison.rounds });
+    if (mob.freeze) applyFreezeStatus(mob.freeze.rounds);
+    if (mob.isBoss) triggerBossAbilities(mob, "on_attack");
+  }
+}
+
 function monsterAttackHero(m) {
+  DungeonSounds.playMobAttack(m);
   const critChance = m.isBoss ? 0.22 : 0.15;
   const isCrit = Math.random() < critChance;
   const rawDmg = isCrit ? Math.round(m.dmg * 2) : m.dmg;
@@ -2093,7 +2371,7 @@ function spawnSlashArc() {
 
 function dungeonHit() {
   if (!dng) return;
-  const m = dng.queue[dng.monsterIdx];
+  const m = currentMob();
   const hero = getHero();
 
   // Hero attack animation
@@ -2112,6 +2390,7 @@ function dungeonHit() {
 
   if (effectiveDodge > 0 && Math.random() < effectiveDodge) {
     spawnFloater("Dodge!", "miss-float", "monsterZone");
+    DungeonSounds.play('sword_miss');
     const sprite = document.getElementById("monsterSprite");
     if (sprite) { sprite.style.transform = "translateX(18px)"; setTimeout(()=>sprite.style.transform="",300); }
     tickStatuses();
@@ -2121,6 +2400,17 @@ function dungeonHit() {
   }
 
   let dmg = dng.cfg.heroDmg;
+
+  // Biome miss_attack: answer correct but strike misses (accuracy debuff)
+  const missStatus = dng.heroStatuses.find(s => s.type === 'miss_attack');
+  if (missStatus && Math.random() < missStatus.chance) {
+    spawnFloater("💨 Miss!", "miss-float", "monsterZone");
+    DungeonSounds.play('sword_miss');
+    tickStatuses();
+    if (dng.heroHp <= 0) { setTimeout(()=>dungeonFailed(),500); return; }
+    scheduleNextQuestion(600);
+    return;
+  }
 
   // Combo Strike crit
   const comboSkill = hero?.skills.combo_strike || 0;
@@ -2144,19 +2434,38 @@ function dungeonHit() {
     spawnFloater("💔 -50%", "miss-float", "monsterZone");
   }
 
-  // Legacy combo bonus (Dragon Mountain comboSystem)
-  const comboBonus = dng.cfg.comboSystem ? getComboBonus(dng.combo) : 0;
+  // Biome weakened: configurable % damage reduction
+  const weakenedStatus = dng.heroStatuses.find(s => s.type === 'weakened');
+  if (weakenedStatus) {
+    dmg = Math.max(1, Math.round(dmg * (1 - weakenedStatus.pct)));
+    spawnFloater(`💔 -${Math.round(weakenedStatus.pct * 100)}%`, "miss-float", "monsterZone");
+  }
+
+  // Biome cursed (dmg stat): flat damage reduction
+  const cursedDmg = dng.heroStatuses
+    .filter(s => s.type === 'cursed' && s.stat === 'dmg')
+    .reduce((sum, s) => sum + s.value, 0);
+  if (cursedDmg > 0) dmg = Math.max(1, dmg - cursedDmg);
+
+  // Legacy combo bonus — only if hero has combo_strike skill
+  const comboBonus = (dng.cfg.comboSystem && comboSkill >= 1) ? getComboBonus(dng.combo) : 0;
   if (comboBonus > 0) { dmg += comboBonus; spawnFloater(`🔥 COMBO x${dng.combo}`, "combo-float", "monsterZone"); }
 
   // Block check (skip if stunned)
   if (!stunned && dmg > 0 && m.block > 0 && Math.random() < m.block) {
     spawnFloater("🔰 Block!", "miss-float", "monsterZone");
+    DungeonSounds.play('sword_block');
     const sp = document.getElementById("monsterSprite");
     if (sp) { sp.style.filter = "drop-shadow(0 0 12px #60a5fa) brightness(1.4)"; setTimeout(()=>{ if(sp) sp.style.filter=""; },400); }
     tickStatuses();
     if (dng.heroHp <= 0) { setTimeout(()=>dungeonFailed(),500); return; }
     scheduleNextQuestion(600);
     return;
+  }
+
+  // Sword hit sound — crit or regular
+  if (_weaponType === 'sword') {
+    DungeonSounds.play(critMult > 1 ? 'sword_crit' : 'sword_regular');
   }
 
   // WM Mace armor multiplier (only if mace equipped)
@@ -2215,21 +2524,55 @@ function dungeonHit() {
   tickStatuses();
   if (dng.heroHp <= 0) { setTimeout(()=>dungeonFailed(),500); return; }
 
+  // per_turn biome events fire after each player answer (mob still alive or dead)
+  processBiomeEventsPerTurn();
+  if (dng.heroHp <= 0) { setTimeout(()=>dungeonFailed(),500); return; }
+
   if (m.hp <= 0) {
+    // on_kill biome events — may revive the mob
+    const revived = processBiomeEventsOnKill(m);
+    if (revived) { scheduleNextQuestion(700); return; }
+
     // Award XP
     const xpGain = m.isBoss ? (m.mobLevel||1)*10 : (m.mobLevel||1)*5;
     setTimeout(() => awardXP(xpGain), 200);
+    // Award gold per mob (illusions yield nothing)
+    if (!m._noGold) {
+      const goldDrop = getMobGoldReward(m.isBoss);
+      if (goldDrop > 0) {
+        dng.sessionGold = (dng.sessionGold || 0) + goldDrop;
+        dng.sessionGoldTotal = (dng.sessionGoldTotal || 0) + goldDrop;
+        spawnGoldFloater(goldDrop, "monsterZone");
+        updateSessionGoldHud();
+      }
+    }
     dng.monsterStatuses = [];
+    clearMobScopedStatuses();
+    const _killWave = currentWave();
+    const _killHasNext = _killWave && (_killWave.activeIdx + 1 < _killWave.mobs.length);
     setTimeout(() => {
-      dng.monsterIdx++;
       dng.mobStunEnd = 0;
       clearStunBar();
-      dng.combo = 0; dng.comboTimerBonus = 0;
-      updateComboHud();
-      if (dng.monsterIdx >= dng.queue.length) { dungeonVictory(); return; }
-      dng.wordIdx++;
-      renderDungeonMonster();
-      renderDungeonQuestion();
+      if (_killHasNext) {
+        // More mobs in this wave — advance target within wave
+        _killWave.activeIdx++;
+        renderDungeonMonster();
+        renderDungeonQuestion();
+      } else {
+        // Wave fully cleared — move to next wave
+        dng.waveIdx++;
+        dng.combo = 0; dng.comboTimerBonus = 0;
+        updateComboHud();
+        if (dng.waveIdx >= dng.queue.length) { dungeonVictory(); return; }
+        dng.wordIdx++;
+        const nextWave = currentWave();
+        if (!nextWave?.mobs[0]?.isIllusion) {
+          processBiomeEventsPerRound();
+          processBiomeEventsAlways();
+        }
+        renderDungeonMonster();
+        renderDungeonQuestion();
+      }
     }, 600);
   } else {
     scheduleNextQuestion(500);
@@ -2238,8 +2581,12 @@ function dungeonHit() {
 
 function updateComboHud() {
   if (!dng || !dng.cfg.comboSystem) return;
+  const hero = getHero();
+  const comboSkill = hero?.skills?.combo_strike || 0;
   let hud = document.getElementById("dngComboHud");
   if (!hud) return;
+  // Hide HUD entirely if combo_strike not unlocked
+  if (comboSkill < 1) { hud.style.opacity = "0"; hud.innerHTML = ""; return; }
   const c = dng.combo;
   const bonus = getComboBonus(c);
   if (c < 2) {
@@ -2269,8 +2616,11 @@ function applyHeroDamage(rawDmg, sourceEmoji, suppressFloater = false, isCrit = 
     dmg = Math.max(1, Math.round(dmg * toughnessMult));
   }
 
-  // Shield block chance
-  const heroBlock = dng.heroStats?.block || 0;
+  // Shield block chance (reduced by cursed block)
+  const cursedBlock = dng.heroStatuses
+    .filter(s => s.type === 'cursed' && s.stat === 'block')
+    .reduce((sum, s) => sum + s.value, 0);
+  const heroBlock = Math.max(0, (dng.heroStats?.block || 0) - cursedBlock);
   if (heroBlock > 0 && Math.random() < heroBlock) {
     spawnFloater("🛡️ Block!", "miss-float", "heroHpBar");
     const heroSpr = document.getElementById("heroSprite");
@@ -2278,8 +2628,11 @@ function applyHeroDamage(rawDmg, sourceEmoji, suppressFloater = false, isCrit = 
     return 0;
   }
 
-  // Hero armor (flat reduction)
-  const armor = dng.heroStats?.armor || 0;
+  // Hero armor (flat reduction, reduced by cursed armor)
+  const cursedArmor = dng.heroStatuses
+    .filter(s => s.type === 'cursed' && s.stat === 'armor')
+    .reduce((sum, s) => sum + s.value, 0);
+  const armor = Math.max(0, (dng.heroStats?.armor || 0) - cursedArmor);
   if (armor > 0) {
     dmg = Math.max(0, dmg - armor);
     if (rawDmg > 0 && dmg === 0) { spawnFloater("🛡️ Blocked!", "miss-float", "heroHpBar"); }
@@ -2324,11 +2677,18 @@ function applyStatus(status) {
   if (status.type === "bleed") {
     // Bleed stacks — each application is independent with its own timer
     dng.heroStatuses.push({ ...status });
+  } else if (status.type === "cursed") {
+    // Each curse application is independent (different stat or stacking)
+    dng.heroStatuses.push({ ...status });
   } else {
     const existing = dng.heroStatuses.find(s => s.type === status.type);
     if (existing) {
-      existing.roundsLeft = Math.max(existing.roundsLeft, status.roundsLeft);
-      existing.dmg = Math.max(existing.dmg, status.dmg);
+      // Refresh duration; take stronger value where applicable
+      if (status.roundsLeft !== undefined) existing.roundsLeft = Math.max(existing.roundsLeft ?? 0, status.roundsLeft);
+      if (status.dmg   !== undefined) existing.dmg   = Math.max(existing.dmg   ?? 0, status.dmg);
+      if (status.pct   !== undefined) existing.pct   = Math.max(existing.pct   ?? 0, status.pct);
+      if (status.value !== undefined) existing.value = Math.max(existing.value ?? 0, status.value);
+      if (status.chance!== undefined) existing.chance= Math.max(existing.chance?? 0, status.chance);
     } else {
       dng.heroStatuses.push({ ...status });
     }
@@ -2341,15 +2701,19 @@ function tickStatuses() {
   let poisonTotal = 0, bleedTotal = 0, bleedCount = 0;
   dng.heroStatuses = dng.heroStatuses
     .map(s => {
+      // mobScope statuses persist until mob dies — don't decrement them here
+      if (s.mobScope) return s;
+
       if (s.type === "poison") {
         poisonTotal += applyHeroDamage(s.dmg, "☠️", true);
       } else if (s.type === "bleed") {
         bleedTotal += applyHeroDamage(s.dmg, "🩸", true);
         bleedCount++;
       }
-      return { ...s, roundsLeft: s.roundsLeft - 1 };
+      // slowed / miss_attack / weakened / cursed / freeze: just decrement, no damage tick
+      return { ...s, roundsLeft: (s.roundsLeft ?? 1) - 1 };
     })
-    .filter(s => s.roundsLeft > 0);
+    .filter(s => s.mobScope || s.roundsLeft > 0);
   if (poisonTotal > 0) spawnFloater(`☠️-${poisonTotal}`, "hero-dmg", "heroHpBar");
   if (bleedTotal  > 0) spawnFloater(bleedCount > 1 ? `🩸-${bleedTotal} ×${bleedCount}` : `🩸-${bleedTotal}`, "hero-dmg", "heroHpBar");
   const stillFrozen = dng.heroStatuses.some(s => s.type === "freeze");
@@ -2358,7 +2722,7 @@ function tickStatuses() {
   dng.wordIdx++;
 
   // Boss per-turn effects
-  const _bossM = dng.queue?.[dng.monsterIdx];
+  const _bossM = currentMob();
   if (_bossM && _bossM.hp > 0 && _bossM.isBoss) {
     triggerBossAbilities(_bossM, "per_turn");
     // Phase 3: auto-freeze every 3 rounds — dungeon mechanic, ignores boss stun
@@ -2369,6 +2733,459 @@ function tickStatuses() {
         spawnFloater("❄️ Phase 3!", "miss-float", "heroHpBar");
       }
     }
+  }
+}
+
+function renderBiomeEventsHud() {
+  const hud = document.getElementById("biomeEventsHud");
+  if (!hud) return;
+  const events = dng?.biomeEvents;
+  if (!events || events.length === 0) { hud.style.display = "none"; return; }
+  hud.style.display = "flex";
+  hud.innerHTML = events.map(ev => {
+    const icon  = ev.label.match(/^\S+/)?.[0] ?? "⚡";
+    const title = ev.label.replace(/^\S+\s*/, "");
+    return `<div class="biome-event-chip"><span class="bec-icon">${icon}</span><span class="bec-label">${title}</span></div>`;
+  }).join("");
+}
+
+// Clears statuses that last for one mob encounter (mobScope:true).
+// Called whenever a mob dies (both normal and DoT-kill paths).
+function clearMobScopedStatuses() {
+  if (!dng) return;
+  dng.heroStatuses = dng.heroStatuses.filter(s => !s.mobScope);
+  // Mob-scoped dots (roundsLeft===null) stop immediately.
+  // Round-based dots (roundsLeft>0) lose one round; stop only when they reach 0.
+  _dotSecondIntervals = _dotSecondIntervals.filter(d => {
+    if (d.roundsLeft === null) { clearInterval(d.interval); return false; }
+    d.roundsLeft--;
+    if (d.roundsLeft <= 0) { clearInterval(d.interval); return false; }
+    return true;
+  });
+  renderDungeonStatuses();
+}
+
+// ===================== BIOME EVENTS ENGINE =====================
+
+// ─── BIOME EVENT VISUAL FX ───────────────────────────────────────────────────
+const _biomeEventFXCooldown = {};
+
+function playBiomeEventFX(eventId) {
+  const screen = document.getElementById('dungeonScreen');
+  if (!screen || !screen.classList.contains('active')) return;
+  const now = Date.now();
+  if (_biomeEventFXCooldown[eventId] && now - _biomeEventFXCooldown[eventId] < 3000) return;
+  _biomeEventFXCooldown[eventId] = now;
+  const fx = document.createElement('div');
+  fx.className = `biome-fx biome-fx-${eventId}`;
+  screen.appendChild(fx);
+  setTimeout(() => fx.remove(), 2000);
+}
+
+// ─── DUNGEON ENTRY BANNER ────────────────────────────────────────────────────
+function showDungeonLocationBanner(name, theme) {
+  document.getElementById('dngLocationBanner')?.remove();
+  document.querySelectorAll('.dng-flash').forEach(el => el.remove());
+
+  const screen = document.getElementById('dungeonScreen');
+  if (!screen) return;
+
+  // Coloured edge flash
+  const flash = document.createElement('div');
+  flash.className = 'dng-flash';
+  screen.appendChild(flash);
+  setTimeout(() => flash.remove(), 900);
+
+  // Name banner
+  const banner = document.createElement('div');
+  banner.id = 'dngLocationBanner';
+  banner.className = 'dng-location-banner';
+  banner.innerHTML = `<div class="dng-loc-name">${name}</div>`;
+  screen.appendChild(banner);
+  setTimeout(() => banner.remove(), 2800);
+}
+
+// ─── BIOME PARTICLES ─────────────────────────────────────────────────────────
+const _biomeParticles = [];
+
+function startBiomeParticles(theme) {
+  stopBiomeParticles();
+  const screen = document.getElementById('dungeonScreen');
+  if (!screen) return;
+
+  const defs = {
+    dragon:   { count:7,  cls:'bmp-ember',  posKey:'bottom', posVal:'32%' },
+    frozen:   { count:9,  cls:'bmp-snow',   posKey:'top',    posVal:'0%'  },
+    void:     { count:6,  cls:'bmp-star',   posKey:'top',    posVal:null  },
+    shadow:   { count:4,  cls:'bmp-shadow', posKey:'top',    posVal:'28%' },
+    spider:   { count:5,  cls:'bmp-web',    posKey:'top',    posVal:'0%'  },
+    goblin:   { count:4,  cls:'bmp-spore',  posKey:'bottom', posVal:'22%' },
+    skeleton: { count:4,  cls:'bmp-dust',   posKey:'bottom', posVal:'28%' },
+  };
+  const d = defs[theme];
+  if (!d) return;
+
+  for (let i = 0; i < d.count; i++) {
+    const el = document.createElement('div');
+    el.className = `bmp ${d.cls}`;
+    const left  = 4 + Math.random() * 92;
+    const drift = (Math.random() * 50 - 25).toFixed(1);
+    const delay = (Math.random() * 4).toFixed(2);
+    const dur   = (2.5 + Math.random() * 3.5).toFixed(2);
+    const top   = d.posVal === null ? `${5 + Math.random() * 60}%` : d.posVal;
+    el.style.cssText = `left:${left}%;${d.posKey}:${top};--drift:${drift}px;animation-delay:${delay}s;animation-duration:${dur}s;`;
+    screen.appendChild(el);
+    _biomeParticles.push(el);
+  }
+}
+
+function stopBiomeParticles() {
+  _biomeParticles.forEach(el => el.remove());
+  _biomeParticles.length = 0;
+}
+
+// Central dispatcher — called with an active event object from dng.biomeEvents.
+// opts.insertAfterCurrent: used by on_kill context so illusion wave goes after current waveIdx
+function applyBiomeEvent(ev, opts = {}) {
+  if (!dng || dng.done) return;
+  playBiomeEventFX(ev.id);
+  const ef = ev.effect;
+  const m  = currentMob();
+  const floor = dng.cfg.floor || 1;
+
+  switch (ef.type) {
+
+    case 'slowed': {
+      const rounds = ef.rounds != null ? ef.rounds
+                   : (ef.roundsMin != null ? Math.floor(Math.random()*(ef.roundsMax-ef.roundsMin+1))+ef.roundsMin : 1);
+      // mobScope = lasts the whole mob encounter; roundsLeft = per-turn
+      if (rounds >= 10) {
+        applyStatus({ type:'slowed', value:ef.value, mobScope:true });
+      } else {
+        applyStatus({ type:'slowed', value:ef.value, roundsLeft:rounds });
+      }
+      spawnFloater(`🐢 Slowed -${ef.value}s`, "miss-float", "heroHpBar");
+      if (ev.dmgPct) {
+        const dmg = Math.max(1, Math.round((dng.heroStats.maxHp) * ev.dmgPct));
+        applyHeroDamage(dmg, "🪤");
+        spawnFloater(`🪤-${dmg}`, "hero-dmg", "heroHpBar");
+        renderDungeonHero();
+      }
+      break;
+    }
+
+    case 'miss_attack': {
+      const rounds = ef.rounds != null ? ef.rounds
+                   : (ef.roundsMin != null ? Math.floor(Math.random()*(ef.roundsMax-ef.roundsMin+1))+ef.roundsMin : 1);
+      applyStatus({ type:'miss_attack', chance:ef.chance, roundsLeft:rounds });
+      spawnFloater(`💨 Miss ${Math.round(ef.chance*100)}%`, "miss-float", "heroHpBar");
+      break;
+    }
+
+    case 'weakened': {
+      const rounds = ef.rounds != null ? ef.rounds
+                   : (ef.roundsMin != null ? Math.floor(Math.random()*(ef.roundsMax-ef.roundsMin+1))+ef.roundsMin : 1);
+      if (rounds >= 10) {
+        applyStatus({ type:'weakened', pct:ef.pct, mobScope:true });
+      } else {
+        applyStatus({ type:'weakened', pct:ef.pct, roundsLeft:rounds });
+      }
+      spawnFloater(`💔 Weakened -${Math.round(ef.pct*100)}%`, "miss-float", "heroHpBar");
+      break;
+    }
+
+    case 'cursed': {
+      const stats = ['armor','dmg','block'];
+      const stat  = stats[Math.floor(Math.random()*stats.length)];
+      const rounds = Math.floor(Math.random()*(ef.roundsMax-ef.roundsMin+1))+ef.roundsMin;
+      applyStatus({ type:'cursed', stat, value:ef.value, roundsLeft:rounds });
+      spawnFloater(`☠️ Cursed ${stat}`, "miss-float", "heroHpBar");
+      break;
+    }
+
+    case 'hypothermia': {
+      dng.hypothermiaStacks = (dng.hypothermiaStacks || 0) + 1;
+      const reduction = Math.min(ef.cap, dng.hypothermiaStacks * ef.pctPerStack);
+      dng.heroStats.maxHp = Math.max(1, Math.round(dng.heroBaseMaxHp * (1 - reduction)));
+      dng.heroHp = Math.min(dng.heroHp, dng.heroStats.maxHp);
+      spawnFloater(`🥶 -${Math.round(reduction*100)}% MaxHP`, "hero-dmg", "heroHpBar");
+      renderDungeonHero();
+      // Show as a passive badge
+      if (!dng.heroStatuses.find(s => s.type === 'hypothermia')) {
+        dng.heroStatuses.push({ type:'hypothermia', mobScope:false });
+      }
+      renderDungeonStatuses();
+      break;
+    }
+
+    case 'dot_second': {
+      const rounds = ef.roundsMin != null
+        ? Math.floor(Math.random()*(ef.roundsMax-ef.roundsMin+1))+ef.roundsMin
+        : null; // null = mob-scoped (burning_ground, no roundsMin/Max)
+      const emoji = ef.dotEmoji ?? '🔥';
+      startDotSecond(ef.dmg, rounds, emoji, ev.id);
+      if (rounds) spawnFloater(`${emoji} ${rounds} раунда`, "miss-float", "heroHpBar");
+      else        spawnFloater(`${emoji} Горит!`, "miss-float", "heroHpBar");
+      break;
+    }
+
+    case 'direct_dmg': {
+      const dmg = Math.max(1, Math.round(dng.heroStats.maxHp * ef.pct));
+      applyHeroDamage(dmg, "💥");
+      spawnFloater(`💥-${dmg}`, "hero-dmg", "heroHpBar");
+      renderDungeonHero();
+      if (dng.heroHp <= 0) setTimeout(() => dungeonFailed(), 300);
+      break;
+    }
+
+    case 'gold_loss': {
+      const lost = Math.floor((dng.sessionGold || 0) * ef.pct);
+      if (lost > 0) {
+        dng.sessionGold = Math.max(0, dng.sessionGold - lost);
+        updateSessionGoldHud();
+        spawnFloater(`💰-${lost}`, "hero-dmg", "heroHpBar");
+      }
+      break;
+    }
+
+    case 'ambush': {
+      if (!m || m.hp <= 0) break;
+      const heroDmg = Math.max(1, Math.round(dng.heroStats.maxHp * ef.heroHpPct));
+      const mobSelfDmg = Math.max(1, Math.round(m.maxHp * ef.mobHpPct));
+      m.hp = Math.max(0, m.hp - mobSelfDmg);
+      applyHeroDamage(heroDmg, "⚠️");
+      spawnFloater(`⚠️ Ambush! -${heroDmg}`, "hero-dmg", "heroHpBar");
+      spawnFloater(`-${mobSelfDmg} 🤪`, "monster-dmg", "monsterZone");
+      renderDungeonHero();
+      updateMonsterHpBar();
+      if (dng.heroHp <= 0) setTimeout(() => dungeonFailed(), 300);
+      break;
+    }
+
+    case 'multi_spawn': {
+      if (!m) break;
+      const count = ef.count ?? 2;
+      const spawnedMobs = Array.from({ length: count }, () => ({
+        ...m,
+        name: ef.spawnName ?? `Baby ${m.name}`,
+        emoji: ef.spawnEmoji ?? m.emoji,
+        isIllusion: false,
+        maxHp: Math.max(1, Math.round(m.maxHp * (ef.hpMult ?? 0.15))),
+        hp:    Math.max(1, Math.round(m.maxHp * (ef.hpMult ?? 0.15))),
+        dmg:   Math.max(1, Math.round(m.dmg   * (ef.dmgMult ?? 0.20))),
+        armor: 0, currentArmor: 0,
+        dodge: ef.dodge ?? 0.10, block: 0,
+        _noGold: true, _reviveUsed: true, _pendingRevive: null,
+        isBoss: false, poison: undefined, freeze: undefined,
+      }));
+      const spawnWave = { mobs: spawnedMobs, activeIdx: 0 };
+      dng.queue.splice(dng.waveIdx + 1, 0, spawnWave);
+      spawnFloater(`🥚 ×${count} вылупились!`, "miss-float", "monsterZone");
+      break;
+    }
+
+    case 'illusion_spawn': {
+      if (!m) break;
+      const illusion = {
+        ...m,
+        isIllusion: true,
+        maxHp:  Math.max(1, Math.round(m.maxHp  * ef.hpMult)),
+        hp:     Math.max(1, Math.round(m.maxHp  * ef.hpMult)),
+        dmg:    Math.max(1, Math.round(m.dmg    * ef.dmgMult)),
+        armor:  Math.max(0, Math.round((m.armor || 0) * ef.hpMult)),
+        currentArmor: Math.max(0, Math.round((m.currentArmor || 0) * ef.hpMult)),
+        dodge:  m.dodge  * ef.hpMult,
+        block:  m.block  * ef.hpMult,
+        _noGold: true,
+        _reviveUsed: true,
+        _pendingRevive: null,
+        isBoss: false,
+        name: `${m.name} (Illusion)`,
+      };
+      // on_kill: insert AFTER current wave (waveIdx++ will land on it)
+      // per_round: insert AT current wave (illusion fights before the real mob)
+      const illusionWave = { mobs: [illusion], activeIdx: 0 };
+      const insertIdx = opts.insertAfterCurrent ? dng.waveIdx + 1 : dng.waveIdx;
+      dng.queue.splice(insertIdx, 0, illusionWave);
+      spawnFloater("🌑 Illusion!", "miss-float", "monsterZone");
+      if (!opts.insertAfterCurrent) renderDungeonMonster();
+      break;
+    }
+
+    case 'free_first_hit': {
+      // Mark the current mob to attack first (handled in per_round hook)
+      if (m) m._freeFirstHit = true;
+      spawnFloater("🕷️ First Strike!", "miss-float", "monsterZone");
+      break;
+    }
+
+    case 'buff_queue': {
+      // Randomly buff upcoming waves' mobs
+      const count = Math.floor(Math.random()*(ef.countMax-ef.countMin+1))+ef.countMin;
+      const upcomingWaveIdx = [];
+      for (let i = dng.waveIdx + 1; i < dng.queue.length && upcomingWaveIdx.length < count; i++) {
+        upcomingWaveIdx.push(i);
+      }
+      upcomingWaveIdx.sort(() => Math.random()-0.5);
+      let buffedCount = 0;
+      upcomingWaveIdx.forEach(i => {
+        dng.queue[i].mobs.forEach(mob => {
+          mob.maxHp = Math.round(mob.maxHp * (1 + ef.hpBonus));
+          mob.hp    = Math.round(mob.hp    * (1 + ef.hpBonus));
+          buffedCount++;
+        });
+      });
+      if (buffedCount > 0)
+        spawnFloater(`🔔 +${Math.round(ef.hpBonus*100)}% HP ×${buffedCount}`, "miss-float", "monsterZone");
+      break;
+    }
+
+    case 'revive': {
+      // Mark mob for one-time revive (checked in on_kill hook)
+      if (m && !m._reviveUsed) m._pendingRevive = { hpPct: ef.hpPct };
+      break;
+    }
+
+    case 'skip_turn': {
+      // Hero loses next turn — mob attacks as if timer expired
+      spawnFloater("❄️ Frozen!", "miss-float", "heroHpBar");
+      dng.locked = true;
+      setTimeout(() => {
+        if (!dng || dng.done) return;
+        onDngTimerExpired();
+      }, 800);
+      break;
+    }
+
+    case 'heat_exhaustion': {
+      const state = dng.biomeEventState;
+      state.heatCount = (state.heatCount || 0) + 1;
+      if (state.heatCount % ef.everyN === 0) {
+        const penalty = (state.heatCount / ef.everyN) * ef.timerPenalty;
+        state.heatPenalty = penalty;
+        spawnFloater(`🌡️ Timer -${penalty.toFixed(1)}s`, "miss-float", "heroHpBar");
+      }
+      break;
+    }
+
+    case 'unstable_hp': {
+      if (!m) break;
+      const delta = Math.round(m.maxHp * ef.variance * (Math.random()*2-1));
+      m.hp = Math.max(1, Math.min(m.maxHp, m.hp + delta));
+      if (delta !== 0) spawnFloater(`❓ ${delta > 0 ? '+' : ''}${delta}HP`, "monster-dmg", "monsterZone");
+      updateMonsterHpBar();
+      break;
+    }
+
+    case 'strip_buff': {
+      const positiveTypes = ['iron_skin_buff','toughness_buff']; // extend when buffs are added
+      const buffIdx = dng.heroStatuses.findIndex(s => positiveTypes.includes(s.type));
+      if (buffIdx >= 0) {
+        spawnFloater(`📉 ${dng.heroStatuses[buffIdx].type} removed!`, "miss-float", "heroHpBar");
+        dng.heroStatuses.splice(buffIdx, 1);
+        renderDungeonStatuses();
+      }
+      break;
+    }
+
+    case 'mob_power_up': {
+      if (!m) break;
+      const option = ef.options[Math.floor(Math.random()*ef.options.length)];
+      const mag = ef.magnitude[option];
+      if (option === 'hp') {
+        const bonus = Math.round(m.maxHp * mag);
+        m.maxHp += bonus; m.hp += bonus;
+        spawnFloater(`⚫ +${Math.round(mag*100)}% HP`, "monster-dmg", "monsterZone");
+        updateMonsterHpBar();
+      } else if (option === 'dmg') {
+        m.dmg = Math.round(m.dmg * (1 + mag));
+        spawnFloater(`⚫ +${Math.round(mag*100)}% DMG`, "monster-dmg", "monsterZone");
+      } else if (option === 'dodge') {
+        m.dodge = Math.min(0.9, (m.dodge || 0) + mag);
+        spawnFloater(`⚫ +${Math.round(mag*100)}% Dodge`, "monster-dmg", "monsterZone");
+      }
+      break;
+    }
+
+    case 'random_event': {
+      // Pull a random event from any other biome within the given tier range
+      const allEvents = Object.values(BIOME_EVENTS).flat()
+        .filter(e => e.tier >= ef.tierMin && e.tier <= ef.tierMax && e.id !== ev.id);
+      if (allEvents.length === 0) break;
+      const picked = allEvents[Math.floor(Math.random()*allEvents.length)];
+      spawnFloater(`🌀 ${picked.label}`, "miss-float", "heroHpBar");
+      applyBiomeEvent(picked);
+      break;
+    }
+  }
+}
+
+// ── Biome event hooks ─────────────────────────────────────────────────────────
+
+// Called when a new mob spawns (start of mob encounter).
+function processBiomeEventsPerRound() {
+  if (!dng || !dng.biomeEvents) return;
+  for (const ev of dng.biomeEvents) {
+    if (ev.trigger !== 'per_round') continue;
+    if (Math.random() < ev.fireChance) applyBiomeEvent(ev);
+  }
+}
+
+// Called after each player answer.
+function processBiomeEventsPerTurn() {
+  if (!dng || !dng.biomeEvents) return;
+  for (const ev of dng.biomeEvents) {
+    if (ev.trigger !== 'per_turn') continue;
+    if (ev.effect.type === 'heat_exhaustion') { applyBiomeEvent(ev); continue; }
+    if (Math.random() < ev.fireChance) applyBiomeEvent(ev);
+  }
+}
+
+// Called when a mob dies. Returns true if mob revives (caller should abort kill).
+function processBiomeEventsOnKill(mob) {
+  if (!dng || !dng.biomeEvents) return false;
+
+  // Revive check (from restless_dead or revive effect already applied)
+  if (mob._pendingRevive && !mob._reviveUsed) {
+    mob._reviveUsed = true;
+    mob._pendingRevive = null;
+    const reviveHp = Math.max(1, Math.round(mob.maxHp * 0.30));
+    mob.hp = reviveHp;
+    spawnFloater("🪦 Rises again!", "monster-dmg", "monsterZone");
+    updateMonsterHpBar();
+    return true; // mob is NOT dead — caller should continue fight
+  }
+
+  // on_kill events
+  for (const ev of dng.biomeEvents) {
+    if (ev.trigger !== 'on_kill') continue;
+    if (ev.effect.type === 'revive') {
+      // Attempt to apply revive — if not already used
+      if (!mob._reviveUsed && Math.random() < ev.fireChance) {
+        applyBiomeEvent(ev);
+        // If revive was marked, re-check
+        if (mob._pendingRevive) {
+          mob._reviveUsed = true;
+          mob._pendingRevive = null;
+          mob.hp = Math.max(1, Math.round(mob.maxHp * ev.effect.hpPct));
+          spawnFloater("🪦 Rises again!", "monster-dmg", "monsterZone");
+          updateMonsterHpBar();
+          return true; // still alive
+        }
+      }
+    } else {
+      if (Math.random() < ev.fireChance) applyBiomeEvent(ev, { insertAfterCurrent: true });
+    }
+  }
+  return false; // mob is dead for real
+}
+
+// Always-on events — started when mob spawns, stopped on mob death (via stopAllDotSeconds).
+function processBiomeEventsAlways() {
+  if (!dng || !dng.biomeEvents) return;
+  for (const ev of dng.biomeEvents) {
+    if (ev.trigger !== 'always') continue;
+    applyBiomeEvent(ev);
   }
 }
 
@@ -2477,10 +3294,28 @@ function dungeonVictory() {
   if (!dng) return;
   dng.done = true;
   stopDngTimer();
+  stopAllDotSeconds();
 
-  // Award gold
-  const goldEarned = rollStat(dng.cfg.goldReward ?? [0, 5]);
-  awardGold(goldEarned);
+  // Unlock portals after defeating the Overlord (set 1, level 7)
+  if (dng.setId === 1 && dng.level === 7 && !dng.cfg?._generated) {
+    if (typeof unlockPortals === "function") unlockPortals();
+  }
+  // Save floor record for procedural dungeons
+  if (dng.cfg?._generated && typeof recordFloorProgress === "function") {
+    recordFloorProgress(dng.setId, dng.cfg.floor);
+  }
+
+  // Award gold:
+  // Generated dungeons: sessionGold committed when player clicks exitDungeon / Next Floor
+  // Legacy dungeons: roll end-of-run gold as before
+  const isGenerated = !!dng.cfg._generated;
+  let goldEarned = 0;
+  if (isGenerated) {
+    goldEarned = dng.sessionGoldTotal || 0; // display only — committed on exit
+  } else {
+    goldEarned = rollStat(dng.cfg.goldReward ?? [0, 5]);
+    awardGold(goldEarned);
+  }
 
   const screen = document.getElementById("dungeonScreen");
   const res = document.createElement("div");
@@ -2488,20 +3323,47 @@ function dungeonVictory() {
   const hero = getHero();
   const xpNeeded = hero ? getXPForLevel(hero.level) : 100;
   const xpPct = hero ? Math.min(100, Math.round((hero.xp / xpNeeded) * 100)) : 0;
-  res.innerHTML = `
-    <div class="dng-result-emoji">🏆</div>
-    <div class="dng-result-title">Dungeon Cleared!</div>
-    <div class="dng-result-sub">
-      You conquered <strong style="color:#f59e0b">${dng.cfg.name}</strong><br>
-      with <strong style="color:#4ade80">${dng.heroHp} HP</strong> remaining.
-    </div>
-    <div style="display:flex;gap:16px;justify-content:center;margin:4px 0;font-size:13px;font-weight:700">
-      <span style="color:#fbbf24">🪙 +${goldEarned} Gold</span>
-      ${hero ? `<span style="color:#818cf8">✦ Lv${hero.level} · ${xpPct}% XP</span>` : ""}
-    </div>
-    <button class="dng-result-btn" onclick="exitDungeon()">← Back to Study</button>
-    <button class="dng-result-btn secondary" onclick="replayDungeon()">▶ Play Again</button>
-  `;
+  const currentFloor = dng.cfg.floor ?? dng.level ?? 1;
+  const nextFloor = currentFloor + 1;
+  const goldLabel = isGenerated ? `🪙 ${goldEarned}g earned this run` : `🪙 +${goldEarned} Gold`;
+
+  if (isGenerated) {
+    // Portal victory — clickable portal gate + Back to Study below
+    const guardianColor = dng.queue?.flatMap(w => w.mobs).find(m => m.isGuardian)?.guardianColor || "#7c3aed";
+    const guardianGlow  = dng.queue?.flatMap(w => w.mobs).find(m => m.isGuardian)?.guardianGlow  || "rgba(124,58,237,0.6)";
+    res.innerHTML = `
+      <div class="portal-victory-stats">
+        <span style="color:#fbbf24">${goldLabel}</span>
+        ${hero ? `<span style="color:#818cf8">✦ Lv${hero.level} · ${xpPct}% XP</span>` : ""}
+      </div>
+      <div class="portal-victory-label">Floor ${currentFloor} cleared — the portal opens...</div>
+      <div class="portal-gate" onclick="enterDungeonFloor(${dng.setId}, ${nextFloor}, '${dng.cfg.difficulty ?? 'normal'}')"
+           style="--portal-color:${guardianColor};--portal-glow:${guardianGlow}">
+        <div class="portal-gate-ring portal-gate-ring--outer"></div>
+        <div class="portal-gate-ring portal-gate-ring--mid"></div>
+        <div class="portal-gate-ring portal-gate-ring--inner"></div>
+        <div class="portal-gate-core">
+          <div class="portal-gate-floor">Floor ${nextFloor}</div>
+        </div>
+      </div>
+      <button class="dng-result-btn" onclick="exitDungeon()" style="margin-top:8px">← Back to Study</button>
+    `;
+  } else {
+    res.innerHTML = `
+      <div class="dng-result-emoji">🏆</div>
+      <div class="dng-result-title">Dungeon Cleared!</div>
+      <div class="dng-result-sub">
+        You conquered <strong style="color:#f59e0b">${dng.cfg.name}</strong><br>
+        with <strong style="color:#4ade80">${dng.heroHp} HP</strong> remaining.
+      </div>
+      <div style="display:flex;gap:16px;justify-content:center;margin:4px 0;font-size:13px;font-weight:700">
+        <span style="color:#fbbf24">${goldLabel}</span>
+        ${hero ? `<span style="color:#818cf8">✦ Lv${hero.level} · ${xpPct}% XP</span>` : ""}
+      </div>
+      <button class="dng-result-btn" onclick="exitDungeon()">← Back to Study</button>
+      <button class="dng-result-btn secondary" onclick="replayDungeon()">▶ Play Again</button>
+    `;
+  }
   screen.appendChild(res);
 }
 
@@ -2509,17 +3371,31 @@ function dungeonFailed() {
   if (!dng) return;
   dng.done = true;
   stopDngTimer();
+  stopAllDotSeconds();
+
+  // Death penalty: save only 20% of session gold — gold was never added to hero yet
+  const sessionGold = dng.sessionGold || 0;
+  const goldLost  = Math.floor(sessionGold * 0.8);
+  const goldSaved = sessionGold - goldLost;
+  if (goldSaved > 0) {
+    awardGold(goldSaved); // only the saved 20% goes to hero
+  }
+
   const screen = document.getElementById("dungeonScreen");
   const res = document.createElement("div");
   res.className = "dng-result-screen";
-  const n = dng.monsterIdx;
+  const n = dng.waveIdx;
+  const deathPenaltyHtml = sessionGold > 0
+    ? `<div style="color:#f87171;font-size:12px;margin:2px 0">💸 Lost ${goldLost}g · Saved ${goldSaved}g</div>`
+    : "";
   res.innerHTML = `
     <div class="dng-result-emoji">💀</div>
     <div class="dng-result-title">Dungeon Failed</div>
     <div class="dng-result-sub">
       You defeated <strong style="color:#f59e0b">${n}</strong> monster${n!==1?"s":""}<br>before falling in battle.
     </div>
-    <button class="dng-result-btn" onclick="replayDungeon()">▶ Try Again</button>
+    ${deathPenaltyHtml}
+    ${dng.cfg._generated ? "" : `<button class="dng-result-btn" onclick="replayDungeon()">▶ Try Again</button>`}
     <button class="dng-result-btn secondary" onclick="exitDungeon()">← Back to Study</button>
   `;
   screen.appendChild(res);

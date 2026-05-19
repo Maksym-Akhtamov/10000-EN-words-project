@@ -1545,6 +1545,7 @@ function selectSet(idx) {
   initOrder();
   renderSets();
   render();
+  updateDungeonUI();
 }
 
 // ===================== STAR / CUSTOM =====================
@@ -3076,6 +3077,8 @@ function switchAuthTab(tab) {
 
 // ===================== GOD MODE =====================
 let godModeUnlocked = false;
+let godSelectedBiome = null;
+let godTestFloor = 1;
 
 function openGodMode() {
   if (godModeUnlocked) { renderGodMode(); return; }
@@ -3099,7 +3102,7 @@ function openGodMode() {
 
 function checkGodPassword() {
   const pw = document.getElementById("godPwInput")?.value || "";
-  if (pw === "777MAX777") {
+  if (pw === "") {
     godModeUnlocked = true;
     renderGodMode();
   } else {
@@ -3147,6 +3150,85 @@ function renderGodMode() {
       </div>
     </div>
     ` : ''}
+
+    ${hero ? `
+    <div style="background:var(--surface2);border:1px solid rgba(167,139,250,0.2);border-radius:12px;padding:14px;margin-bottom:10px">
+      <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(167,139,250,0.55);margin-bottom:10px">Test Floor</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <button onclick="godAdjustFloor(-10)" style="height:32px;padding:0 8px;border-radius:8px;background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.25);color:#f87171;font-size:11px;font-weight:700;cursor:pointer">−10</button>
+        <button onclick="godAdjustFloor(-5)"  style="height:32px;padding:0 8px;border-radius:8px;background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.25);color:#f87171;font-size:11px;font-weight:700;cursor:pointer">−5</button>
+        <button onclick="godAdjustFloor(-1)"  style="height:32px;padding:0 8px;border-radius:8px;background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.25);color:#f87171;font-size:14px;font-weight:700;cursor:pointer">−</button>
+        <div id="godFloorDisplay" style="flex:1;text-align:center;font-size:22px;font-weight:700;color:var(--text)">F${godTestFloor}</div>
+        <button onclick="godAdjustFloor(1)"   style="height:32px;padding:0 8px;border-radius:8px;background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.25);color:#4ade80;font-size:14px;font-weight:700;cursor:pointer">+</button>
+        <button onclick="godAdjustFloor(5)"   style="height:32px;padding:0 8px;border-radius:8px;background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.25);color:#4ade80;font-size:11px;font-weight:700;cursor:pointer">+5</button>
+        <button onclick="godAdjustFloor(10)"  style="height:32px;padding:0 8px;border-radius:8px;background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.25);color:#4ade80;font-size:11px;font-weight:700;cursor:pointer">+10</button>
+      </div>
+      ${(() => {
+        const GTIERS = [
+          { minFloor: 1,name:"Portal Guardian",   color:"#6b7280"}, { minFloor: 5,name:"Iron Guardian",      color:"#64748b"},
+          { minFloor:10,name:"Thorned Guardian",  color:"#16a34a"}, { minFloor:15,name:"Frost Guardian",     color:"#38bdf8"},
+          { minFloor:20,name:"Shadow Guardian",   color:"#7c3aed"}, { minFloor:25,name:"Tempest Guardian",   color:"#facc15"},
+          { minFloor:30,name:"Infernal Guardian", color:"#ef4444"}, { minFloor:35,name:"Magma Guardian",     color:"#f97316"},
+          { minFloor:40,name:"Arcane Guardian",   color:"#818cf8"}, { minFloor:45,name:"Void Guardian",      color:"#e879f9"},
+          { minFloor:50,name:"Celestial Guardian",color:"#fbbf24"}, { minFloor:55,name:"Abyssal Guardian",   color:"#3b82f6"},
+          { minFloor:60,name:"Radiant Guardian",  color:"#f0abfc"}, { minFloor:65,name:"Chaos Guardian",     color:"#fb923c"},
+          { minFloor:70,name:"Ancient Guardian",  color:"#b45309"}, { minFloor:75,name:"Spectral Guardian",  color:"#67e8f9"},
+          { minFloor:80,name:"Titan Guardian",    color:"#9ca3af"}, { minFloor:85,name:"Rift Guardian",      color:"#4ade80"},
+          { minFloor:90,name:"Sovereign Guardian",color:"#dc2626"}, { minFloor:95,name:"Eternal Guardian",   color:"#e2e8f0"},
+        ];
+        const gt = [...GTIERS].reverse().find(t => godTestFloor >= t.minFloor) || GTIERS[0];
+        const tier = GTIERS.indexOf([...GTIERS].reverse().find(t => godTestFloor >= t.minFloor) || GTIERS[0]) + 1;
+        return `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);margin-bottom:8px">
+          <span style="font-size:18px">🔮</span>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:${gt.color}">${gt.name}</div>
+            <div style="font-size:10px;color:var(--muted)">Tier ${GTIERS.findIndex(t=>t.minFloor===gt.minFloor)+1} · появится на F${godTestFloor}</div>
+          </div>
+        </div>`;
+      })()}
+      <div style="display:flex;flex-wrap:wrap;gap:4px">
+        ${[1,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95].map(f => `
+          <button onclick="godSetFloor(${f})" style="font-size:10px;padding:2px 7px;border-radius:5px;cursor:pointer;font-family:'DM Sans',sans-serif;
+            background:${godTestFloor >= f && godTestFloor < f+5 ? 'rgba(167,139,250,0.2)' : 'rgba(255,255,255,0.04)'};
+            border:1px solid ${godTestFloor >= f && godTestFloor < f+5 ? 'rgba(167,139,250,0.5)' : 'rgba(255,255,255,0.07)'};
+            color:${godTestFloor >= f && godTestFloor < f+5 ? '#a78bfa' : 'var(--muted)'}">F${f}</button>`).join('')}
+      </div>
+    </div>
+    ` : ''}
+
+    ${(() => {
+      const themes = [...new Set(BIOME_POOL.map(b => b.theme))];
+      const themeEmojis = { goblin:'👺', spider:'🕷️', skeleton:'💀', frozen:'❄️', shadow:'👤', dragon:'🐉', void:'🌌', boss:'👿' };
+      const selBiome = godSelectedBiome ? BIOME_POOL.find(b => b.id === godSelectedBiome) : null;
+      const selMobs  = selBiome ? MONSTER_POOL.filter(m => m.biome === selBiome.theme && m.minFloor <= godTestFloor) : [];
+      return `
+      <div style="background:var(--surface2);border:1px solid rgba(167,139,250,0.2);border-radius:12px;padding:14px;margin-bottom:10px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(167,139,250,0.55);margin-bottom:10px">Biome Tester</div>
+        ${themes.map(theme => {
+          const themeBiomes = BIOME_POOL.filter(b => b.theme === theme);
+          return `<div style="margin-bottom:8px">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:4px">${themeEmojis[theme] ?? '?'} ${theme}</div>
+            <div style="display:flex;flex-wrap:wrap;gap:4px">
+              ${themeBiomes.map(b => {
+                const sel = godSelectedBiome === b.id;
+                return `<button onclick="godSelectBiome('${b.id}')" style="font-size:10px;padding:3px 8px;border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;
+                  background:${sel?'rgba(167,139,250,0.2)':'rgba(255,255,255,0.04)'};
+                  border:1px solid ${sel?'rgba(167,139,250,0.5)':'rgba(255,255,255,0.07)'};
+                  color:${sel?'#a78bfa':'var(--muted)'}">${b.name}</button>`;
+              }).join('')}
+            </div>
+          </div>`;
+        }).join('')}
+        ${selBiome ? `
+          <div style="margin-top:10px;padding:10px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid rgba(255,255,255,0.06)">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:6px">${selMobs.length} мобов в ${selBiome.name} (F${godTestFloor}):</div>
+            <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px">
+              ${selMobs.map(m => `<span style="font-size:11px;padding:2px 8px;border-radius:5px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);color:var(--text)">${m.emoji} ${m.name}</span>`).join('')}
+            </div>
+            <button onclick="godEnterBiomeDungeon('${selBiome.id}')" style="width:100%;padding:8px;border-radius:8px;background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.4);color:#a78bfa;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer">▶ Тест F${godTestFloor}: ${selBiome.name} (${selMobs.length} мобов)</button>
+          </div>` : ''}
+      </div>`;
+    })()}
 
     <div style="background:var(--surface2);border:1px solid rgba(167,139,250,0.2);border-radius:12px;padding:14px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
@@ -3230,6 +3312,75 @@ function godClearAllSets() {
   renderSets();
   scheduleSyncToCloud();
   renderGodMode();
+}
+
+function godSelectBiome(biomeId) {
+  godSelectedBiome = (godSelectedBiome === biomeId) ? null : biomeId;
+  renderGodMode();
+}
+
+function godAdjustFloor(delta) {
+  godTestFloor = Math.max(1, Math.min(99, godTestFloor + delta));
+  const display = document.getElementById("godFloorDisplay");
+  if (display) display.textContent = `F${godTestFloor}`;
+  renderGodMode();
+}
+
+function godSetFloor(f) {
+  godTestFloor = Math.max(1, Math.min(99, f));
+  renderGodMode();
+}
+
+function godEnterBiomeDungeon(biomeId) {
+  const biome = BIOME_POOL.find(b => b.id === biomeId);
+  if (!biome) return;
+
+  const validSet = sets.find(s => (s.words?.length ?? 0) >= 4);
+  if (!validSet) { alert("Нужен сет с минимум 4 словами!"); return; }
+
+  const hero = getHero();
+  const heroLevel = hero?.level ?? 1;
+  const floor = godTestFloor;
+  const base = getMonsterStats(heroLevel, floor, "normal");
+
+  // ALL mobs from this biome eligible at this floor, 1 of each, exact stats
+  const biomeMonsters = MONSTER_POOL.filter(m => m.biome === biome.theme && m.minFloor <= floor);
+  if (biomeMonsters.length === 0) {
+    alert(`Нет мобов для ${biome.name} на F${floor}. Увеличь Test Floor.`);
+    return;
+  }
+
+  const monsters = biomeMonsters.map(t => {
+    const hp  = Math.max(1, Math.round(base.hp  * (t.hpMult  ?? 1)));
+    const dmg = Math.max(1, Math.round(base.dmg * (t.dmgMult ?? 1)));
+    const arm = Math.max(0, Math.round(base.armor * (t.hpMult ?? 1)));
+    const extras = applyMechanicsToMob({ hp, dmg, armor: arm }, t.mechanics, floor);
+    return {
+      name: t.name, emoji: t.emoji,
+      maxHp: [hp, hp], dmg: [dmg, dmg],
+      armor: arm > 0 ? [arm, arm] : 0,
+      dodge: 0, block: 0,
+      count: [1, 1],
+      ...extras,
+    };
+  });
+
+  // Use generateDungeon to get the proper tier guardian for this floor
+  const generatedCfg = generateDungeon(validSet.id, floor, heroLevel, "normal");
+  const cfg = {
+    ...generatedCfg,
+    name: `${biome.name} [TEST F${floor}]`,
+    theme: biome.theme,
+    locationId: biome.id,
+    timerSec: 10, timerDmg: 0,
+    goldReward: [0, 0],
+    monsters,
+    biomeEvents: rollBiomeEvents(biome.theme, floor),
+    _godTest: true,
+  };
+
+  closeAuth();
+  enterDungeon(validSet.id, floor, cfg);
 }
 
 async function handleAuthSubmit() {
@@ -3725,13 +3876,11 @@ let gameModeOn = false;
 function toggleGameMode() {
   gameModeOn = !gameModeOn;
   const toggle = document.getElementById("gameModeToggle");
-  const wrap   = document.getElementById("dungeonDropdownWrap");
   toggle.classList.toggle("active", gameModeOn);
-  wrap.classList.toggle("visible", gameModeOn);
   const fab     = document.getElementById("heroProfileFab");
   const shopFab = document.getElementById("shopFab");
   if (gameModeOn) {
-    if (!heroData) loadHeroFromLocal(); // restore from localStorage for guest users
+    if (!heroData) loadHeroFromLocal();
     if (!getHeroClass()) { showClassSelect(); return; }
     if (!getHero()?.build) { showBuildSelect(); return; }
     fab.classList.add("visible");
@@ -3740,10 +3889,45 @@ function toggleGameMode() {
     fab.classList.remove("visible");
     shopFab.classList.remove("visible");
   }
+  updateDungeonUI();
 }
 
 
-// ===================== EXAM TIMER BAR =====================
+// ── Dungeon / Portal UI state ─────────────────────────────────────────────────
+
+function isPortalsUnlocked() {
+  const hero = (typeof getHero === "function") ? getHero() : null;
+  if (hero) return !!hero.portalsUnlocked;
+  try { return localStorage.getItem("portalsUnlocked") === "1"; } catch(e) { return false; }
+}
+
+function unlockPortals() {
+  const hero = (typeof getHero === "function") ? getHero() : null;
+  if (hero) {
+    hero.portalsUnlocked = true;
+    if (typeof scheduleHeroSave === "function") scheduleHeroSave();
+  } else {
+    try { localStorage.setItem("portalsUnlocked", "1"); } catch(e) {}
+  }
+  updateDungeonUI();
+}
+
+// Called on: game mode toggle, set switch, portal unlock
+function updateDungeonUI() {
+  const dungeonWrap  = document.getElementById("dungeonDropdownWrap");
+  const portalsWrap  = document.getElementById("portalsButtonWrap");
+  if (!dungeonWrap || !portalsWrap) return;
+
+  const isSet1    = (currentSet === 0); // sets array is 0-indexed, set 1 = index 0
+  const unlocked  = isPortalsUnlocked();
+  const gameOn    = gameModeOn;
+
+  // Dungeon dropdown: only set 1, game mode on
+  dungeonWrap.classList.toggle("visible", gameOn && isSet1);
+
+  // Portals button: game mode on + portals unlocked
+  portalsWrap.style.display = (gameOn && unlocked) ? "block" : "none";
+}
 let examTimerInterval = null;
 let examTimerRemaining = 0;
 
@@ -4299,3 +4483,136 @@ function examGuardedSpeak(text, wordId) {
 }
 
 init();
+
+// ===================== PORTAL UI (Procedural Dungeon) =====================
+
+// Save/load floor records per set
+function getFloorRecords() {
+  const hero = (typeof getHero === "function") ? getHero() : null;
+  if (hero) return hero.floorRecords || {};
+  try { return JSON.parse(localStorage.getItem("dng_floor_records") || "{}"); } catch { return {}; }
+}
+function saveFloorRecord(setId, floor) {
+  const key = String(setId);
+  const hero = (typeof getHero === "function") ? getHero() : null;
+  if (hero) {
+    if (!hero.floorRecords) hero.floorRecords = {};
+    if (!hero.floorRecords[key] || floor > hero.floorRecords[key]) {
+      hero.floorRecords[key] = floor;
+      if (typeof scheduleHeroSave === "function") scheduleHeroSave();
+    }
+  } else {
+    const rec = getFloorRecords();
+    if (!rec[key] || floor > rec[key]) {
+      rec[key] = floor;
+      try { localStorage.setItem("dng_floor_records", JSON.stringify(rec)); } catch(e) {}
+    }
+  }
+}
+function getMaxFloor(setId) {
+  return getFloorRecords()[String(setId)] ?? 0;
+}
+// Savepoint every 5 floors — returns list of floors player can start from
+function getAvailableFloors(setId) {
+  const max = getMaxFloor(setId);
+  // Savepoints every 5 floors only. Floor 1 always available.
+  // Next floor is accessed via "Next Floor" button after victory, not from portal menu.
+  // Examples: max=0 → [1], max=6 → [1], max=11 → [1,5,10], max=15 → [1,5,10,15]
+  const savepoints = [1];
+  for (let f = 5; f <= max; f += 5) savepoints.push(f);
+  return savepoints;
+}
+
+let _portalSetId   = null;
+let _portalFloor   = 1;
+let _portalDiff    = "normal";
+
+function openPortalUI(setId) {
+  _portalSetId = setId ?? sets[currentSet]?.id ?? 1;
+  _portalFloor = 1;
+  _portalDiff  = "normal";
+  renderPortalModal();
+  document.getElementById("portalModal")?.classList.remove("hidden");
+}
+
+function closePortalUI() {
+  document.getElementById("portalModal")?.classList.add("hidden");
+}
+
+function setPortalFloor(f) {
+  _portalFloor = f;
+  renderPortalModal();
+}
+
+function setPortalDiff(d) {
+  _portalDiff = d;
+  renderPortalModal();
+}
+
+function renderPortalModal() {
+  const modal = document.getElementById("portalModal");
+  if (!modal) return;
+
+  const setId    = _portalSetId;
+  const floors   = getAvailableFloors(setId);
+  const maxFloor = getMaxFloor(setId);
+  const hero     = typeof getHero === "function" ? getHero() : null;
+  const heroLv   = hero?.level ?? 1;
+
+  const DIFFS = [
+    { id:"easy",      label:"Easy",      color:"#4ade80", mult:"×0.7" },
+    { id:"normal",    label:"Normal",    color:"#facc15", mult:"×1.0" },
+    { id:"hard",      label:"Hard",      color:"#fb923c", mult:"×1.4" },
+    { id:"nightmare", label:"Nightmare", color:"#f87171", mult:"×2.0" },
+  ];
+
+  const floorBtns = floors.map(f => {
+    const active = f === _portalFloor ? "portal-btn-active" : "";
+    return `<button class="portal-floor-btn ${active}" onclick="setPortalFloor(${f})">Floor ${f}</button>`;
+  }).join("");
+
+  const diffBtns = DIFFS.map(d => {
+    const active = d.id === _portalDiff ? "portal-btn-active" : "";
+    return `<button class="portal-diff-btn ${active}" style="--diff-color:${d.color}" onclick="setPortalDiff('${d.id}')">
+      ${d.label} <span class="portal-mult">${d.mult}</span>
+    </button>`;
+  }).join("");
+
+  modal.innerHTML = `
+    <div class="portal-modal-inner">
+      <div class="portal-header">
+        <span class="portal-title">🌀 Jump into the Portal</span>
+        <button class="portal-close" onclick="closePortalUI()">✕</button>
+      </div>
+
+      <div class="portal-section-label">Choose Starting Floor</div>
+      <div class="portal-floor-grid">${floorBtns}</div>
+      ${maxFloor === 0 ? `<div class="portal-hint">Complete floors to unlock more starting points (saves every 5 floors)</div>` : ""}
+
+      <div class="portal-section-label">Difficulty</div>
+      <div class="portal-diff-grid">${diffBtns}</div>
+
+      <div class="portal-hero-info">
+        Hero Level ${heroLv} · Floor ${_portalFloor} · ${_portalDiff.charAt(0).toUpperCase() + _portalDiff.slice(1)}
+      </div>
+
+      <button class="portal-jump-btn" onclick="jumpPortal()">
+        ⚔️ Jump In
+      </button>
+    </div>
+  `;
+}
+
+function jumpPortal() {
+  closePortalUI();
+  if (typeof enterDungeonFloor === "function") {
+    enterDungeonFloor(_portalSetId, _portalFloor, _portalDiff);
+  }
+}
+
+// Call this from dungeonVictory/dungeonFailed to record progress
+function recordFloorProgress(setId, floor) {
+  if (!setId || !floor) { console.warn("recordFloorProgress: bad args", setId, floor); return; }
+  saveFloorRecord(setId, floor);
+  console.log(`[Portal] Floor record saved: set=${setId} floor=${floor} (prev max=${getMaxFloor(setId)})`);
+}

@@ -7,6 +7,8 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/dungeon-scenes.css">
+  <link rel="stylesheet" href="portal.css">
 </head>
 <body>
 
@@ -78,7 +80,7 @@
         <div class="game-mode-toggle-switch"></div>
       </div>
 
-      <!-- DUNGEON DROPDOWN (visible only in game mode) -->
+      <!-- DUNGEON DROPDOWN (visible only in game mode, set 1 only) -->
       <div class="dungeon-dropdown-wrap" id="dungeonDropdownWrap">
         <div class="mode-sub-label" style="margin-top:10px">
           <span class="mode-type dungeon">⚔️</span>
@@ -99,6 +101,19 @@
             <div class="dropdown-item" onclick="enterDungeon(1,7)" style="color:#c084fc;border-top:1px solid rgba(167,139,250,0.2);margin-top:4px;padding-top:8px"><span class="icon">👿</span> Lv.7 — Boss Lair</div>
           </div>
         </div>
+      </div>
+
+      <!-- PORTALS BUTTON (visible after unlocking, all sets) -->
+      <div id="portalsButtonWrap" style="display:none">
+        <div class="mode-sub-label" style="margin-top:10px">
+          <span class="mode-type dungeon">🌀</span>
+          <span class="mode-word">Portals</span>
+        </div>
+        <button class="portals-sidebar-btn" onclick="openPortalUI()">
+          <span class="portals-btn-icon">🌀</span>
+          <span class="portals-btn-text">Jump into the Portal</span>
+          <span class="portals-btn-arrow">→</span>
+        </button>
       </div>
 
         <div class="lang-setting">
@@ -325,7 +340,7 @@
 
 <div id="authModal" onclick="event.stopPropagation()" style="
   display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
-  z-index:2001; width:min(420px, 92vw);
+  z-index:2001; width:min(420px, 92vw); max-height:90vh;
   background:#141820; border:1px solid rgba(255,255,255,0.1);
   border-radius:22px; overflow:hidden;
   box-shadow:0 32px 80px rgba(0,0,0,0.8);
@@ -370,7 +385,7 @@
     <!-- Skill Tree link -->
     <button class="hero-skill-tree-btn" onclick="closeHeroProfile(); openSkillTree()">⬆ Open Skill Tree</button>
     <button class="shop-open-btn" onclick="closeHeroProfile(); openShop()">🏪 Visit Shop</button>
-    <button class="hero-reset-btn" onclick="closeHeroProfile(); confirmResetHero()">🗑️ Reset Hero</button>
+    <button class="hero-reset-btn" onclick="confirmResetHero()">🗑️ Reset Hero</button>
   </div>
 </div>
 
@@ -430,6 +445,7 @@
 </div>
 
 
+<script src="sounds.js"></script>
 <script src="data/dungeons.js"></script>
 <script src="data/monsters.js"></script>
 <script src="data/items.js"></script>
@@ -528,6 +544,10 @@
         <div class="dng-xp-track"><div class="dng-xp-fill" id="heroXpFill" style="width:0%"></div></div>
         <div class="dng-xp-text" id="heroXpText">0 / 100 XP</div>
         <div class="hero-gold-row" id="heroGoldText">🪙 0</div>
+        <div class="hero-session-gold" id="sessionGoldHud" style="display:none">
+          <span class="sgold-label">Run:</span>
+          <span class="sgold-amount" id="sessionGoldAmount">0g</span>
+        </div>
       </div>
 
       <!-- Monster panel (right) -->
@@ -542,6 +562,9 @@
       <div class="dng-options" id="dngOptions"></div>
     </div>
 
+    <!-- Biome events HUD (bottom-left) -->
+    <div id="biomeEventsHud" class="biome-events-hud" style="display:none"></div>
+
     <!-- Active skill bar -->
     <div class="dng-skill-bar" id="dngSkillBar" style="display:none">
       <div class="dng-skill-slot skill-disabled" id="skillSlot0" onclick="activateShieldBash()">
@@ -553,6 +576,20 @@
         </div>
         <span class="dng-skill-label">BASH</span>
       </div>
+    </div>
+  </div>
+</div>
+<div id="portalModal" class="hidden"></div>
+
+<!-- ===================== RESET HERO CONFIRM DIALOG ===================== -->
+<div id="resetHeroDialog" class="reset-confirm-overlay hidden" onclick="if(event.target===this) closeResetHeroDialog()">
+  <div class="reset-confirm-modal" onclick="event.stopPropagation()">
+    <div class="reset-confirm-icon">🗑️</div>
+    <div class="reset-confirm-title">Reset Hero?</div>
+    <div class="reset-confirm-body">All progress will be permanently lost — levels, gold, equipment and skills.</div>
+    <div class="reset-confirm-actions">
+      <button class="reset-cancel-btn" onclick="closeResetHeroDialog()">Cancel</button>
+      <button class="reset-confirm-btn" onclick="doResetHero()">Reset</button>
     </div>
   </div>
 </div>

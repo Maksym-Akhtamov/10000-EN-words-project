@@ -1421,6 +1421,127 @@
     }
     .hero-reset-btn:hover { background: rgba(248,113,113,0.15); border-color: rgba(248,113,113,0.4); }
 
+    /* Portals sidebar button */
+    .portals-sidebar-btn {
+      width: 100%; margin-top: 4px;
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 14px; border-radius: 12px;
+      background: rgba(109,40,217,0.12);
+      border: 1px solid rgba(109,40,217,0.35);
+      color: #c4b5fd; font-family: 'DM Sans', sans-serif;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .portals-sidebar-btn:hover {
+      background: rgba(109,40,217,0.22);
+      border-color: #7c3aed; color: #ddd6fe;
+    }
+    .portals-btn-icon { font-size: 15px; }
+    .portals-btn-text { flex: 1; text-align: left; }
+    .portals-btn-arrow { opacity: 0.5; font-size: 12px; }
+
+    /* Portal victory screen */
+    .portal-victory-stats {
+      display: flex; gap: 16px; justify-content: center;
+      font-size: 13px; font-weight: 700; margin-bottom: 6px;
+    }
+    .portal-victory-label {
+      font-size: 13px; color: #9ca3af; margin-bottom: 20px; font-style: italic;
+    }
+    .portal-gate {
+      position: relative; width: 180px; height: 180px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; margin: 0 auto;
+    }
+    .portal-gate-ring {
+      position: absolute; border-radius: 50%;
+      border: 2px solid var(--portal-color, #7c3aed);
+      animation: portalSpin 4s linear infinite;
+    }
+    .portal-gate-ring--outer { inset: 0;    opacity: 0.35; animation-duration: 6s; }
+    .portal-gate-ring--mid   { inset: 16px; opacity: 0.55; animation-duration: 4s; animation-direction: reverse; }
+    .portal-gate-ring--inner { inset: 32px; opacity: 0.8;  animation-duration: 2.5s; }
+    @keyframes portalSpin {
+      from { transform: rotate(0deg);   box-shadow: 0 0 12px var(--portal-glow); }
+      to   { transform: rotate(360deg); box-shadow: 0 0 20px var(--portal-glow); }
+    }
+    .portal-gate-core {
+      position: relative; z-index: 2;
+      width: 90px; height: 90px; border-radius: 50%;
+      background: radial-gradient(circle, var(--portal-color, #7c3aed) 0%, #0c0d10 70%);
+      box-shadow: 0 0 30px var(--portal-glow, rgba(124,58,237,0.6));
+      display: flex; align-items: center; justify-content: center;
+      animation: portalPulse 2s ease-in-out infinite;
+      transition: transform 0.2s;
+    }
+    .portal-gate:hover .portal-gate-core { transform: scale(1.1); }
+    @keyframes portalPulse {
+      0%,100% { box-shadow: 0 0 24px var(--portal-glow); }
+      50%      { box-shadow: 0 0 48px var(--portal-glow); }
+    }
+    .portal-gate-floor {
+      font-family: 'DM Serif Display', serif;
+      font-size: 15px; font-weight: 700; color: #fff;
+      text-shadow: 0 0 8px var(--portal-color);
+      text-align: center; line-height: 1.2;
+    }
+
+    /* Reset Hero confirm dialog */
+    .reset-confirm-overlay {
+      position: fixed; inset: 0; z-index: 9500;
+      background: rgba(0,0,0,0.75); backdrop-filter: blur(6px);
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+    }
+    .reset-confirm-overlay.hidden { display: none; }
+    .reset-confirm-modal {
+      background: var(--surface);
+      border: 1px solid rgba(248,113,113,0.25);
+      border-radius: 20px;
+      padding: 32px 28px 24px;
+      max-width: 340px; width: 100%;
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+      box-shadow: 0 0 60px rgba(248,113,113,0.15), 0 30px 80px rgba(0,0,0,0.7);
+      animation: resetDialogIn 0.18s ease;
+    }
+    @keyframes resetDialogIn {
+      from { opacity: 0; transform: scale(0.93) translateY(8px); }
+      to   { opacity: 1; transform: scale(1)    translateY(0);   }
+    }
+    .reset-confirm-icon {
+      font-size: 36px; line-height: 1;
+      background: rgba(248,113,113,0.1);
+      border: 1px solid rgba(248,113,113,0.2);
+      border-radius: 50%; width: 64px; height: 64px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 4px;
+    }
+    .reset-confirm-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 20px; color: var(--text); font-weight: 700;
+    }
+    .reset-confirm-body {
+      font-size: 13px; color: #9ca3af;
+      text-align: center; line-height: 1.5; padding: 0 4px;
+    }
+    .reset-confirm-actions {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 10px; width: 100%; margin-top: 10px;
+    }
+    .reset-cancel-btn {
+      padding: 11px; border-radius: 12px;
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+      color: #9ca3af; font-family: 'DM Sans', sans-serif;
+      font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+    }
+    .reset-cancel-btn:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+    .reset-confirm-btn {
+      padding: 11px; border-radius: 12px;
+      background: rgba(248,113,113,0.12); border: 1px solid rgba(248,113,113,0.35);
+      color: #f87171; font-family: 'DM Sans', sans-serif;
+      font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s;
+    }
+    .reset-confirm-btn:hover { background: rgba(248,113,113,0.22); border-color: #f87171; color: #fca5a5; }
+
     /* Dungeon screen */
     #dungeonScreen {
       position: fixed; inset: 0; z-index: 500;
@@ -1442,6 +1563,7 @@
       width: 100%; max-width: 640px;
       display: flex; flex-direction: column; align-items: center;
       gap: 12px; padding: 58px 16px 16px; flex: 1; overflow: hidden;
+      position: relative;
     }
 
     /* Battle row: hero left | monster right */
@@ -1572,29 +1694,99 @@
     .dng-monster-sprite.shake    { animation: monsterShake 0.3s ease; }
     .dng-monster-sprite.attack-left { animation: monsterAttackLeft 0.38s ease; }
 
-    /* Theme backgrounds with scenery */
-    #dungeonScreen.theme-goblin  { background: #0b0e08; }
-    #dungeonScreen.theme-goblin .dungeon-arena  { background: radial-gradient(ellipse at 50% 80%, rgba(34,80,20,0.25) 0%, transparent 65%); }
+    /* Arena transparent by default — biome background lives on #dungeonScreen */
+    .dungeon-arena { background: transparent; }
+
+    /* Hide body ambient blobs when dungeon is active */
+    body:has(#dungeonScreen.active)::before,
+    body:has(#dungeonScreen.active)::after { opacity: 0; pointer-events: none; }
+
+    /* Theme backgrounds with scenery — gradients on full screen */
+
+    /* ── Goblin: тёмная пещера ── */
+    #dungeonScreen.theme-goblin {
+      background:
+        radial-gradient(ellipse at 50% 85%, rgba(34,80,20,0.42) 0%, transparent 62%),
+        radial-gradient(ellipse at 14% 78%, rgba(60,100,20,0.20) 0%, transparent 42%),
+        radial-gradient(ellipse at 86% 82%, rgba(40,90,15,0.16) 0%, transparent 38%),
+        radial-gradient(ellipse at 50% 0%,  rgba(10,25,5,0.55)  0%, transparent 38%),
+        repeating-linear-gradient(180deg, transparent 0px, transparent 38px, rgba(20,40,10,0.07) 38px, rgba(20,40,10,0.07) 40px),
+        #080d06;
+    }
+    #dungeonScreen.theme-goblin .dungeon-arena::before {
+      content: '';
+      position: absolute; inset: 0; pointer-events: none; z-index: 0;
+      background:
+        radial-gradient(ellipse at 12% 0%, rgba(40,80,20,0.20) 0%, transparent 32%),
+        radial-gradient(ellipse at 88% 0%, rgba(30,70,15,0.16) 0%, transparent 30%),
+        repeating-linear-gradient(90deg, transparent 0px, transparent 58px, rgba(10,30,5,0.08) 58px, rgba(10,30,5,0.08) 60px);
+    }
     #dungeonScreen.theme-goblin  .dng-word-prompt { color: #a3e635; }
     #dungeonScreen.theme-goblin  .dng-opt-btn { border-color: rgba(132,204,22,0.25); }
     #dungeonScreen.theme-goblin  .dng-opt-btn:hover:not(:disabled) { border-color: #a3e635; background: rgba(132,204,22,0.1); }
 
-    #dungeonScreen.theme-spider  { background: #0a0b10; }
-    #dungeonScreen.theme-spider .dungeon-arena  { background: radial-gradient(ellipse at 50% 80%, rgba(80,20,100,0.22) 0%, transparent 65%); }
+    /* ── Spider: паучье логово ── */
+    #dungeonScreen.theme-spider {
+      background:
+        radial-gradient(ellipse at 50% 78%, rgba(80,20,110,0.38) 0%, transparent 65%),
+        radial-gradient(ellipse at 14% 32%, rgba(60,10,90,0.24) 0%, transparent 42%),
+        radial-gradient(ellipse at 86% 28%, rgba(70,15,100,0.20) 0%, transparent 38%),
+        radial-gradient(ellipse at 50% 0%,  rgba(30,5,50,0.32)  0%, transparent 42%),
+        #080810;
+    }
+    #dungeonScreen.theme-spider .dungeon-arena::before {
+      content: '';
+      position: absolute; inset: 0; pointer-events: none; z-index: 0;
+      background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Ccircle cx='200' cy='200' r='180' stroke='rgba(139,92,246,0.07)' stroke-width='1' fill='none'/%3E%3Ccircle cx='200' cy='200' r='130' stroke='rgba(139,92,246,0.06)' stroke-width='1' fill='none'/%3E%3Ccircle cx='200' cy='200' r='80' stroke='rgba(139,92,246,0.05)' stroke-width='1' fill='none'/%3E%3Ccircle cx='200' cy='200' r='40' stroke='rgba(139,92,246,0.04)' stroke-width='1' fill='none'/%3E%3Cline x1='20' y1='200' x2='380' y2='200' stroke='rgba(139,92,246,0.05)' stroke-width='1'/%3E%3Cline x1='200' y1='20' x2='200' y2='380' stroke='rgba(139,92,246,0.05)' stroke-width='1'/%3E%3Cline x1='55' y1='55' x2='345' y2='345' stroke='rgba(139,92,246,0.04)' stroke-width='1'/%3E%3Cline x1='345' y1='55' x2='55' y2='345' stroke='rgba(139,92,246,0.04)' stroke-width='1'/%3E%3C/svg%3E");
+      background-size: 400px 400px; background-position: center 30%; opacity: 0.8;
+    }
     #dungeonScreen.theme-spider  .dng-word-prompt { color: #c084fc; }
     #dungeonScreen.theme-spider  .dng-opt-btn { border-color: rgba(168,85,247,0.25); }
     #dungeonScreen.theme-spider  .dng-opt-btn:hover:not(:disabled) { border-color: #c084fc; background: rgba(168,85,247,0.1); }
     #dungeonScreen.theme-spider  .dng-monster-sprite { filter: drop-shadow(0 0 22px rgba(168,85,247,0.5)); }
 
-    #dungeonScreen.theme-skeleton { background: #0d0c0a; }
-    #dungeonScreen.theme-skeleton .dungeon-arena { background: radial-gradient(ellipse at 50% 80%, rgba(100,80,40,0.2) 0%, transparent 65%); }
+    /* ── Skeleton: склеп ── */
+    #dungeonScreen.theme-skeleton {
+      background:
+        radial-gradient(ellipse at 50% 82%, rgba(100,80,40,0.34) 0%, transparent 65%),
+        radial-gradient(ellipse at 50% 0%,  rgba(60,45,20,0.28)  0%, transparent 38%),
+        repeating-linear-gradient(90deg, transparent 0px, transparent 56px, rgba(70,55,25,0.07) 56px, rgba(70,55,25,0.07) 58px),
+        linear-gradient(180deg, rgba(15,12,8,0.52) 0%, transparent 32%),
+        #0c0b09;
+    }
+    #dungeonScreen.theme-skeleton .dungeon-arena::before {
+      content: '';
+      position: absolute; inset: 0; pointer-events: none; z-index: 0;
+      background:
+        radial-gradient(ellipse at 10% 50%, rgba(80,60,25,0.14) 0%, transparent 28%),
+        radial-gradient(ellipse at 90% 50%, rgba(80,60,25,0.14) 0%, transparent 28%),
+        repeating-linear-gradient(180deg, transparent 0px, transparent 44px, rgba(50,38,15,0.07) 44px, rgba(50,38,15,0.07) 46px);
+    }
     #dungeonScreen.theme-skeleton .dng-word-prompt { color: #d4c5a0; }
     #dungeonScreen.theme-skeleton .dng-opt-btn { border-color: rgba(212,197,160,0.25); }
     #dungeonScreen.theme-skeleton .dng-opt-btn:hover:not(:disabled) { border-color: #d4c5a0; background: rgba(212,197,160,0.08); }
     #dungeonScreen.theme-skeleton .dng-monster-sprite { filter: drop-shadow(0 0 18px rgba(212,197,160,0.4)); }
 
-    #dungeonScreen.theme-frozen  { background: #060d14; }
-    #dungeonScreen.theme-frozen .dungeon-arena  { background: radial-gradient(ellipse at 50% 80%, rgba(30,80,140,0.25) 0%, transparent 65%); }
+    /* ── Frozen: ледяная крепость ── */
+    #dungeonScreen.theme-frozen {
+      background:
+        radial-gradient(ellipse at 50% 82%, rgba(30,80,150,0.40) 0%, transparent 65%),
+        radial-gradient(ellipse at 50% 0%,  rgba(100,190,255,0.13) 0%, transparent 42%),
+        radial-gradient(ellipse at 16% 42%, rgba(50,120,200,0.16) 0%, transparent 36%),
+        radial-gradient(ellipse at 84% 38%, rgba(40,110,190,0.13) 0%, transparent 32%),
+        repeating-linear-gradient(55deg,  transparent 0px, transparent 22px, rgba(100,180,255,0.03) 22px, rgba(100,180,255,0.03) 23px),
+        repeating-linear-gradient(125deg, transparent 0px, transparent 18px, rgba(80,160,240,0.025) 18px, rgba(80,160,240,0.025) 19px),
+        #050d16;
+    }
+    #dungeonScreen.theme-frozen .dungeon-arena::before {
+      content: '';
+      position: absolute; inset: 0; pointer-events: none; z-index: 0;
+      background:
+        radial-gradient(ellipse at 10% 0%, rgba(150,220,255,0.09) 0%, transparent 32%),
+        radial-gradient(ellipse at 90% 0%, rgba(120,200,255,0.08) 0%, transparent 30%),
+        linear-gradient(180deg, rgba(80,160,240,0.07) 0%, transparent 26%);
+    }
     #dungeonScreen.theme-frozen  .dng-word-prompt { color: #93c5fd; }
     #dungeonScreen.theme-frozen  .dng-opt-btn { border-color: rgba(96,165,250,0.25); }
     #dungeonScreen.theme-frozen  .dng-opt-btn:hover:not(:disabled) { border-color: #93c5fd; background: rgba(96,165,250,0.1); }
@@ -1606,6 +1798,36 @@
     }
     .dng-boss-crown { font-size: 18px; margin-bottom: -8px; animation: crownFloat 2s ease-in-out infinite; }
     @keyframes crownFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
+
+    /* Portal Guardian */
+    .dng-guardian-sprite {
+      filter: drop-shadow(0 0 12px var(--guardian-glow, rgba(107,114,128,0.5)));
+      animation: guardianFloat 3s ease-in-out infinite;
+    }
+    .dng-guardian-sprite svg ellipse[fill="#6b7280"],
+    .dng-guardian-sprite svg ellipse[fill="#9ca3af"],
+    .dng-guardian-sprite svg polygon[fill="#6b7280"] {
+      fill: var(--guardian-color, #6b7280);
+    }
+    @keyframes guardianFloat {
+      0%,100% { transform: translateY(0);    filter: drop-shadow(0 0 12px var(--guardian-glow)); }
+      50%      { transform: translateY(-6px); filter: drop-shadow(0 0 22px var(--guardian-glow)); }
+    }
+    .dng-guardian-aura {
+      position: absolute; inset: -8px; border-radius: 50%;
+      pointer-events: none; z-index: 0;
+      animation: auraBreath 2.5s ease-in-out infinite;
+    }
+    .dng-guardian-aura--stone   { box-shadow: 0 0 24px 6px rgba(107,114,128,0.3); }
+    .dng-guardian-aura--poison  { box-shadow: 0 0 24px 6px rgba(22,163,74,0.35);  }
+    .dng-guardian-aura--frost   { box-shadow: 0 0 24px 6px rgba(56,189,248,0.35); }
+    .dng-guardian-aura--shadow  { box-shadow: 0 0 24px 6px rgba(124,58,237,0.4);  }
+    .dng-guardian-aura--fire    { box-shadow: 0 0 24px 6px rgba(239,68,68,0.4);   }
+    .dng-guardian-aura--void    { box-shadow: 0 0 24px 6px rgba(232,121,249,0.45); }
+    @keyframes auraBreath {
+      0%,100% { opacity: 0.6; transform: scale(1);    }
+      50%      { opacity: 1;   transform: scale(1.08); }
+    }
 
     /* Damage floaters */
     .dng-dmg-float {
@@ -1638,32 +1860,877 @@
     /* Combo floater */
     .dng-dmg-float.combo-float { color: #f59e0b; font-size: 14px; font-weight: 700; }
 
-    /* Dragon Mountain theme */
-    #dungeonScreen.theme-dragon { background: #0e0a04; }
-    #dungeonScreen.theme-dragon .dungeon-arena { background: radial-gradient(ellipse at center, rgba(180,60,0,0.18) 0%, transparent 70%); }
+    /* ── Dragon: вулканический пик с лавовыми трещинами ── */
+    #dungeonScreen.theme-dragon {
+      background:
+        radial-gradient(ellipse at 50% 50%, rgba(180,60,0,0.25) 0%, transparent 72%),
+        radial-gradient(ellipse at 50% 115%, rgba(255,80,0,0.50) 0%, rgba(200,50,0,0.22) 45%, transparent 68%),
+        radial-gradient(ellipse at 20% 90%, rgba(220,70,0,0.22) 0%, transparent 35%),
+        radial-gradient(ellipse at 80% 90%, rgba(240,60,0,0.20) 0%, transparent 30%),
+        repeating-linear-gradient(72deg, transparent 0px, transparent 28px, rgba(220,80,0,0.04) 28px, rgba(220,80,0,0.04) 29px),
+        linear-gradient(180deg, rgba(8,4,0,0.5) 0%, transparent 30%),
+        #0d0803;
+    }
+    #dungeonScreen.theme-dragon .dungeon-arena::before {
+      content: '';
+      position: absolute; inset: 0; pointer-events: none; z-index: 0;
+      background:
+        radial-gradient(ellipse at 30% 100%, rgba(255,100,0,0.18) 0%, transparent 35%),
+        radial-gradient(ellipse at 70% 100%, rgba(255,80,0,0.15) 0%, transparent 30%),
+        radial-gradient(ellipse at 50% 100%, rgba(255,60,0,0.25) 0%, transparent 20%);
+      animation: dragon-lava-flicker 3s ease-in-out infinite;
+    }
+    @keyframes dragon-lava-flicker {
+      0%,100% { opacity: 1; }
+      45%     { opacity: 0.65; }
+      70%     { opacity: 0.85; }
+    }
     #dungeonScreen.theme-dragon .dng-monster-sprite { filter: drop-shadow(0 0 28px rgba(239,68,68,0.55)); }
     #dungeonScreen.theme-dragon .dng-word-prompt { color: #fca5a5; text-shadow: 0 0 16px rgba(239,68,68,0.35); }
     #dungeonScreen.theme-dragon .dng-opt-btn { border-color: rgba(239,68,68,0.3); }
     #dungeonScreen.theme-dragon .dng-opt-btn:hover { border-color: rgba(239,68,68,0.7); background: rgba(180,30,0,0.2); }
     #dungeonScreen.theme-dragon .dng-timer-bar { background: rgba(239,68,68,0.12); }
 
-    /* Shadow Dungeon theme */
-    #dungeonScreen.theme-shadow { background: #080810; }
-    #dungeonScreen.theme-shadow .dungeon-arena { background: radial-gradient(ellipse at center, rgba(88,28,135,0.15) 0%, transparent 70%); }
+    /* ── Shadow: мир теней с движущимися призраками ── */
+    #dungeonScreen.theme-shadow {
+      background:
+        radial-gradient(ellipse at 50% 50%, rgba(88,28,135,0.24) 0%, transparent 72%),
+        radial-gradient(ellipse at 25% 60%, rgba(60,15,100,0.22) 0%, transparent 40%),
+        radial-gradient(ellipse at 75% 40%, rgba(70,20,110,0.18) 0%, transparent 35%),
+        radial-gradient(ellipse at 50% 90%, rgba(50,10,80,0.30) 0%, transparent 45%),
+        linear-gradient(180deg, rgba(4,4,8,0.55) 0%, transparent 30%),
+        #060608;
+    }
+    #dungeonScreen.theme-shadow .dungeon-arena::before {
+      content: '';
+      position: absolute; inset: 0; pointer-events: none; z-index: 0;
+      background:
+        radial-gradient(ellipse at 10% 70%, rgba(80,20,120,0.14) 0%, transparent 28%),
+        radial-gradient(ellipse at 90% 65%, rgba(60,15,100,0.12) 0%, transparent 25%);
+      animation: shadow-drift 6s ease-in-out infinite alternate;
+    }
+    @keyframes shadow-drift {
+      0%   { opacity: 0.4; transform: translateX(-8px); }
+      100% { opacity: 1; transform: translateX(8px); }
+    }
     #dungeonScreen.theme-shadow .dng-monster-sprite { filter: drop-shadow(0 0 24px rgba(167,139,250,0.5)); }
     #dungeonScreen.theme-shadow .dng-word-prompt { color: #c4b5fd; text-shadow: 0 0 20px rgba(167,139,250,0.4); }
     #dungeonScreen.theme-shadow .dng-opt-btn { border-color: rgba(167,139,250,0.3); }
     #dungeonScreen.theme-shadow .dng-opt-btn:hover { border-color: rgba(167,139,250,0.7); background: rgba(88,28,135,0.2); }
 
     /* Boss Lair theme — dark ice */
-    #dungeonScreen.theme-boss { background: #04040f; }
-    #dungeonScreen.theme-boss .dungeon-arena { background: radial-gradient(ellipse at 50% 80%, rgba(76,29,149,0.18) 0%, rgba(30,30,80,0.10) 50%, transparent 75%); }
+    #dungeonScreen.theme-boss {
+      background:
+        radial-gradient(ellipse at 50% 55%, rgba(76,29,149,0.22) 0%, rgba(30,30,80,0.14) 50%, transparent 78%),
+        radial-gradient(ellipse at 20% 80%, rgba(60,20,120,0.18) 0%, transparent 35%),
+        radial-gradient(ellipse at 80% 80%, rgba(55,18,110,0.16) 0%, transparent 30%),
+        linear-gradient(180deg, rgba(2,2,10,0.6) 0%, transparent 28%),
+        #04040f;
+    }
     #dungeonScreen.theme-boss .dng-word-prompt { color: #d8b4fe; text-shadow: 0 0 18px rgba(168,85,247,0.4); }
     #dungeonScreen.theme-boss .dng-opt-btn { border-color: rgba(139,92,246,0.3); }
     #dungeonScreen.theme-boss .dng-opt-btn:hover:not(:disabled) { border-color: rgba(192,132,252,0.75); background: rgba(76,29,149,0.22); }
     #dungeonScreen.theme-boss .dng-timer-bar { background: rgba(109,40,217,0.15); }
     #dungeonScreen.theme-boss .dng-timer-fill { background: linear-gradient(90deg, #6d28d9, #c084fc); }
     #dungeonScreen.theme-boss .dng-hp-track { background: rgba(109,40,217,0.12); }
+
+    /* ── Void: космическая бездна с туманностями ── */
+    #dungeonScreen.theme-void {
+      background:
+        radial-gradient(ellipse at 50% 55%, rgba(76,29,149,0.26) 0%, rgba(20,83,45,0.14) 50%, transparent 78%),
+        radial-gradient(ellipse at 20% 30%, rgba(50,20,100,0.22) 0%, transparent 40%),
+        radial-gradient(ellipse at 80% 25%, rgba(30,15,80,0.18) 0%, transparent 35%),
+        radial-gradient(ellipse at 60% 80%, rgba(20,60,40,0.16) 0%, transparent 32%),
+        radial-gradient(ellipse at 50% 100%, rgba(40,15,90,0.28) 0%, transparent 45%),
+        #020510;
+    }
+    #dungeonScreen.theme-void .dungeon-arena::before {
+      content: '';
+      position: absolute; inset: 0; pointer-events: none; z-index: 0;
+      background:
+        radial-gradient(circle at 15% 20%, rgba(200,180,255,0.10) 0%, rgba(200,180,255,0.10) 1.5px, transparent 1.5px),
+        radial-gradient(circle at 78% 18%, rgba(180,220,255,0.09) 0%, rgba(180,220,255,0.09) 1px, transparent 1px),
+        radial-gradient(circle at 42% 12%, rgba(200,200,255,0.08) 0%, rgba(200,200,255,0.08) 1px, transparent 1px),
+        radial-gradient(circle at 88% 55%, rgba(180,180,255,0.07) 0%, rgba(180,180,255,0.07) 1px, transparent 1px),
+        radial-gradient(circle at 5% 65%, rgba(200,180,255,0.09) 0%, rgba(200,180,255,0.09) 1.5px, transparent 1.5px),
+        radial-gradient(circle at 65% 75%, rgba(150,220,200,0.07) 0%, rgba(150,220,200,0.07) 1px, transparent 1px),
+        radial-gradient(ellipse at 50% 50%, rgba(60,20,120,0.12) 0%, transparent 60%);
+      animation: void-pulse 5s ease-in-out infinite alternate;
+    }
+    @keyframes void-pulse {
+      0%   { opacity: 0.6; }
+      100% { opacity: 1; }
+    }
+    #dungeonScreen.theme-void .dng-word-prompt { color: #a78bfa; text-shadow: 0 0 18px rgba(124,58,237,0.5); }
+    #dungeonScreen.theme-void .dng-opt-btn { border-color: rgba(109,40,217,0.3); }
+    #dungeonScreen.theme-void .dng-opt-btn:hover:not(:disabled) { border-color: rgba(74,222,128,0.5); background: rgba(20,83,45,0.15); }
+    #dungeonScreen.theme-void .dng-timer-bar { background: rgba(76,29,149,0.15); }
+    #dungeonScreen.theme-void .dng-timer-fill { background: linear-gradient(90deg, #4c1d95, #4ade80); }
+    #dungeonScreen.theme-void .dng-hp-track { background: rgba(76,29,149,0.12); }
+
+    /* ═══════════════════════════════════════════════════════════════════════ */
+    /* PER-LOCATION ATMOSPHERE OVERRIDES                                       */
+    /* Builds on biome base — just background gradient differs per location.   */
+    /* ═══════════════════════════════════════════════════════════════════════ */
+
+    /* ── Goblin locations ── */
+    #dungeonScreen.loc-goblin_cave {
+      background:
+        radial-gradient(ellipse at 50% 85%, rgba(34,80,20,0.50) 0%, transparent 62%),
+        radial-gradient(ellipse at 15% 80%, rgba(60,100,20,0.22) 0%, transparent 40%),
+        radial-gradient(ellipse at 85% 82%, rgba(40,90,15,0.18) 0%, transparent 38%),
+        radial-gradient(ellipse at 50% 0%,  rgba(5,15,2,0.65)   0%, transparent 35%),
+        repeating-linear-gradient(180deg, transparent 0px, transparent 38px, rgba(20,40,10,0.08) 38px, rgba(20,40,10,0.08) 40px),
+        #080d06;
+    }
+    #dungeonScreen.loc-goblin_warcamp {
+      background:
+        radial-gradient(ellipse at 20% 90%, rgba(180,60,10,0.32) 0%, transparent 38%),
+        radial-gradient(ellipse at 80% 88%, rgba(160,50,8,0.30)  0%, transparent 35%),
+        radial-gradient(ellipse at 50% 75%, rgba(100,35,5,0.24)  0%, transparent 55%),
+        radial-gradient(ellipse at 50% 0%,  rgba(30,8,2,0.62)    0%, transparent 38%),
+        repeating-linear-gradient(170deg, transparent 0px, transparent 36px, rgba(80,20,5,0.07) 36px, rgba(80,20,5,0.07) 37px),
+        #0d0602;
+    }
+    #dungeonScreen.loc-mushroom_burrows {
+      background:
+        radial-gradient(ellipse at 50% 80%, rgba(10,80,70,0.42)  0%, transparent 60%),
+        radial-gradient(ellipse at 20% 60%, rgba(20,100,80,0.24) 0%, transparent 38%),
+        radial-gradient(ellipse at 80% 65%, rgba(15,90,110,0.20) 0%, transparent 35%),
+        radial-gradient(ellipse at 40% 40%, rgba(0,60,50,0.16)   0%, transparent 30%),
+        radial-gradient(ellipse at 50% 0%,  rgba(0,12,10,0.68)   0%, transparent 35%),
+        #020d0b;
+    }
+    #dungeonScreen.loc-scrapyard_pit {
+      background:
+        radial-gradient(ellipse at 50% 90%, rgba(140,70,10,0.40) 0%, transparent 60%),
+        radial-gradient(ellipse at 30% 80%, rgba(100,50,8,0.25)  0%, transparent 38%),
+        radial-gradient(ellipse at 70% 82%, rgba(120,60,5,0.22)  0%, transparent 35%),
+        radial-gradient(ellipse at 50% 0%,  rgba(20,10,2,0.62)   0%, transparent 35%),
+        repeating-linear-gradient(85deg, transparent 0px, transparent 22px, rgba(80,40,5,0.09) 22px, rgba(80,40,5,0.09) 23px),
+        #0a0704;
+    }
+    #dungeonScreen.loc-troll_bridge {
+      background:
+        radial-gradient(ellipse at 50% 95%, rgba(20,60,80,0.48)  0%, transparent 55%),
+        radial-gradient(ellipse at 15% 85%, rgba(30,70,30,0.25)  0%, transparent 40%),
+        radial-gradient(ellipse at 85% 88%, rgba(25,65,25,0.20)  0%, transparent 35%),
+        radial-gradient(ellipse at 50% 40%, rgba(15,40,55,0.20)  0%, transparent 42%),
+        radial-gradient(ellipse at 50% 0%,  rgba(3,8,12,0.68)    0%, transparent 32%),
+        #030608;
+    }
+
+    /* ── Spider locations ── */
+    #dungeonScreen.loc-spider_nest {
+      background:
+        radial-gradient(ellipse at 50% 55%, rgba(60,15,90,0.44)  0%, transparent 70%),
+        radial-gradient(ellipse at 15% 75%, rgba(40,10,70,0.28)  0%, transparent 42%),
+        radial-gradient(ellipse at 85% 72%, rgba(35,8,65,0.24)   0%, transparent 40%),
+        radial-gradient(ellipse at 50% 0%,  rgba(8,2,14,0.68)    0%, transparent 35%),
+        repeating-linear-gradient(60deg, transparent 0px, transparent 32px, rgba(40,0,60,0.06) 32px, rgba(40,0,60,0.06) 33px),
+        #060208;
+    }
+    #dungeonScreen.loc-webbed_catacombs {
+      background:
+        radial-gradient(ellipse at 50% 55%, rgba(25,20,85,0.44)  0%, transparent 70%),
+        radial-gradient(ellipse at 20% 70%, rgba(18,15,70,0.28)  0%, transparent 42%),
+        radial-gradient(ellipse at 80% 68%, rgba(16,12,75,0.25)  0%, transparent 40%),
+        radial-gradient(ellipse at 50% 0%,  rgba(3,2,18,0.72)    0%, transparent 35%),
+        repeating-linear-gradient(72deg, transparent 0px, transparent 30px, rgba(12,10,55,0.08) 30px, rgba(12,10,55,0.08) 31px),
+        #020210;
+    }
+    #dungeonScreen.loc-venom_marshes {
+      background:
+        radial-gradient(ellipse at 50% 80%, rgba(18,72,18,0.44)  0%, transparent 62%),
+        radial-gradient(ellipse at 25% 75%, rgba(14,58,28,0.28)  0%, transparent 40%),
+        radial-gradient(ellipse at 75% 78%, rgba(16,62,14,0.24)  0%, transparent 38%),
+        radial-gradient(ellipse at 50% 40%, rgba(10,42,10,0.20)  0%, transparent 44%),
+        radial-gradient(ellipse at 50% 0%,  rgba(2,10,2,0.70)    0%, transparent 35%),
+        #020a02;
+    }
+    #dungeonScreen.loc-silk_labyrinth {
+      background:
+        radial-gradient(ellipse at 50% 50%, rgba(80,60,110,0.36) 0%, transparent 70%),
+        radial-gradient(ellipse at 30% 60%, rgba(62,52,85,0.25)  0%, transparent 42%),
+        radial-gradient(ellipse at 70% 62%, rgba(72,58,95,0.22)  0%, transparent 40%),
+        radial-gradient(ellipse at 50% 10%, rgba(130,110,155,0.18) 0%, transparent 35%),
+        radial-gradient(ellipse at 50% 0%,  rgba(10,8,16,0.62)   0%, transparent 35%),
+        #080610;
+    }
+    #dungeonScreen.loc-brood_hollow {
+      background:
+        radial-gradient(ellipse at 50% 80%, rgba(100,10,10,0.46) 0%, transparent 62%),
+        radial-gradient(ellipse at 20% 75%, rgba(80,8,8,0.28)    0%, transparent 40%),
+        radial-gradient(ellipse at 80% 78%, rgba(70,6,6,0.25)    0%, transparent 38%),
+        radial-gradient(ellipse at 50% 50%, rgba(60,32,0,0.20)   0%, transparent 48%),
+        radial-gradient(ellipse at 50% 0%,  rgba(12,2,2,0.72)    0%, transparent 35%),
+        #0a0202;
+    }
+
+    /* ── Skeleton locations ── */
+    #dungeonScreen.loc-skeleton_crypt {
+      background:
+        radial-gradient(ellipse at 50% 55%, rgba(38,48,82,0.38)  0%, transparent 70%),
+        radial-gradient(ellipse at 20% 70%, rgba(28,38,72,0.24)  0%, transparent 42%),
+        radial-gradient(ellipse at 80% 68%, rgba(32,44,78,0.20)  0%, transparent 40%),
+        radial-gradient(ellipse at 50% 0%,  rgba(4,5,14,0.68)    0%, transparent 35%),
+        repeating-linear-gradient(90deg, transparent 0px, transparent 44px, rgba(28,38,72,0.07) 44px, rgba(28,38,72,0.07) 45px),
+        #03040d;
+    }
+    #dungeonScreen.loc-cursed_graveyard {
+      background:
+        radial-gradient(ellipse at 50% 60%, rgba(18,52,28,0.42)  0%, transparent 70%),
+        radial-gradient(ellipse at 50% 18%, rgba(58,82,38,0.26)  0%, transparent 40%),
+        radial-gradient(ellipse at 20% 80%, rgba(14,42,20,0.25)  0%, transparent 40%),
+        radial-gradient(ellipse at 80% 78%, rgba(12,36,18,0.22)  0%, transparent 38%),
+        radial-gradient(ellipse at 50% 0%,  rgba(2,6,3,0.70)     0%, transparent 35%),
+        #020502;
+    }
+    #dungeonScreen.loc-bone_fortress {
+      background:
+        radial-gradient(ellipse at 20% 85%, rgba(165,102,18,0.35) 0%, transparent 42%),
+        radial-gradient(ellipse at 80% 88%, rgba(145,92,14,0.32)  0%, transparent 40%),
+        radial-gradient(ellipse at 50% 70%, rgba(105,68,10,0.26)  0%, transparent 58%),
+        radial-gradient(ellipse at 50% 0%,  rgba(18,10,2,0.68)    0%, transparent 35%),
+        repeating-linear-gradient(90deg, transparent 0px, transparent 40px, rgba(82,52,5,0.07) 40px, rgba(82,52,5,0.07) 41px),
+        #0a0702;
+    }
+    #dungeonScreen.loc-plague_sanctum {
+      background:
+        radial-gradient(ellipse at 50% 70%, rgba(28,62,10,0.46)  0%, transparent 65%),
+        radial-gradient(ellipse at 25% 65%, rgba(18,52,8,0.28)   0%, transparent 40%),
+        radial-gradient(ellipse at 75% 68%, rgba(16,48,6,0.25)   0%, transparent 38%),
+        radial-gradient(ellipse at 50% 35%, rgba(38,72,5,0.22)   0%, transparent 44%),
+        radial-gradient(ellipse at 50% 0%,  rgba(3,8,1,0.72)     0%, transparent 35%),
+        #030701;
+    }
+    #dungeonScreen.loc-tomb_forgotten {
+      background:
+        radial-gradient(ellipse at 50% 55%, rgba(62,18,82,0.42)  0%, transparent 70%),
+        radial-gradient(ellipse at 20% 65%, rgba(52,14,72,0.26)  0%, transparent 42%),
+        radial-gradient(ellipse at 80% 62%, rgba(48,12,68,0.22)  0%, transparent 40%),
+        radial-gradient(ellipse at 50% 25%, rgba(85,32,105,0.18) 0%, transparent 38%),
+        radial-gradient(ellipse at 50% 0%,  rgba(8,2,13,0.70)    0%, transparent 35%),
+        #04020a;
+    }
+
+    /* ── Frozen locations ── */
+    #dungeonScreen.loc-frozen_fortress {
+      background:
+        radial-gradient(ellipse at 50% 55%, rgba(28,78,142,0.46) 0%, transparent 68%),
+        radial-gradient(ellipse at 20% 70%, rgba(18,58,122,0.30) 0%, transparent 44%),
+        radial-gradient(ellipse at 80% 68%, rgba(16,54,118,0.26) 0%, transparent 42%),
+        radial-gradient(ellipse at 50% 0%,  rgba(2,7,22,0.68)    0%, transparent 35%),
+        repeating-linear-gradient(90deg, transparent 0px, transparent 40px, rgba(18,58,122,0.07) 40px, rgba(18,58,122,0.07) 41px),
+        #010610;
+    }
+    #dungeonScreen.loc-glacial_caverns {
+      background:
+        radial-gradient(ellipse at 50% 55%, rgba(8,48,102,0.46)  0%, transparent 68%),
+        radial-gradient(ellipse at 15% 55%, rgba(8,68,122,0.28)  0%, transparent 42%),
+        radial-gradient(ellipse at 85% 52%, rgba(6,62,118,0.25)  0%, transparent 40%),
+        radial-gradient(ellipse at 50% 12%, rgba(38,98,162,0.22) 0%, transparent 38%),
+        radial-gradient(ellipse at 50% 0%,  rgba(1,4,14,0.75)    0%, transparent 32%),
+        #010408;
+    }
+    #dungeonScreen.loc-blizzard_peak {
+      background:
+        radial-gradient(ellipse at 50% 38%, rgba(155,200,240,0.26) 0%, transparent 72%),
+        radial-gradient(ellipse at 50% 85%, rgba(78,118,182,0.40)  0%, transparent 55%),
+        radial-gradient(ellipse at 20% 60%, rgba(98,148,202,0.22)  0%, transparent 40%),
+        radial-gradient(ellipse at 80% 58%, rgba(88,138,198,0.20)  0%, transparent 38%),
+        radial-gradient(ellipse at 50% 0%,  rgba(14,20,34,0.52)    0%, transparent 35%),
+        #080e18;
+    }
+    #dungeonScreen.loc-permafrost_depths {
+      background:
+        radial-gradient(ellipse at 50% 55%, rgba(4,18,52,0.60)   0%, transparent 68%),
+        radial-gradient(ellipse at 20% 60%, rgba(3,14,42,0.36)   0%, transparent 42%),
+        radial-gradient(ellipse at 80% 58%, rgba(2,11,40,0.32)   0%, transparent 40%),
+        radial-gradient(ellipse at 50% 85%, rgba(6,28,72,0.32)   0%, transparent 48%),
+        radial-gradient(ellipse at 50% 0%,  rgba(1,2,9,0.78)     0%, transparent 32%),
+        #010209;
+    }
+    #dungeonScreen.loc-shattered_tundra {
+      background:
+        radial-gradient(ellipse at 33% 55%, rgba(38,48,122,0.42) 0%, transparent 60%),
+        radial-gradient(ellipse at 67% 60%, rgba(48,38,132,0.36) 0%, transparent 55%),
+        radial-gradient(ellipse at 50% 85%, rgba(28,58,152,0.40) 0%, transparent 52%),
+        radial-gradient(ellipse at 14% 40%, rgba(18,28,82,0.26)  0%, transparent 38%),
+        radial-gradient(ellipse at 86% 38%, rgba(24,32,88,0.24)  0%, transparent 35%),
+        radial-gradient(ellipse at 50% 0%,  rgba(3,4,16,0.70)    0%, transparent 32%),
+        #020310;
+    }
+
+    /* ── Shadow locations ── */
+    #dungeonScreen.loc-shadow_realm {
+      background:
+        radial-gradient(ellipse at 50% 50%, rgba(88,28,138,0.30) 0%, transparent 72%),
+        radial-gradient(ellipse at 25% 60%, rgba(60,15,102,0.28) 0%, transparent 44%),
+        radial-gradient(ellipse at 75% 40%, rgba(70,20,112,0.24) 0%, transparent 40%),
+        radial-gradient(ellipse at 50% 90%, rgba(50,10,82,0.38)  0%, transparent 50%),
+        radial-gradient(ellipse at 50% 0%,  rgba(4,1,9,0.70)     0%, transparent 35%),
+        #04010a;
+    }
+    #dungeonScreen.loc-obsidian_labyrinth {
+      background:
+        radial-gradient(ellipse at 50% 50%, rgba(18,18,42,0.55)  0%, transparent 68%),
+        radial-gradient(ellipse at 20% 60%, rgba(12,12,36,0.35)  0%, transparent 42%),
+        radial-gradient(ellipse at 80% 58%, rgba(10,10,32,0.32)  0%, transparent 40%),
+        radial-gradient(ellipse at 50% 90%, rgba(22,10,48,0.35)  0%, transparent 48%),
+        repeating-linear-gradient(55deg, transparent 0px, transparent 25px, rgba(28,14,52,0.08) 25px, rgba(28,14,52,0.08) 26px),
+        #010108;
+    }
+    #dungeonScreen.loc-void_between {
+      background:
+        radial-gradient(ellipse at 50% 50%, rgba(8,4,18,0.70)    0%, transparent 70%),
+        radial-gradient(ellipse at 50% 90%, rgba(18,6,32,0.35)   0%, transparent 48%),
+        radial-gradient(ellipse at 50% 0%,  rgba(2,1,6,0.82)     0%, transparent 32%),
+        #010105;
+    }
+    #dungeonScreen.loc-nightmare_bazaar {
+      background:
+        radial-gradient(ellipse at 30% 60%, rgba(122,10,30,0.40) 0%, transparent 48%),
+        radial-gradient(ellipse at 70% 55%, rgba(82,8,82,0.36)   0%, transparent 45%),
+        radial-gradient(ellipse at 50% 85%, rgba(102,5,42,0.42)  0%, transparent 52%),
+        radial-gradient(ellipse at 15% 30%, rgba(62,5,20,0.25)   0%, transparent 38%),
+        radial-gradient(ellipse at 85% 35%, rgba(52,5,62,0.22)   0%, transparent 35%),
+        radial-gradient(ellipse at 50% 0%,  rgba(12,1,4,0.72)    0%, transparent 35%),
+        #080104;
+    }
+    #dungeonScreen.loc-hollow_mirror {
+      background:
+        radial-gradient(ellipse at 50% 45%, rgba(68,68,92,0.40)  0%, transparent 70%),
+        radial-gradient(ellipse at 25% 55%, rgba(54,54,78,0.26)  0%, transparent 42%),
+        radial-gradient(ellipse at 75% 52%, rgba(62,62,84,0.24)  0%, transparent 40%),
+        radial-gradient(ellipse at 50% 90%, rgba(42,36,68,0.32)  0%, transparent 48%),
+        radial-gradient(ellipse at 50% 8%,  rgba(105,100,128,0.22) 0%, transparent 38%),
+        #040408;
+    }
+
+    /* ── Dragon locations ── */
+    #dungeonScreen.loc-dragon_peak {
+      background:
+        radial-gradient(ellipse at 50% 50%, rgba(182,62,0,0.30)  0%, transparent 72%),
+        radial-gradient(ellipse at 50% 115%, rgba(255,80,0,0.58) 0%, rgba(200,50,0,0.28) 45%, transparent 68%),
+        radial-gradient(ellipse at 20% 90%, rgba(222,70,0,0.28)  0%, transparent 38%),
+        radial-gradient(ellipse at 80% 90%, rgba(242,62,0,0.25)  0%, transparent 32%),
+        repeating-linear-gradient(72deg, transparent 0px, transparent 28px, rgba(222,80,0,0.05) 28px, rgba(222,80,0,0.05) 29px),
+        linear-gradient(180deg, rgba(8,4,0,0.56) 0%, transparent 30%),
+        #0d0803;
+    }
+    #dungeonScreen.loc-scorched_wastes {
+      background:
+        radial-gradient(ellipse at 50% 80%, rgba(82,62,40,0.46)  0%, transparent 65%),
+        radial-gradient(ellipse at 25% 85%, rgba(102,52,20,0.28) 0%, transparent 42%),
+        radial-gradient(ellipse at 75% 82%, rgba(92,56,18,0.25)  0%, transparent 40%),
+        radial-gradient(ellipse at 50% 40%, rgba(62,42,20,0.22)  0%, transparent 52%),
+        radial-gradient(ellipse at 50% 0%,  rgba(10,7,3,0.70)    0%, transparent 35%),
+        repeating-linear-gradient(65deg, transparent 0px, transparent 30px, rgba(72,52,20,0.07) 30px, rgba(72,52,20,0.07) 31px),
+        #080604;
+    }
+    #dungeonScreen.loc-magma_depths {
+      background:
+        radial-gradient(ellipse at 50% 92%, rgba(255,50,0,0.65)  0%, rgba(220,30,0,0.34) 35%, transparent 62%),
+        radial-gradient(ellipse at 20% 90%, rgba(242,62,0,0.38)  0%, transparent 38%),
+        radial-gradient(ellipse at 80% 88%, rgba(252,46,0,0.35)  0%, transparent 35%),
+        radial-gradient(ellipse at 50% 50%, rgba(142,30,0,0.32)  0%, transparent 70%),
+        radial-gradient(ellipse at 50% 0%,  rgba(16,3,0,0.78)    0%, transparent 30%),
+        #100200;
+    }
+    #dungeonScreen.loc-dragonbone_ridge {
+      background:
+        radial-gradient(ellipse at 50% 60%, rgba(102,87,72,0.42) 0%, transparent 68%),
+        radial-gradient(ellipse at 20% 70%, rgba(82,72,57,0.28)  0%, transparent 42%),
+        radial-gradient(ellipse at 80% 68%, rgba(78,68,52,0.25)  0%, transparent 40%),
+        radial-gradient(ellipse at 50% 90%, rgba(62,52,42,0.35)  0%, transparent 48%),
+        radial-gradient(ellipse at 50% 0%,  rgba(10,8,5,0.72)    0%, transparent 32%),
+        repeating-linear-gradient(80deg, transparent 0px, transparent 35px, rgba(82,68,42,0.07) 35px, rgba(82,68,42,0.07) 36px),
+        #080604;
+    }
+    #dungeonScreen.loc-ashen_throne {
+      background:
+        radial-gradient(ellipse at 50% 55%, rgba(122,82,18,0.40) 0%, transparent 65%),
+        radial-gradient(ellipse at 50% 90%, rgba(182,102,18,0.35) 0%, transparent 50%),
+        radial-gradient(ellipse at 20% 75%, rgba(82,52,10,0.28)  0%, transparent 42%),
+        radial-gradient(ellipse at 80% 72%, rgba(92,56,12,0.25)  0%, transparent 40%),
+        radial-gradient(ellipse at 50% 0%,  rgba(12,7,1,0.74)    0%, transparent 32%),
+        repeating-linear-gradient(88deg, transparent 0px, transparent 40px, rgba(102,68,10,0.08) 40px, rgba(102,68,10,0.08) 41px),
+        #090600;
+    }
+
+    /* ── Void locations ── */
+    #dungeonScreen.loc-void_abyss {
+      background:
+        radial-gradient(ellipse at 50% 55%, rgba(76,29,149,0.32) 0%, rgba(20,83,45,0.18) 50%, transparent 78%),
+        radial-gradient(ellipse at 20% 30%, rgba(50,20,102,0.28) 0%, transparent 44%),
+        radial-gradient(ellipse at 80% 25%, rgba(30,15,82,0.25)  0%, transparent 40%),
+        radial-gradient(ellipse at 60% 80%, rgba(20,62,42,0.22)  0%, transparent 36%),
+        radial-gradient(ellipse at 50% 100%, rgba(42,15,92,0.38) 0%, transparent 50%),
+        #020510;
+    }
+    #dungeonScreen.loc-shattered_expanse {
+      background:
+        radial-gradient(ellipse at 33% 44%, rgba(38,18,122,0.42) 0%, transparent 60%),
+        radial-gradient(ellipse at 67% 54%, rgba(48,14,142,0.36) 0%, transparent 55%),
+        radial-gradient(ellipse at 50% 85%, rgba(18,82,82,0.32)  0%, transparent 52%),
+        radial-gradient(ellipse at 20% 24%, rgba(28,10,92,0.26)  0%, transparent 40%),
+        radial-gradient(ellipse at 80% 20%, rgba(24,8,82,0.22)   0%, transparent 38%),
+        radial-gradient(ellipse at 50% 0%,  rgba(2,2,16,0.74)    0%, transparent 32%),
+        #020210;
+    }
+    #dungeonScreen.loc-entropy_fields {
+      background:
+        radial-gradient(ellipse at 28% 50%, rgba(82,10,62,0.36)  0%, transparent 52%),
+        radial-gradient(ellipse at 72% 44%, rgba(18,62,102,0.32) 0%, transparent 48%),
+        radial-gradient(ellipse at 50% 80%, rgba(62,82,10,0.26)  0%, transparent 46%),
+        radial-gradient(ellipse at 18% 80%, rgba(42,5,42,0.28)   0%, transparent 40%),
+        radial-gradient(ellipse at 82% 78%, rgba(10,42,72,0.25)  0%, transparent 38%),
+        radial-gradient(ellipse at 50% 0%,  rgba(5,3,8,0.74)     0%, transparent 32%),
+        #030206;
+    }
+    #dungeonScreen.loc-realm_unborn {
+      background:
+        radial-gradient(ellipse at 50% 55%, rgba(102,14,28,0.48) 0%, transparent 68%),
+        radial-gradient(ellipse at 20% 60%, rgba(82,10,52,0.32)  0%, transparent 44%),
+        radial-gradient(ellipse at 80% 58%, rgba(92,12,42,0.28)  0%, transparent 42%),
+        radial-gradient(ellipse at 50% 90%, rgba(62,8,20,0.40)   0%, transparent 50%),
+        radial-gradient(ellipse at 50% 20%, rgba(122,22,62,0.24) 0%, transparent 40%),
+        radial-gradient(ellipse at 50% 0%,  rgba(10,1,3,0.78)    0%, transparent 32%),
+        #080102;
+    }
+    #dungeonScreen.loc-last_threshold {
+      background:
+        radial-gradient(ellipse at 50% 50%, rgba(14,4,24,0.70)   0%, transparent 68%),
+        radial-gradient(ellipse at 50% 90%, rgba(18,4,32,0.45)   0%, transparent 48%),
+        radial-gradient(ellipse at 50% 10%, rgba(9,2,16,0.50)    0%, transparent 40%),
+        radial-gradient(ellipse at 50% 0%,  rgba(1,0,3,0.88)     0%, transparent 30%),
+        #010002;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════ */
+    /* BIOME EVENT FX OVERLAYS                                                 */
+    /* ═══════════════════════════════════════════════════════════════════════ */
+
+    .biome-fx {
+      position: absolute; inset: 0;
+      pointer-events: none; z-index: 8;
+      animation-fill-mode: forwards;
+    }
+
+    /* ── Red edge flash: ловушки, взрывы, засада, лава ── */
+    .biome-fx-trap_triggered,
+    .biome-fx-explosive_scrap,
+    .biome-fx-lava_burst,
+    .biome-fx-direct_dmg {
+      background: radial-gradient(ellipse at center, transparent 45%, rgba(220,38,38,0.60) 100%);
+      animation: fx-red-flash 0.7s ease-out forwards;
+    }
+    .biome-fx-ambush {
+      background: rgba(0,0,0,0.40);
+      box-shadow: inset 0 0 100px rgba(220,38,38,0.65);
+      animation: fx-ambush 0.9s ease-out forwards;
+    }
+
+    /* ── Green fog: яд, споры, паутинный туман ── */
+    .biome-fx-venomous_air,
+    .biome-fx-toxic_spores,
+    .biome-fx-web_fog {
+      background: radial-gradient(ellipse at 50% 70%, rgba(21,128,61,0.38) 0%, rgba(20,83,45,0.18) 55%, transparent 85%);
+      animation: fx-fog 1.5s ease-in-out forwards;
+    }
+
+    /* ── Web flash: паутина, ползущее нечто, яйца ── */
+    .biome-fx-sticky_web,
+    .biome-fx-something_crawls,
+    .biome-fx-egg_cluster {
+      background:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Ccircle cx='150' cy='150' r='130' stroke='rgba(139,92,246,0.18)' stroke-width='1' fill='none'/%3E%3Ccircle cx='150' cy='150' r='90' stroke='rgba(139,92,246,0.14)' stroke-width='1' fill='none'/%3E%3Ccircle cx='150' cy='150' r='50' stroke='rgba(139,92,246,0.10)' stroke-width='1' fill='none'/%3E%3Cline x1='20' y1='150' x2='280' y2='150' stroke='rgba(139,92,246,0.10)' stroke-width='1'/%3E%3Cline x1='150' y1='20' x2='150' y2='280' stroke='rgba(139,92,246,0.10)' stroke-width='1'/%3E%3Cline x1='50' y1='50' x2='250' y2='250' stroke='rgba(139,92,246,0.08)' stroke-width='1'/%3E%3Cline x1='250' y1='50' x2='50' y2='250' stroke='rgba(139,92,246,0.08)' stroke-width='1'/%3E%3C/svg%3E") center/300px 300px,
+        rgba(15,8,25,0.35);
+      animation: fx-web 1.3s ease-out forwards;
+    }
+
+    /* ── Blue frost: обморожение, метель, ледяной ветер ── */
+    .biome-fx-frostbite,
+    .biome-fx-blizzard,
+    .biome-fx-freezing_wind,
+    .biome-fx-skip_turn {
+      background: radial-gradient(ellipse at center, transparent 38%, rgba(56,189,248,0.38) 100%);
+      animation: fx-frost 1.2s ease-out forwards;
+    }
+    .biome-fx-hypothermia {
+      background: radial-gradient(ellipse at center, transparent 32%, rgba(30,100,200,0.45) 100%);
+      animation: fx-frost-grow 1.6s ease-out forwards;
+    }
+
+    /* ── Purple curse: проклятие, призраки, тени ── */
+    .biome-fx-ancient_curse,
+    .biome-fx-cursed,
+    .biome-fx-haunting_presence,
+    .biome-fx-funeral_bell,
+    .biome-fx-restless_dead,
+    .biome-fx-living_shadows,
+    .biome-fx-false_reflection,
+    .biome-fx-whispers {
+      background: radial-gradient(ellipse at center, transparent 38%, rgba(124,58,237,0.50) 100%);
+      animation: fx-curse 1.4s ease-out forwards;
+    }
+
+    /* ── Orange fire: дракон, угли, жара ── */
+    .biome-fx-burning_ground,
+    .biome-fx-falling_ember,
+    .biome-fx-dragon_fear,
+    .biome-fx-heat_exhaustion {
+      background:
+        radial-gradient(ellipse at 50% 110%, rgba(249,115,22,0.55) 0%, rgba(239,68,68,0.20) 50%, transparent 75%),
+        radial-gradient(ellipse at center, transparent 50%, rgba(239,68,68,0.15) 100%);
+      animation: fx-fire 1.0s ease-out forwards;
+    }
+
+    /* ── Void distortion: энтропия, разрывы реальности ── */
+    .biome-fx-entropy_surge,
+    .biome-fx-reality_tear,
+    .biome-fx-reality_shift,
+    .biome-fx-unstable_form,
+    .biome-fx-existence_collapse,
+    .biome-fx-random_event {
+      background: radial-gradient(ellipse at center, rgba(76,29,149,0.28) 0%, rgba(0,0,0,0.55) 100%);
+      animation: fx-void 1.3s ease-out forwards;
+    }
+
+    /* ── Gold: пропажа монет ── */
+    .biome-fx-missing_coins,
+    .biome-fx-gold_loss {
+      background: radial-gradient(ellipse at center, rgba(245,158,11,0.22) 0%, transparent 70%);
+      animation: fx-gold 0.9s ease-out forwards;
+    }
+
+    /* ── Monster buff: колокол, усиление моба ── */
+    .biome-fx-buff_queue,
+    .biome-fx-mob_power_up {
+      background: radial-gradient(ellipse at 50% 25%, rgba(220,38,38,0.32) 0%, transparent 65%);
+      animation: fx-monster-buff 1.0s ease-out forwards;
+    }
+
+    /* ── Animations ── */
+    @keyframes fx-red-flash {
+      0%   { opacity: 1; }
+      60%  { opacity: 0.75; }
+      100% { opacity: 0; }
+    }
+    @keyframes fx-ambush {
+      0%   { opacity: 0; }
+      12%  { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    @keyframes fx-fog {
+      0%   { opacity: 0; }
+      25%  { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    @keyframes fx-web {
+      0%   { opacity: 0; transform: scale(1.05); }
+      20%  { opacity: 1; transform: scale(1); }
+      100% { opacity: 0; transform: scale(0.98); }
+    }
+    @keyframes fx-frost {
+      0%   { opacity: 0; }
+      20%  { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    @keyframes fx-frost-grow {
+      0%   { opacity: 0; transform: scale(0.94); }
+      30%  { opacity: 1; transform: scale(1); }
+      100% { opacity: 0; transform: scale(1.03); }
+    }
+    @keyframes fx-curse {
+      0%   { opacity: 0; }
+      18%  { opacity: 1; }
+      80%  { opacity: 0.85; }
+      100% { opacity: 0; }
+    }
+    @keyframes fx-fire {
+      0%   { opacity: 0.8; }
+      40%  { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    @keyframes fx-void {
+      0%   { opacity: 0; }
+      28%  { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    @keyframes fx-gold {
+      0%   { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    @keyframes fx-monster-buff {
+      0%   { opacity: 0; }
+      20%  { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       WOW BIOME ATMOSPHERE — STRUCTURAL SCENE LAYER
+       ═══════════════════════════════════════════════════════════════════════ */
+
+    /* Full-screen structural SVG art — sits behind all content */
+    #dungeonScreen::before {
+      content: ''; position: absolute; inset: 0;
+      pointer-events: none; z-index: 0;
+      background-size: cover; background-position: center bottom;
+      background-repeat: no-repeat; opacity: 0.9;
+    }
+
+    /* ── GOBLIN: пещера — сталактиты, сталагмиты, факелы ── */
+    #dungeonScreen.theme-goblin::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 600'%3E%3Crect x='0' y='0' width='58' height='600' fill='%230a1506' opacity='.88'/%3E%3Crect x='742' y='0' width='58' height='600' fill='%230a1506' opacity='.88'/%3E%3Cpolygon points='0,0 85,0 42,135' fill='%230d1a08' opacity='.92'/%3E%3Cpolygon points='105,0 175,0 140,98' fill='%23091404' opacity='.87'/%3E%3Cpolygon points='225,0 290,0 257,115' fill='%230d1a08' opacity='.82'/%3E%3Cpolygon points='325,0 430,0 377,148' fill='%23071003' opacity='.92'/%3E%3Cpolygon points='468,0 538,0 503,105' fill='%230d1a08' opacity='.88'/%3E%3Cpolygon points='590,0 658,0 624,88' fill='%23091404' opacity='.82'/%3E%3Cpolygon points='705,0 800,0 752,128' fill='%230d1a08' opacity='.92'/%3E%3Cpolygon points='118,600 178,600 148,475' fill='%230a1506' opacity='.78'/%3E%3Cpolygon points='278,600 338,600 308,505' fill='%230d1a08' opacity='.72'/%3E%3Cpolygon points='485,600 545,600 515,488' fill='%230a1506' opacity='.78'/%3E%3Cpolygon points='638,600 698,600 668,502' fill='%230d1a08' opacity='.72'/%3E%3Ccircle cx='58' cy='215' r='55' fill='rgba(255,140,0,.11)'/%3E%3Ccircle cx='58' cy='215' r='28' fill='rgba(255,180,0,.08)'/%3E%3Ccircle cx='742' cy='215' r='55' fill='rgba(255,140,0,.11)'/%3E%3Ccircle cx='742' cy='215' r='28' fill='rgba(255,180,0,.08)'/%3E%3Cellipse cx='355' cy='582' rx='32' ry='13' fill='rgba(100,200,50,.13)'/%3E%3Cellipse cx='492' cy='592' rx='22' ry='10' fill='rgba(80,180,40,.10)'/%3E%3Crect x='58' y='0' width='684' height='5' fill='rgba(10,25,6,.6)'/%3E%3C/svg%3E"); }
+
+    /* ── SPIDER: паутина из углов, коконы ── */
+    #dungeonScreen.theme-spider::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 600'%3E%3Cline x1='0' y1='0' x2='310' y2='225' stroke='rgba(139,92,246,.16)' stroke-width='1'/%3E%3Cline x1='0' y1='0' x2='185' y2='360' stroke='rgba(139,92,246,.13)' stroke-width='1'/%3E%3Cline x1='0' y1='0' x2='88' y2='290' stroke='rgba(139,92,246,.10)' stroke-width='1'/%3E%3Cline x1='0' y1='0' x2='370' y2='88' stroke='rgba(139,92,246,.13)' stroke-width='1'/%3E%3Cpath d='M 0,75 Q 75,0 150,0' stroke='rgba(139,92,246,.13)' stroke-width='1' fill='none'/%3E%3Cpath d='M 0,195 Q 175,38 350,0' stroke='rgba(139,92,246,.10)' stroke-width='1' fill='none'/%3E%3Cpath d='M 0,325 Q 240,80 480,0' stroke='rgba(139,92,246,.07)' stroke-width='1' fill='none'/%3E%3Cline x1='800' y1='0' x2='490' y2='225' stroke='rgba(139,92,246,.16)' stroke-width='1'/%3E%3Cline x1='800' y1='0' x2='615' y2='360' stroke='rgba(139,92,246,.13)' stroke-width='1'/%3E%3Cline x1='800' y1='0' x2='712' y2='290' stroke='rgba(139,92,246,.10)' stroke-width='1'/%3E%3Cline x1='800' y1='0' x2='430' y2='88' stroke='rgba(139,92,246,.13)' stroke-width='1'/%3E%3Cpath d='M 800,75 Q 725,0 650,0' stroke='rgba(139,92,246,.13)' stroke-width='1' fill='none'/%3E%3Cpath d='M 800,195 Q 625,38 450,0' stroke='rgba(139,92,246,.10)' stroke-width='1' fill='none'/%3E%3Cpath d='M 800,325 Q 560,80 320,0' stroke='rgba(139,92,246,.07)' stroke-width='1' fill='none'/%3E%3Cellipse cx='162' cy='52' rx='13' ry='24' fill='rgba(70,35,110,.32)' stroke='rgba(139,92,246,.20)' stroke-width='1'/%3E%3Cline x1='162' y1='0' x2='162' y2='28' stroke='rgba(139,92,246,.16)' stroke-width='1'/%3E%3Cellipse cx='638' cy='68' rx='11' ry='20' fill='rgba(70,35,110,.28)' stroke='rgba(139,92,246,.16)' stroke-width='1'/%3E%3Cline x1='638' y1='0' x2='638' y2='48' stroke='rgba(139,92,246,.13)' stroke-width='1'/%3E%3Cellipse cx='400' cy='32' rx='9' ry='16' fill='rgba(70,35,110,.24)' stroke='rgba(139,92,246,.12)' stroke-width='1'/%3E%3Cline x1='400' y1='0' x2='400' y2='16' stroke='rgba(139,92,246,.10)' stroke-width='1'/%3E%3C/svg%3E"); }
+
+    /* ── SKELETON: склеп — колонны, арка, каменный пол ── */
+    #dungeonScreen.theme-skeleton::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 600'%3E%3Crect x='0' y='0' width='62' height='600' fill='%23100c07' opacity='.85'/%3E%3Crect x='738' y='0' width='62' height='600' fill='%23100c07' opacity='.85'/%3E%3Crect x='14' y='110' width='40' height='400' rx='5' fill='%231a1510' opacity='.65'/%3E%3Crect x='746' y='110' width='40' height='400' rx='5' fill='%231a1510' opacity='.65'/%3E%3Cellipse cx='34' cy='110' rx='28' ry='38' fill='%231a1510' opacity='.75'/%3E%3Cellipse cx='766' cy='110' rx='28' ry='38' fill='%231a1510' opacity='.75'/%3E%3Cpath d='M 0,0 L 148,0 Q 400,138 652,0 L 800,0 L 800,68 Q 400,208 0,68 Z' fill='%230f0c07' opacity='.78'/%3E%3Ccircle cx='44' cy='318' r='32' fill='rgba(255,180,60,.09)'/%3E%3Ccircle cx='756' cy='318' r='32' fill='rgba(255,180,60,.09)'/%3E%3Crect x='0' y='548' width='800' height='52' fill='%23100c07' opacity='.58'/%3E%3Cline x1='0' y1='548' x2='800' y2='548' stroke='rgba(180,150,80,.15)' stroke-width='2'/%3E%3Cline x1='0' y1='570' x2='800' y2='570' stroke='rgba(100,80,40,.08)' stroke-width='1'/%3E%3C/svg%3E"); }
+
+    /* ── FROZEN: ледяная крепость — шипы сверху и снизу, кристаллы ── */
+    #dungeonScreen.theme-frozen::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 600'%3E%3Crect x='0' y='0' width='48' height='600' fill='%23060e18' opacity='.82'/%3E%3Crect x='752' y='0' width='48' height='600' fill='%23060e18' opacity='.82'/%3E%3Cpolygon points='22,0 55,0 38,95' fill='%23b8dfff' opacity='.16'/%3E%3Cpolygon points='78,0 112,0 95,72' fill='%23a0d0ff' opacity='.13'/%3E%3Cpolygon points='142,0 180,0 161,108' fill='%23b8dfff' opacity='.14'/%3E%3Cpolygon points='215,0 252,0 233,82' fill='%23a0d0ff' opacity='.12'/%3E%3Cpolygon points='290,0 332,0 311,115' fill='%23b8dfff' opacity='.15'/%3E%3Cpolygon points='372,0 418,0 395,98' fill='%23a0d0ff' opacity='.13'/%3E%3Cpolygon points='456,0 498,0 477,88' fill='%23b8dfff' opacity='.14'/%3E%3Cpolygon points='536,0 572,0 554,78' fill='%23a0d0ff' opacity='.12'/%3E%3Cpolygon points='612,0 652,0 632,102' fill='%23b8dfff' opacity='.15'/%3E%3Cpolygon points='682,0 722,0 702,82' fill='%23a0d0ff' opacity='.13'/%3E%3Cpolygon points='748,0 778,0 763,92' fill='%23b8dfff' opacity='.14'/%3E%3Cpolygon points='85,600 128,600 106,508' fill='%23a0d0ff' opacity='.12'/%3E%3Cpolygon points='238,600 278,600 258,518' fill='%23b8dfff' opacity='.11'/%3E%3Cpolygon points='408,600 450,600 429,502' fill='%23a0d0ff' opacity='.13'/%3E%3Cpolygon points='572,600 612,600 592,515' fill='%23b8dfff' opacity='.11'/%3E%3Cpolygon points='668,600 705,600 686,522' fill='%23a0d0ff' opacity='.12'/%3E%3Ccircle cx='192' cy='148' r='4' fill='rgba(200,240,255,.48)'/%3E%3Ccircle cx='608' cy='122' r='3' fill='rgba(200,240,255,.42)'/%3E%3Ccircle cx='400' cy='78' r='5' fill='rgba(200,240,255,.38)'/%3E%3Ccircle cx='295' cy='168' r='2' fill='rgba(200,240,255,.35)'/%3E%3Crect x='0' y='0' width='800' height='7' fill='rgba(200,230,255,.14)'/%3E%3C/svg%3E"); }
+
+    /* ── DRAGON: горные силуэты, лавовые трещины, дым ── */
+    #dungeonScreen.theme-dragon::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 600'%3E%3Cpolygon points='0,600 0,328 88,215 168,348 278,182 375,318 498,195 598,308 678,225 738,318 800,285 800,600' fill='%230c0702' opacity='.90'/%3E%3Cpolygon points='0,600 0,428 68,355 125,425 228,318 318,408 448,328 548,408 648,345 728,408 800,375 800,600' fill='%23100903' opacity='.85'/%3E%3Cellipse cx='400' cy='600' rx='368' ry='58' fill='rgba(255,80,0,.20)'/%3E%3Cellipse cx='400' cy='600' rx='210' ry='32' fill='rgba(255,105,0,.14)'/%3E%3Cpath d='M 75,578 Q 195,558 338,572 Q 458,586 598,562 Q 698,548 800,570' stroke='rgba(255,100,0,.20)' stroke-width='2' fill='none'/%3E%3Cpath d='M 0,590 Q 120,575 240,582 Q 360,590 480,578 Q 620,565 740,580 Q 780,585 800,582' stroke='rgba(255,80,0,.12)' stroke-width='1.5' fill='none'/%3E%3Cellipse cx='88' cy='210' rx='30' ry='15' fill='rgba(22,12,6,.55)'/%3E%3Cellipse cx='278' cy='178' rx='35' ry='16' fill='rgba(22,12,6,.55)'/%3E%3Cellipse cx='498' cy='190' rx='28' ry='13' fill='rgba(22,12,6,.52)'/%3E%3Cellipse cx='678' cy='220' rx='22' ry='11' fill='rgba(22,12,6,.48)'/%3E%3C/svg%3E"); }
+
+    /* ── SHADOW: порталы, трещины, тёмные края ── */
+    #dungeonScreen.theme-shadow::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 600'%3E%3Crect x='0' y='0' width='48' height='600' fill='%23030308' opacity='.78'/%3E%3Crect x='752' y='0' width='48' height='600' fill='%23030308' opacity='.78'/%3E%3Ccircle cx='400' cy='285' r='225' stroke='rgba(124,58,237,.13)' stroke-width='2' fill='none'/%3E%3Ccircle cx='400' cy='285' r='168' stroke='rgba(124,58,237,.10)' stroke-width='1.5' fill='none'/%3E%3Ccircle cx='400' cy='285' r='112' stroke='rgba(124,58,237,.07)' stroke-width='1' fill='none'/%3E%3Cline x1='400' y1='60' x2='215' y2='0' stroke='rgba(124,58,237,.11)' stroke-width='1'/%3E%3Cline x1='400' y1='60' x2='585' y2='0' stroke='rgba(124,58,237,.11)' stroke-width='1'/%3E%3Cline x1='178' y1='508' x2='0' y2='600' stroke='rgba(124,58,237,.09)' stroke-width='1'/%3E%3Cline x1='622' y1='508' x2='800' y2='600' stroke='rgba(124,58,237,.09)' stroke-width='1'/%3E%3Cline x1='0' y1='285' x2='175' y2='285' stroke='rgba(124,58,237,.08)' stroke-width='1'/%3E%3Cline x1='800' y1='285' x2='625' y2='285' stroke='rgba(124,58,237,.08)' stroke-width='1'/%3E%3Cellipse cx='88' cy='298' rx='40' ry='65' stroke='rgba(100,50,200,.16)' stroke-width='2' fill='rgba(14,5,38,.28)'/%3E%3Cellipse cx='88' cy='298' rx='22' ry='38' stroke='rgba(100,50,200,.10)' stroke-width='1' fill='none'/%3E%3Cellipse cx='712' cy='298' rx='40' ry='65' stroke='rgba(100,50,200,.16)' stroke-width='2' fill='rgba(14,5,38,.28)'/%3E%3Cellipse cx='712' cy='298' rx='22' ry='38' stroke='rgba(100,50,200,.10)' stroke-width='1' fill='none'/%3E%3C/svg%3E"); }
+
+    /* ── VOID: звёздное поле, туманность, разрыв ── */
+    #dungeonScreen.theme-void::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 600'%3E%3Ccircle cx='400' cy='300' r='245' stroke='rgba(76,29,149,.15)' stroke-width='2.5' fill='none'/%3E%3Ccircle cx='400' cy='300' r='175' stroke='rgba(76,29,149,.11)' stroke-width='1.5' fill='none'/%3E%3Ccircle cx='400' cy='300' r='115' stroke='rgba(76,29,149,.08)' stroke-width='1' fill='none'/%3E%3Cpath d='M 392,78 L 406,198 L 396,308 L 410,418 L 400,525' stroke='rgba(139,92,246,.22)' stroke-width='2.5' fill='none' stroke-linecap='round'/%3E%3Cpath d='M 399,138 L 378,163 L 363,146' stroke='rgba(139,92,246,.14)' stroke-width='1' fill='none'/%3E%3Cpath d='M 403,362 L 426,388 L 440,370' stroke='rgba(139,92,246,.14)' stroke-width='1' fill='none'/%3E%3Ccircle cx='72' cy='52' r='2.2' fill='rgba(220,200,255,.68)'/%3E%3Ccircle cx='185' cy='26' r='1.6' fill='rgba(200,180,255,.58)'/%3E%3Ccircle cx='308' cy='72' r='1.1' fill='rgba(220,200,255,.48)'/%3E%3Ccircle cx='512' cy='33' r='2.1' fill='rgba(200,180,255,.62)'/%3E%3Ccircle cx='648' cy='62' r='1.6' fill='rgba(220,200,255,.58)'/%3E%3Ccircle cx='758' cy='28' r='1.1' fill='rgba(200,180,255,.48)'/%3E%3Ccircle cx='112' cy='158' r='1.1' fill='rgba(180,200,255,.42)'/%3E%3Ccircle cx='692' cy='128' r='1.6' fill='rgba(200,180,255,.52)'/%3E%3Ccircle cx='42' cy='422' r='2.2' fill='rgba(220,200,255,.58)'/%3E%3Ccircle cx='768' cy='462' r='1.6' fill='rgba(200,180,255,.52)'/%3E%3Ccircle cx='92' cy='542' r='1.1' fill='rgba(220,200,255,.40)'/%3E%3Ccircle cx='712' cy='532' r='2.1' fill='rgba(200,180,255,.58)'/%3E%3Ccircle cx='338' cy='18' r='1.6' fill='rgba(220,200,255,.52)'/%3E%3Ccircle cx='462' cy='552' r='1.1' fill='rgba(180,200,255,.42)'/%3E%3Ccircle cx='228' cy='488' r='1.6' fill='rgba(200,180,255,.45)'/%3E%3Ccircle cx='582' cy='502' r='1.1' fill='rgba(220,200,255,.38)'/%3E%3C/svg%3E"); }
+
+    /* ── Постоянная виньетка тёмных краёв ── */
+    #dungeonScreen::after {
+      content: ''; position: absolute; inset: 0;
+      pointer-events: none; z-index: 2;
+      background: radial-gradient(ellipse at 50% 45%, transparent 48%, rgba(0,0,0,0.65) 100%);
+    }
+
+    /* ── Туман у пола арены ── */
+    .dungeon-arena::after {
+      content: ''; position: absolute;
+      bottom: 0; left: 0; right: 0; height: 72px;
+      pointer-events: none; z-index: 0; border-radius: 0;
+    }
+    #dungeonScreen.theme-goblin .dungeon-arena::after   { background: linear-gradient(180deg, transparent, rgba(18,45,8,0.40)); }
+    #dungeonScreen.theme-spider .dungeon-arena::after   { background: linear-gradient(180deg, transparent, rgba(28,8,48,0.45)); }
+    #dungeonScreen.theme-skeleton .dungeon-arena::after { background: linear-gradient(180deg, transparent, rgba(18,13,6,0.38)); }
+    #dungeonScreen.theme-frozen .dungeon-arena::after   { background: linear-gradient(180deg, transparent, rgba(8,28,58,0.50)); }
+    #dungeonScreen.theme-dragon .dungeon-arena::after   { background: linear-gradient(180deg, transparent, rgba(38,8,0,0.55)); }
+    #dungeonScreen.theme-shadow .dungeon-arena::after   { background: linear-gradient(180deg, transparent, rgba(8,4,22,0.55)); }
+    #dungeonScreen.theme-void .dungeon-arena::after     { background: linear-gradient(180deg, transparent, rgba(4,2,18,0.60)); }
+
+    /* ── Fighter panel — биом-тематика рамки и фона ── */
+    #dungeonScreen.theme-goblin .dng-fighter-panel {
+      border-color: rgba(132,204,22,0.32); background: rgba(18,38,8,0.10);
+      box-shadow: inset 0 0 28px rgba(34,80,20,0.12);
+    }
+    #dungeonScreen.theme-spider .dng-fighter-panel {
+      border-color: rgba(139,92,246,0.32); background: rgba(28,8,44,0.12);
+      box-shadow: inset 0 0 28px rgba(80,20,120,0.13);
+    }
+    #dungeonScreen.theme-skeleton .dng-fighter-panel {
+      border-color: rgba(180,150,80,0.28); background: rgba(18,13,6,0.10);
+      box-shadow: inset 0 0 22px rgba(100,80,30,0.10);
+    }
+    #dungeonScreen.theme-frozen .dng-fighter-panel {
+      border-color: rgba(100,190,255,0.36); background: rgba(5,18,38,0.13);
+      box-shadow: inset 0 0 28px rgba(30,80,160,0.13), 0 0 8px rgba(80,170,240,0.07);
+    }
+    #dungeonScreen.theme-dragon .dng-fighter-panel {
+      border-color: rgba(239,68,68,0.36); background: rgba(28,8,3,0.13);
+      box-shadow: inset 0 0 32px rgba(180,50,0,0.15);
+    }
+    #dungeonScreen.theme-shadow .dng-fighter-panel {
+      border-color: rgba(124,58,237,0.32); background: rgba(8,4,18,0.13);
+      box-shadow: inset 0 0 28px rgba(80,20,140,0.13);
+    }
+    #dungeonScreen.theme-void .dng-fighter-panel {
+      border-color: rgba(76,29,149,0.32); background: rgba(4,2,14,0.13);
+      box-shadow: inset 0 0 28px rgba(50,15,100,0.13);
+    }
+
+    /* ── Световая линия пола под файтерами ── */
+    .dng-fighter-panel::after {
+      content: ''; position: absolute;
+      bottom: 0; left: 10%; right: 10%; height: 2px;
+      border-radius: 50%; pointer-events: none; z-index: 0;
+    }
+    #dungeonScreen.theme-goblin .dng-fighter-panel::after {
+      background: rgba(100,185,30,0.55);
+      box-shadow: 0 0 18px 6px rgba(80,165,20,0.22), 0 0 40px 12px rgba(60,140,10,0.10);
+    }
+    #dungeonScreen.theme-spider .dng-fighter-panel::after {
+      background: rgba(139,92,246,0.55);
+      box-shadow: 0 0 18px 6px rgba(120,70,220,0.22), 0 0 40px 12px rgba(100,50,200,0.10);
+    }
+    #dungeonScreen.theme-skeleton .dng-fighter-panel::after {
+      background: rgba(182,152,82,0.45);
+      box-shadow: 0 0 16px 5px rgba(160,132,62,0.18), 0 0 35px 10px rgba(130,105,45,0.09);
+    }
+    #dungeonScreen.theme-frozen .dng-fighter-panel::after {
+      background: rgba(105,195,255,0.58);
+      box-shadow: 0 0 20px 7px rgba(80,172,242,0.24), 0 0 45px 14px rgba(56,148,220,0.12);
+    }
+    #dungeonScreen.theme-dragon .dng-fighter-panel::after {
+      background: rgba(255,80,0,0.65);
+      box-shadow: 0 0 22px 8px rgba(220,60,0,0.28), 0 0 50px 16px rgba(180,40,0,0.13);
+    }
+    #dungeonScreen.theme-shadow .dng-fighter-panel::after {
+      background: rgba(124,58,237,0.55);
+      box-shadow: 0 0 18px 6px rgba(100,40,200,0.22), 0 0 40px 12px rgba(80,25,160,0.10);
+    }
+    #dungeonScreen.theme-void .dng-fighter-panel::after {
+      background: rgba(76,29,149,0.55);
+      box-shadow: 0 0 20px 7px rgba(60,20,130,0.24), 0 0 45px 14px rgba(40,12,100,0.11);
+    }
+
+    /* ── Entry animation: арена поднимается ── */
+    @keyframes dngArenaRise {
+      from { opacity: 0; transform: translateY(-22px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    #dungeonScreen.dng-entering .dungeon-arena {
+      animation: dngArenaRise 0.65s cubic-bezier(0.22,1,0.36,1) 0.08s both;
+    }
+
+    /* ── Entry flash ── */
+    @keyframes dngFlashAnim {
+      0%   { opacity: 0; }
+      18%  { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    .dng-flash {
+      position: absolute; inset: 0; pointer-events: none; z-index: 90;
+      animation: dngFlashAnim 0.85s ease-out forwards;
+    }
+    #dungeonScreen.theme-goblin  .dng-flash { background: radial-gradient(ellipse at center, transparent 35%, rgba(100,200,30,0.42) 100%); }
+    #dungeonScreen.theme-spider  .dng-flash { background: radial-gradient(ellipse at center, transparent 35%, rgba(139,92,246,0.45) 100%); }
+    #dungeonScreen.theme-skeleton .dng-flash { background: radial-gradient(ellipse at center, transparent 35%, rgba(180,150,80,0.38) 100%); }
+    #dungeonScreen.theme-frozen  .dng-flash { background: radial-gradient(ellipse at center, transparent 35%, rgba(100,190,255,0.45) 100%); }
+    #dungeonScreen.theme-dragon  .dng-flash { background: radial-gradient(ellipse at center, transparent 35%, rgba(239,68,68,0.48) 100%); }
+    #dungeonScreen.theme-shadow  .dng-flash { background: radial-gradient(ellipse at center, transparent 35%, rgba(124,58,237,0.48) 100%); }
+    #dungeonScreen.theme-void    .dng-flash { background: radial-gradient(ellipse at center, transparent 35%, rgba(76,29,149,0.50) 100%); }
+    #dungeonScreen.theme-boss    .dng-flash { background: radial-gradient(ellipse at center, transparent 35%, rgba(139,92,246,0.52) 100%); }
+
+    /* ── Location banner ── */
+    @keyframes dngBannerAnim {
+      0%   { opacity: 0; transform: translateY(12px) scale(0.95); }
+      14%  { opacity: 1; transform: translateY(0) scale(1); }
+      72%  { opacity: 1; }
+      100% { opacity: 0; transform: translateY(-10px); }
+    }
+    .dng-location-banner {
+      position: absolute; inset: 0; pointer-events: none; z-index: 100;
+      display: flex; align-items: center; justify-content: center;
+      animation: dngBannerAnim 2.8s cubic-bezier(0.22,1,0.36,1) forwards;
+    }
+    .dng-loc-name {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(22px,5vw,38px); letter-spacing: 0.07em;
+      color: #fff; padding: 14px 48px;
+      background: rgba(0,0,0,0.58);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 14px; backdrop-filter: blur(8px);
+      text-shadow: 0 0 28px currentColor, 0 2px 8px rgba(0,0,0,0.95);
+    }
+    #dungeonScreen.theme-goblin  .dng-loc-name { color:#a3e635; border-color:rgba(132,204,22,0.38); }
+    #dungeonScreen.theme-spider  .dng-loc-name { color:#c084fc; border-color:rgba(168,85,247,0.38); }
+    #dungeonScreen.theme-skeleton .dng-loc-name { color:#d4c5a0; border-color:rgba(212,197,160,0.32); }
+    #dungeonScreen.theme-frozen  .dng-loc-name { color:#93c5fd; border-color:rgba(96,165,250,0.38); }
+    #dungeonScreen.theme-dragon  .dng-loc-name { color:#fca5a5; border-color:rgba(239,68,68,0.38); }
+    #dungeonScreen.theme-shadow  .dng-loc-name { color:#c4b5fd; border-color:rgba(167,139,250,0.38); }
+    #dungeonScreen.theme-void    .dng-loc-name { color:#a78bfa; border-color:rgba(109,40,217,0.38); }
+    #dungeonScreen.theme-boss    .dng-loc-name { color:#d8b4fe; border-color:rgba(139,92,246,0.38); }
+
+    /* ── Biome particles ── */
+    .bmp {
+      position: absolute; pointer-events: none; z-index: 3;
+      animation-iteration-count: infinite; animation-timing-function: linear;
+    }
+    /* Dragon embers */
+    .bmp-ember {
+      width: 4px; height: 4px; border-radius: 50%;
+      background: #f97316;
+      box-shadow: 0 0 7px #ef4444, 0 0 16px rgba(249,115,22,0.5);
+      animation-name: bmpEmberRise;
+    }
+    @keyframes bmpEmberRise {
+      0%   { transform: translateY(0) translateX(0) scale(1); opacity: 0.9; }
+      45%  { opacity: 0.75; }
+      100% { transform: translateY(-210px) translateX(var(--drift,20px)) scale(0.08); opacity: 0; }
+    }
+    /* Frozen snowflakes */
+    .bmp-snow {
+      width: 4px; height: 4px; border-radius: 50%;
+      background: rgba(212,242,255,0.92);
+      box-shadow: 0 0 5px rgba(160,222,255,0.65);
+      animation-name: bmpSnowfall; animation-timing-function: ease-in;
+    }
+    @keyframes bmpSnowfall {
+      0%   { transform: translateY(-12px) translateX(0) rotate(0deg); opacity: 0; }
+      7%   { opacity: 0.88; }
+      92%  { opacity: 0.55; }
+      100% { transform: translateY(88vh) translateX(var(--drift,10px)) rotate(200deg); opacity: 0; }
+    }
+    /* Void stars */
+    .bmp-star {
+      width: 2px; height: 2px; border-radius: 50%;
+      background: #ddd2ff;
+      box-shadow: 0 0 5px #c4b5fd, 0 0 14px rgba(167,139,250,0.42);
+      animation-name: bmpStarTwinkle; animation-timing-function: ease-in-out;
+    }
+    @keyframes bmpStarTwinkle {
+      0%, 100% { opacity: 0.05; transform: scale(0.7); }
+      50%      { opacity: 1; transform: scale(2.4); }
+    }
+    /* Shadow wisps */
+    .bmp-shadow {
+      width: 88px; height: 26px; border-radius: 50%;
+      background: radial-gradient(ellipse at center, rgba(88,28,135,0.40) 0%, transparent 70%);
+      animation-name: bmpShadowWisp; animation-timing-function: ease-in-out;
+    }
+    @keyframes bmpShadowWisp {
+      0%   { transform: translateX(-115px); opacity: 0; }
+      14%  { opacity: 1; }
+      86%  { opacity: 0.7; }
+      100% { transform: translateX(115vw); opacity: 0; }
+    }
+    /* Spider web strands */
+    .bmp-web {
+      width: 1px; height: 58px;
+      background: linear-gradient(180deg, rgba(139,92,246,0.60), rgba(100,60,200,0.22), transparent);
+      animation-name: bmpWebSway; animation-timing-function: ease-in-out;
+    }
+    @keyframes bmpWebSway {
+      0%, 100% { transform: rotate(-11deg) translateY(0); opacity: 0.28; }
+      50%      { transform: rotate(11deg) translateY(10px); opacity: 0.78; }
+    }
+    /* Goblin spores */
+    .bmp-spore {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: rgba(163,230,53,0.78);
+      box-shadow: 0 0 9px rgba(132,204,22,0.52);
+      animation-name: bmpSporeFloat;
+    }
+    @keyframes bmpSporeFloat {
+      0%   { transform: translateY(0) translateX(0) scale(1); opacity: 0.88; }
+      100% { transform: translateY(-140px) translateX(var(--drift,14px)) scale(0.12); opacity: 0; }
+    }
+    /* Skeleton dust */
+    .bmp-dust {
+      width: 3px; height: 3px; border-radius: 50%;
+      background: rgba(212,197,160,0.68);
+      box-shadow: 0 0 5px rgba(212,197,160,0.32);
+      animation-name: bmpDustFloat;
+    }
+    @keyframes bmpDustFloat {
+      0%   { transform: translateY(0) translateX(0); opacity: 0.68; }
+      100% { transform: translateY(-95px) translateX(var(--drift,18px)); opacity: 0; }
+    }
 
     /* Phase 1 — solid Dark Lord */
     #dungeonScreen.boss-phase-1 .dng-monster-sprite {
@@ -1917,10 +2984,97 @@
     .dng-status {
       font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 6px;
     }
-    .dng-status.poison { background: rgba(167,139,250,0.2); color: #a78bfa; }
-    .dng-status.freeze { background: rgba(96,165,250,0.2);  color: #60a5fa; }
-    .dng-status.bleed  { background: rgba(248,113,113,0.2); color: #f87171; }
-    .dng-status.weaken { background: rgba(251,146,60,0.2);  color: #fb923c; }
+    .dng-status.poison      { background: rgba(167,139,250,0.2); color: #a78bfa; }
+    .dng-status.freeze      { background: rgba(96,165,250,0.2);  color: #60a5fa; }
+    .dng-status.bleed       { background: rgba(248,113,113,0.2); color: #f87171; }
+    .dng-status.weaken      { background: rgba(251,146,60,0.2);  color: #fb923c; }
+    /* Biome statuses */
+    .dng-status.slowed      { background: rgba(148,163,184,0.18); color: #94a3b8; }
+    .dng-status.miss-attack { background: rgba(100,116,139,0.18); color: #94a3b8; }
+    .dng-status.weakened    { background: rgba(251,146,60,0.18);  color: #fb923c; }
+    .dng-status.cursed      { background: rgba(139,92,246,0.18);  color: #a78bfa; }
+    .dng-status.hypothermia { background: rgba(56,189,248,0.18);  color: #38bdf8; }
+
+    /* Illusion mob styling */
+    #monsterZone.is-illusion .dng-monster-sprite { opacity: 0.55; filter: hue-rotate(200deg) saturate(0.7); }
+    #monsterZone.is-illusion .dng-fighter-name   { opacity: 0.7; color: #818cf8; }
+    #monsterZone.is-illusion .dng-hp-track       { opacity: 0.65; }
+
+    /* ── Biome events HUD ── */
+    .biome-events-hud {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      z-index: 20;
+      pointer-events: none;
+      max-width: 160px;
+    }
+    .biome-event-chip {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(15, 10, 28, 0.82);
+      border: 1px solid rgba(109, 40, 217, 0.35);
+      border-radius: 7px;
+      padding: 3px 8px;
+      font-size: 0.68rem;
+      color: #c4b5fd;
+      backdrop-filter: blur(4px);
+      white-space: nowrap;
+    }
+    .biome-event-chip .bec-icon { font-size: 0.8rem; }
+    .biome-event-chip .bec-label { color: #a78bfa; font-weight: 600; }
+
+    /* ── Wave multi-mob layout ── */
+    #monsterZone.wave-multi {
+      display: flex;
+      flex-direction: row;
+      align-items: stretch;
+      gap: 6px;
+      padding: 6px;
+      overflow: hidden;
+    }
+    .dng-mob-card {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      padding: 6px 4px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      transition: border-color .15s, background .15s;
+      min-width: 0;
+    }
+    .dng-mob-card.mob-active {
+      border-color: rgba(250,204,21,0.55);
+      background: rgba(250,204,21,0.06);
+      box-shadow: 0 0 14px rgba(250,204,21,0.15);
+    }
+    .dng-mob-card.mob-dead {
+      opacity: 0.35;
+      filter: grayscale(0.8);
+    }
+    .dng-mob-card .dng-monster-sprite svg { width: 58px; height: 58px; }
+    .dng-mob-card .dng-mob-name {
+      font-size: 0.62rem;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+    .dng-mob-card .dng-hp-track { height: 4px; width: 100%; margin-top: 2px; }
+    .dng-mob-card .dng-hp-text  { font-size: 0.6rem; color: #9ca3af; }
+    .dng-illusion-badge {
+      font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 6px;
+      background: rgba(129,140,248,0.18); color: #818cf8;
+      text-align: center; margin-bottom: 2px;
+    }
 
     /* ===== BOSS PHASE BANNER ===== */
     .dng-phase-banner {
@@ -2064,7 +3218,7 @@
     display:grid; place-items:center; transition:all 0.15s;
   }
   .auth-close:hover { background:rgba(255,255,255,0.1); color:#e8eaf0; }
-  .auth-body { padding:24px; display:flex; flex-direction:column; gap:14px; }
+  .auth-body { padding:24px; display:flex; flex-direction:column; gap:14px; overflow-y:auto; max-height:calc(90vh - 68px); }
   .auth-tabs {
     display:flex; gap:0; background:rgba(255,255,255,0.04);
     border-radius:10px; padding:3px;
