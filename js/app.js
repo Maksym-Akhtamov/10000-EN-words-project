@@ -3196,6 +3196,12 @@ function renderGodMode() {
     </div>
     ` : ''}
 
+    <div style="background:var(--surface2);border:1px solid rgba(167,139,250,0.2);border-radius:12px;padding:14px;margin-bottom:10px">
+      <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(167,139,250,0.55);margin-bottom:8px">🔬 Content Test</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px">Данж без таймера. Выбери любого моба, триггери любое событие боя вручную.</div>
+      <button onclick="godLaunchContentTest()" style="width:100%;padding:9px;border-radius:8px;background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.4);color:#a78bfa;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer">▶ Запустить Content Test</button>
+    </div>
+
     ${(() => {
       const themes = [...new Set(BIOME_POOL.map(b => b.theme))];
       const themeEmojis = { goblin:'👺', spider:'🕷️', skeleton:'💀', frozen:'❄️', shadow:'👤', dragon:'🐉', void:'🌌', boss:'👿' };
@@ -3381,6 +3387,352 @@ function godEnterBiomeDungeon(biomeId) {
 
   closeAuth();
   enterDungeon(validSet.id, floor, cfg);
+}
+
+// ===================== CONTENT TEST =====================
+
+let ctSelectedMobId = null;
+let ctPanelOpen = true;
+
+function godLaunchContentTest() {
+  const validSet = sets.find(s => (s.words?.length ?? 0) >= 4);
+  if (!validSet) { alert('Нужен сет с минимум 4 словами!'); return; }
+
+  // Dummy indestructible mob
+  const dummy = {
+    name: 'Test Dummy', emoji: '🪆',
+    maxHp: [9999, 9999], dmg: [1, 1],
+    armor: 0, dodge: 0, block: 0, count: [999, 999],
+  };
+  const cfg = {
+    name: '🔬 Content Test',
+    theme: 'goblin',
+    timerSec: 0,
+    goldReward: [0, 0],
+    monsters: [dummy],
+    boss: dummy,
+    _contentTest: true,
+    _godTest: true,
+  };
+
+  ctSelectedMobId = null;
+  ctPanelOpen = true;
+  closeAuth();
+  enterDungeon(validSet.id, 1, cfg);
+
+  // Give hero huge HP so they can't die easily
+  if (dng) {
+    dng.heroHp = 99999;
+    dng.heroBaseMaxHp = 99999;
+    if (dng.heroStats) dng.heroStats.maxHp = 99999;
+    if (dng.cfg) dng.cfg.heroMaxHp = 99999;
+  }
+
+  setTimeout(() => ctInjectPanel(), 200);
+}
+
+function ctInjectPanel() {
+  document.getElementById('ctPanel')?.remove();
+  if (!dng?.cfg?._contentTest) return;
+  const panel = document.createElement('div');
+  panel.id = 'ctPanel';
+  panel.style.cssText = [
+    'position:fixed;bottom:0;left:0;right:0;z-index:9000',
+    'background:#0d0818;border-top:1px solid rgba(167,139,250,0.35)',
+    'font-family:"DM Sans",sans-serif;max-height:65vh;display:flex;flex-direction:column',
+  ].join(';');
+  panel.innerHTML = ctPanelHTML();
+  document.body.appendChild(panel);
+  ctScrollToSelected();
+}
+
+function ctPanelHTML() {
+  const m = ctSelectedMobId ? MONSTER_POOL.find(m => m.id === ctSelectedMobId) : null;
+  const mobLabel = m ? `${m.emoji} ${m.name}` : '— не выбран —';
+
+  // ── helper: one action button ────────────────────────────────
+  const btn = (label, rgb, fn, small = false) =>
+    `<button onclick="${fn}" style="padding:${small?'3px 7px':'5px 10px'};border-radius:6px;font-size:${small?'10':'11'}px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;background:rgba(${rgb},0.12);border:1px solid rgba(${rgb},0.38);color:rgb(${rgb})">${label}</button>`;
+
+  const G = '74,222,128'; const R = '248,113,113'; const B = '96,165,250';
+  const Y = '250,204,21'; const P = '167,139,250'; const T = '148,163,184';
+  const O = '251,146,60'; const C = '125,211,252'; const M = '232,121,249';
+
+  // ── mob list ─────────────────────────────────────────────────
+  const biomeEmojis = { goblin:'👺', spider:'🕷️', skeleton:'💀', frozen:'❄️', shadow:'👤', dragon:'🐉', void:'🌌' };
+  const biomes = {};
+  MONSTER_POOL.forEach(mob => {
+    (biomes[mob.biome] = biomes[mob.biome] || []).push(mob);
+  });
+  const mobListHTML = Object.entries(biomes).map(([biome, mobs]) => `
+    <div style="margin-bottom:6px">
+      <div style="font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:rgba(167,139,250,0.45);margin-bottom:3px">${biomeEmojis[biome]??'?'} ${biome}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:2px">
+        ${mobs.map(mob => `<button onclick="ctSelectMob('${mob.id}')" id="ctMobBtn_${mob.id}"
+          style="font-size:10px;padding:2px 7px;border-radius:5px;cursor:pointer;font-family:'DM Sans',sans-serif;
+            background:${ctSelectedMobId===mob.id?'rgba(167,139,250,0.22)':'rgba(255,255,255,0.04)'};
+            border:1px solid ${ctSelectedMobId===mob.id?'rgba(167,139,250,0.55)':'rgba(255,255,255,0.08)'};
+            color:${ctSelectedMobId===mob.id?'#c4b5fd':'var(--muted)'}">${mob.emoji} ${mob.name}</button>`).join('')}
+      </div>
+    </div>
+  `).join('');
+
+  const body = ctPanelOpen ? `
+    <div style="overflow-y:auto;padding:10px 14px 14px;flex:1">
+
+      <!-- Row 1: Hero attacks + Mob attacks -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div>
+          <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(74,222,128,0.65);margin-bottom:5px">⚔️ Герой → Моб</div>
+          <div style="display:flex;flex-wrap:wrap;gap:3px">
+            ${btn('Обычный удар',G,"ctTrigger('hero_regular')")}
+            ${btn('💥 Крит',Y,"ctTrigger('hero_crit')")}
+            ${btn('💨 Промах',T,"ctTrigger('hero_miss')")}
+            ${btn('🔰 Заблок.',B,"ctTrigger('hero_blocked')")}
+            ${btn('💨 Уклон.',T,"ctTrigger('hero_dodged')")}
+          </div>
+        </div>
+        <div>
+          <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(248,113,113,0.65);margin-bottom:5px">👊 Моб → Герой</div>
+          <div style="display:flex;flex-wrap:wrap;gap:3px">
+            ${btn('Удар моба',R,"ctTrigger('mob_hit')")}
+            ${btn('💥 Крит моба',O,"ctTrigger('mob_crit')")}
+            ${btn('🛡️ Герой блок.',B,"ctTrigger('mob_hero_block')")}
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 2: Status on mob + Status on hero -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div>
+          <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(163,230,53,0.65);margin-bottom:5px">🎯 Статус → Моб</div>
+          <div style="display:flex;flex-wrap:wrap;gap:3px">
+            ${btn('🩸 Кровотечение',R,"ctTrigger('mob_bleed')",true)}
+            ${btn('⚡ Стан 3с',Y,"ctTrigger('mob_stun')",true)}
+          </div>
+        </div>
+        <div>
+          <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(248,113,113,0.65);margin-bottom:5px">🎯 Статус → Герой</div>
+          <div style="display:flex;flex-wrap:wrap;gap:3px">
+            ${btn('☠️ Яд',G,"ctTrigger('hero_poison')",true)}
+            ${btn('🧊 Заморозка',C,"ctTrigger('hero_freeze')",true)}
+            ${btn('🩸 Кровь',R,"ctTrigger('hero_bleed')",true)}
+            ${btn('💨 -Точность',T,"ctTrigger('hero_miss_attack')",true)}
+            ${btn('💔 Ослаблен',R,"ctTrigger('hero_weakened')",true)}
+            ${btn('🐌 Замедлен',T,"ctTrigger('hero_slowed')",true)}
+            ${btn('👁️ Проклят',M,"ctTrigger('hero_cursed')",true)}
+            ${btn('❄️ Гипотермия',C,"ctTrigger('hero_hypothermia')",true)}
+            ${btn('🔴 Оглушён 3с',Y,"ctTrigger('hero_stun')",true)}
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 3: Game events -->
+      <div style="margin-bottom:10px">
+        <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(167,139,250,0.65);margin-bottom:5px">🎮 Игровые события</div>
+        <div style="display:flex;flex-wrap:wrap;gap:3px">
+          ${btn('✅ Правильный ответ',G,"ctTrigger('correct')")}
+          ${btn('❌ Неправильный',R,"ctTrigger('wrong')")}
+          ${btn('🪙 Золото',Y,"ctTrigger('gold')")}
+          ${btn('⬆️ Level Up',P,"ctTrigger('levelup')")}
+          ${btn('🏆 Победа',Y,"ctTrigger('victory')")}
+          ${btn('💀 Смерть героя',R,"ctTrigger('death')")}
+          ${btn('🌀 Портал',P,"ctTrigger('portal')")}
+          ${btn('⏱️ Таймер!',O,"ctTrigger('timer_danger')")}
+        </div>
+      </div>
+
+      <!-- Row 4: Mob list -->
+      <div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:8px">
+        <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(167,139,250,0.5);margin-bottom:6px">📋 Список мобов</div>
+        ${mobListHTML}
+      </div>
+    </div>
+  ` : '';
+
+  return `
+    <div style="padding:7px 14px;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;gap:8px;flex-shrink:0;cursor:pointer" onclick="ctTogglePanel()">
+      <span style="font-size:11px;font-weight:700;color:#a78bfa;letter-spacing:.05em">🔬 CONTENT TEST</span>
+      <span style="font-size:11px;color:${m?'#e2e8f0':'var(--muted)'}">Моб: ${mobLabel}</span>
+      <span style="margin-left:auto;font-size:11px;color:var(--muted)">${ctPanelOpen?'▼':'▲'}</span>
+    </div>
+    ${body}
+  `;
+}
+
+function ctTogglePanel() {
+  ctPanelOpen = !ctPanelOpen;
+  const panel = document.getElementById('ctPanel');
+  if (panel) panel.innerHTML = ctPanelHTML();
+}
+
+function ctSelectMob(mobId) {
+  if (!dng) return;
+  const template = MONSTER_POOL.find(m => m.id === mobId);
+  if (!template) return;
+  ctSelectedMobId = mobId;
+
+  const hero = getHero();
+  const floor = godTestFloor || 1;
+  const base  = getMonsterStats(hero?.level ?? 1, floor, 'normal');
+  const hp    = Math.max(1, Math.round(base.hp  * (template.hpMult  ?? 1)));
+  const dmg   = Math.max(1, Math.round(base.dmg * (template.dmgMult ?? 1)));
+  const arm   = Math.max(0, Math.round(base.armor * (template.hpMult ?? 1)));
+  const extras = applyMechanicsToMob({ hp, dmg, armor: arm }, template.mechanics, floor);
+
+  const mob = {
+    ...template,
+    hp, maxHp: hp,
+    dmg,
+    armor: arm, currentArmor: arm,
+    dodge:  extras.dodge  ?? 0,
+    block:  extras.block  ?? 0,
+    isBoss: false,
+    ...(extras.poison  && { poison:  extras.poison }),
+    ...(extras.freeze  && { freeze:  extras.freeze }),
+  };
+
+  const wave = currentWave?.();
+  if (wave) { wave.mobs = [mob]; wave.activeIdx = 0; }
+  if (dng) dng.monsterStatuses = [];
+
+  renderDungeonMonster?.();
+  updateMonsterHpBar?.();
+
+  const panel = document.getElementById('ctPanel');
+  if (panel) panel.innerHTML = ctPanelHTML();
+  ctScrollToSelected();
+}
+
+function ctScrollToSelected() {
+  if (!ctSelectedMobId) return;
+  setTimeout(() => {
+    const el = document.getElementById(`ctMobBtn_${ctSelectedMobId}`);
+    el?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, 50);
+}
+
+function ctTrigger(type) {
+  if (!dng) return;
+  const m = currentMob?.();
+
+  switch (type) {
+
+    // ── Hero → Mob ────────────────────────────────────────────
+    case 'hero_regular': {
+      playHeroAttackAnim?.();
+      DungeonSounds.playHit(m?.name, false);
+      if (!m) break;
+      const dmg = Math.max(1, dng.cfg.heroDmg || 10);
+      m.hp = Math.max(0, m.hp - dmg);
+      if (m.hp <= 0) setTimeout(() => DungeonSounds.playDeath(m.name), 200);
+      spawnFloater?.(`-${dmg}`, 'monster-dmg', 'monsterZone');
+      const sp = document.getElementById('monsterSprite');
+      if (sp) { sp.classList.add('hit'); setTimeout(() => sp.classList.remove('hit'), 450); }
+      updateMonsterHpBar?.();
+      break;
+    }
+    case 'hero_crit': {
+      playHeroAttackAnim?.();
+      DungeonSounds.playHit(m?.name, true);
+      if (!m) break;
+      const dmg = Math.max(1, Math.round((dng.cfg.heroDmg || 10) * 2.5));
+      m.hp = Math.max(0, m.hp - dmg);
+      if (m.hp <= 0) setTimeout(() => DungeonSounds.playDeath(m.name), 200);
+      spawnFloater?.(`⚡ CRIT!`, 'combo-float', 'monsterZone');
+      spawnFloater?.(`-${dmg}`, 'crit-monster-dmg', 'monsterZone');
+      const sp = document.getElementById('monsterSprite');
+      if (sp) { sp.classList.add('hit','shake'); setTimeout(() => sp.classList.remove('hit','shake'), 450); }
+      updateMonsterHpBar?.();
+      break;
+    }
+    case 'hero_miss': {
+      playHeroAttackAnim?.();
+      DungeonSounds.play('sword_miss');
+      spawnFloater?.('💨 Miss!', 'miss-float', 'monsterZone');
+      break;
+    }
+    case 'hero_blocked': {
+      playHeroAttackAnim?.();
+      DungeonSounds.play('sword_block');
+      spawnFloater?.('🔰 Block!', 'miss-float', 'monsterZone');
+      const sp = document.getElementById('monsterSprite');
+      if (sp) { sp.style.filter = 'drop-shadow(0 0 12px #60a5fa) brightness(1.4)'; setTimeout(() => { if (sp) sp.style.filter = ''; }, 400); }
+      break;
+    }
+    case 'hero_dodged': {
+      playHeroAttackAnim?.();
+      DungeonSounds.play('sword_miss');
+      spawnFloater?.('Dodge!', 'miss-float', 'monsterZone');
+      const sp = document.getElementById('monsterSprite');
+      if (sp) { sp.style.transform = 'translateX(18px)'; setTimeout(() => sp.style.transform = '', 300); }
+      break;
+    }
+
+    // ── Mob → Hero ────────────────────────────────────────────
+    case 'mob_hit': {
+      if (!m) break;
+      DungeonSounds.playMobAttack(m);
+      applyHeroDamage?.(Math.max(1, m.dmg || 5), m.emoji || '👊', false, false);
+      break;
+    }
+    case 'mob_crit': {
+      if (!m) break;
+      DungeonSounds.playMobAttack(m);
+      spawnFloater?.('💥 CRIT!', 'crit-hero-dmg', 'heroHpBar');
+      applyHeroDamage?.(Math.max(1, Math.round((m.dmg || 5) * 2)), m.emoji || '👊', false, true);
+      break;
+    }
+    case 'mob_hero_block': {
+      spawnFloater?.('🛡️ Blocked!', 'miss-float', 'heroHpBar');
+      DungeonSounds.play('block');
+      break;
+    }
+
+    // ── Status → Mob ─────────────────────────────────────────
+    case 'mob_bleed': {
+      applyMonsterBleed?.(8);
+      spawnFloater?.('🩸 Bleed!', 'monster-dmg', 'monsterZone');
+      break;
+    }
+    case 'mob_stun': {
+      if (!dng) break;
+      dng.mobStunEnd = Date.now() + 3000;
+      showStunBar?.(3);
+      spawnFloater?.('⚡ STUNNED 3s!', 'miss-float', 'monsterZone');
+      break;
+    }
+
+    // ── Status → Hero ─────────────────────────────────────────
+    case 'hero_poison':       applyStatus?.({ type:'poison',      dmg:6,          roundsLeft:3 });
+      spawnFloater?.('☠️ Poisoned!', 'hero-dmg', 'heroHpBar'); break;
+    case 'hero_freeze':       applyFreezeStatus?.(2); break;
+    case 'hero_bleed':        applyStatus?.({ type:'bleed',       dmg:5,          roundsLeft:4 });
+      spawnFloater?.('🩸 Bleed!', 'hero-dmg', 'heroHpBar'); break;
+    case 'hero_miss_attack':  applyStatus?.({ type:'miss_attack', chance:0.4,     roundsLeft:3 });
+      spawnFloater?.('💨 -40% Точность', 'miss-float', 'heroHpBar'); break;
+    case 'hero_weakened':     applyStatus?.({ type:'weakened',    pct:0.3,        roundsLeft:3 });
+      spawnFloater?.('💔 -30% Урон', 'miss-float', 'heroHpBar'); break;
+    case 'hero_slowed':       applyStatus?.({ type:'slowed',      value:2,        roundsLeft:3 });
+      spawnFloater?.('🐌 Замедлен', 'miss-float', 'heroHpBar'); break;
+    case 'hero_cursed':       applyStatus?.({ type:'cursed',      stat:'dmg', value:5, roundsLeft:3 });
+      spawnFloater?.('👁️ Проклят!', 'miss-float', 'heroHpBar'); break;
+    case 'hero_hypothermia':
+      if (dng) dng.heroStatuses.push({ type:'hypothermia', mobScope:false, roundsLeft:3 });
+      renderDungeonStatuses?.();
+      spawnFloater?.('❄️ Гипотермия!', 'miss-float', 'heroHpBar'); break;
+    case 'hero_stun':         applyHeroStun?.(3); break;
+
+    // ── Game events ───────────────────────────────────────────
+    case 'correct':      DungeonSounds.play('correct'); break;
+    case 'wrong':        DungeonSounds.play('wrong');   break;
+    case 'gold':         DungeonSounds.play('gold');    break;
+    case 'levelup':      DungeonSounds.play('levelup'); break;
+    case 'victory':      DungeonSounds.play('victory'); break;
+    case 'death':        DungeonSounds.play('death');   break;
+    case 'portal':       DungeonSounds.play('portal');  break;
+    case 'timer_danger': DungeonSounds.play('timer_danger'); break;
+  }
 }
 
 async function handleAuthSubmit() {

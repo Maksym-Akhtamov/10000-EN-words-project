@@ -1740,6 +1740,7 @@ function exitDungeon() {
   screen.classList.remove("active");
   screen.className = screen.className.replace(/\btheme-\S+/g, "").replace(/\bboss-phase-\d/g, "").replace(/\bloc-\S+/g, "").trim();
   screen.querySelector(".dng-result-screen")?.remove();
+  document.getElementById('ctPanel')?.remove();
   dng = null;
 }
 
@@ -2463,10 +2464,8 @@ function dungeonHit() {
     return;
   }
 
-  // Sword hit sound — crit or regular
-  if (_weaponType === 'sword') {
-    DungeonSounds.play(critMult > 1 ? 'sword_crit' : 'sword_regular');
-  }
+  // Hit sound — material-aware
+  DungeonSounds.playHit(m?.name, critMult > 1, _weaponType);
 
   // WM Mace armor multiplier (only if mace equipped)
   const wmMace = hero?.skills.weapon_mastery_mace || 0;
@@ -2495,6 +2494,7 @@ function dungeonHit() {
       setTimeout(() => { sprite.classList.remove("hit", "shake"); }, 450);
     }
     if (critMult > 1) setTimeout(() => spawnCritEffect("monsterZone", "gold"), 330);
+    if (m.hp <= 0) setTimeout(() => DungeonSounds.playDeath(m.name), 200);
     // Check boss phase transition after damage
     if (m.isBoss) checkBossPhase(m);
   }

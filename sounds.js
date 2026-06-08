@@ -68,31 +68,7 @@ const DungeonSounds = (() => {
 
   // Меч — острый свист + металлический щелчок
   function playSword() {
-    const c = ctx();
-    const now = c.currentTime;
-
-    // Свист клинка (высокочастотный sweep вниз)
-    const g1 = makeGain(0.18);
-    const o1 = c.createOscillator();
-    o1.type = 'sawtooth';
-    o1.frequency.setValueAtTime(1800, now);
-    o1.frequency.exponentialRampToValueAtTime(400, now + 0.12);
-    expRamp(g1, 0.18, 0.001, now, now + 0.14);
-    o1.connect(g1); o1.start(now); o1.stop(now + 0.14);
-
-    // Металлический удар (шум + тональность)
-    const g2 = makeGain(0.22);
-    noise(0.08, g2, 4000);
-    expRamp(g2, 0.22, 0.001, now + 0.08, now + 0.18);
-
-    // Тональный удар
-    const g3 = makeGain(0.12);
-    const o3 = c.createOscillator();
-    o3.type = 'triangle';
-    o3.frequency.setValueAtTime(320, now + 0.07);
-    o3.frequency.exponentialRampToValueAtTime(160, now + 0.2);
-    expRamp(g3, 0.12, 0.001, now + 0.07, now + 0.22);
-    o3.connect(g3); o3.start(now + 0.07); o3.stop(now + 0.22);
+    playCombo('sword_swipe', 'hit_flesh');
   }
 
   // Топор — тяжёлый рубящий удар с низким гулом
@@ -214,22 +190,15 @@ const DungeonSounds = (() => {
     o2.connect(g2); o2.start(now); o2.stop(now + 0.38);
   }
 
-  // Монстр умирает — рычание + затухание
-  function playMonsterDeath() {
-    const c = ctx();
-    const now = c.currentTime;
-
-    const g1 = makeGain(0.28);
-    const o1 = c.createOscillator();
-    o1.type = 'sawtooth';
-    o1.frequency.setValueAtTime(140, now);
-    o1.frequency.exponentialRampToValueAtTime(25, now + 0.6);
-    expRamp(g1, 0.28, 0.001, now, now + 0.65);
-    o1.connect(g1); o1.start(now); o1.stop(now + 0.65);
-
-    const g2 = makeGain(0.2);
-    noise(0.3, g2, 1200);
-    expRamp(g2, 0.2, 0.001, now + 0.1, now + 0.5);
+  function playMonsterDeath(mobName) {
+    const group = getDeathGroup(mobName);
+    const key = `death_${group}`;
+    const files = FILE_SOUNDS[key];
+    if (files?.length) {
+      const audio = new Audio(files[Math.floor(Math.random() * files.length)]);
+      audio.volume = _volume;
+      audio.play().catch(() => {});
+    }
   }
 
   // ── GAME EVENTS ───────────────────────────────────────────────
@@ -325,15 +294,7 @@ const DungeonSounds = (() => {
 
   // Крит — резкий высокочастотный удар поверх обычного
   function playCrit() {
-    const c = ctx();
-    const now = c.currentTime;
-    const g = makeGain(0.22);
-    const o = c.createOscillator();
-    o.type = 'sawtooth';
-    o.frequency.setValueAtTime(2200, now);
-    o.frequency.exponentialRampToValueAtTime(440, now + 0.1);
-    expRamp(g, 0.22, 0.001, now, now + 0.15);
-    o.connect(g); o.start(now); o.stop(now + 0.15);
+    playFileSound('weapon_crit');
   }
 
   // Уклонение монстра — whoosh мимо
@@ -351,18 +312,7 @@ const DungeonSounds = (() => {
 
   // Блок монстра — металлический clang
   function playBlock() {
-    const c = ctx();
-    const now = c.currentTime;
-    const g1 = makeGain(0.25);
-    noise(0.06, g1, 5000);
-    expRamp(g1, 0.25, 0.001, now, now + 0.2);
-    const g2 = makeGain(0.18);
-    const o2 = c.createOscillator();
-    o2.type = 'triangle';
-    o2.frequency.setValueAtTime(400, now);
-    o2.frequency.exponentialRampToValueAtTime(200, now + 0.22);
-    expRamp(g2, 0.18, 0.001, now, now + 0.28);
-    o2.connect(g2); o2.start(now); o2.stop(now + 0.28);
+    playFileSound('weapon_block');
   }
 
   // Таймер заканчивается — тревожный пульс
@@ -407,30 +357,101 @@ const DungeonSounds = (() => {
 
   // ── FILE-BASED SOUNDS ─────────────────────────────────────────
 
-  function files(dir, n) {
-    const out = [];
-    for (let i = 1; i <= n; i++) out.push(`${dir}${i}.mp3`);
-    return out;
+  // Discovered file lists — populated async on page load
+  const FILE_SOUNDS = {
+    sword_swipe:  [],
+    hit_flesh:    [],
+    hit_bone:       [],
+    hit_dragon_1:   [],
+    hit_dragon_2:   [],
+    hit_ice:        [],
+    hit_metal_1:    [],
+    hit_metal_2:    [],
+    hit_spider_web:    [],
+    hit_stone_1:       [],
+    hit_stone_2:    [],
+    hit_void_1:     [],
+    hit_void_2:     [],
+    weapon_crit:  [],
+    weapon_miss:  [],
+    weapon_block: [],
+    mob_melee:          [],
+    mob_fist:           [],
+    mob_mage:           [],
+    mob_knights:        [],
+    mob_insects:        [],
+    mob_bow:            [],
+    mob_animals_flying: [],
+    mob_animals_ground: [],
+    mob_animals_dragon: [],
+    death_goblin:     [],
+    death_skeleton:   [],
+    death_knight:     [],
+    death_beast:      [],
+    death_insect:     [],
+    death_spirit:     [],
+    death_stone:      [],
+    death_ice:        [],
+    death_dragon:     [],
+    death_spider_web: [],
+  };
+
+  // Probe a folder: try 1.mp3, 2.mp3, ... until 404. Fills target array.
+  async function discoverFolder(folder, targetArray) {
+    let i = 1;
+    while (true) {
+      const path = `sounds/${folder}/${i}.mp3`;
+      try {
+        const res = await fetch(path, { method: 'HEAD' });
+        if (!res.ok) break;
+        targetArray.push(path);
+        i++;
+      } catch { break; }
+    }
   }
 
-  const FILE_SOUNDS = {
-    // Hero sword
-    sword_regular: files('sounds/sword/regular/', 3),
-    sword_crit:    files('sounds/sword/crit/', 1),
-    sword_miss:    files('sounds/sword/miss/', 1),
-    sword_block:   files('sounds/sword/block/', 1),
-
-    // Mob attacks
-    mob_melee:          files('sounds/mobs/melee/', 4),
-    mob_fist:           files('sounds/mobs/fist/', 5),
-    mob_mage:           files('sounds/mobs/mage cast/', 4),
-    mob_knights:        files('sounds/mobs/knights/', 4),
-    mob_insects:        files('sounds/mobs/insects/', 6),
-    mob_bow:            files('sounds/mobs/bow/', 6),
-    mob_animals_flying: files('sounds/mobs/animals/flying animals/', 3),
-    mob_animals_ground: files('sounds/mobs/animals/not flying animals/', 5),
-    mob_animals_dragon: files('sounds/mobs/animals/dragons/', 3),
+  // Run discovery for all folders in parallel on page load
+  const FOLDER_MAP = {
+    sword_swipe:  'weapons/sword/swipe',
+    hit_flesh:    'hits/flesh',
+    hit_bone:       'hits/bone',
+    hit_dragon_1:   'hits/dragon/1',
+    hit_dragon_2:   'hits/dragon/2',
+    hit_ice:        'hits/ice',
+    hit_metal_1:    'hits/metal/1',
+    hit_metal_2:    'hits/metal/2',
+    hit_spider_web: 'hits/spider web',
+    hit_stone_1:    'hits/stone/1',
+    hit_stone_2:    'hits/stone/2',
+    hit_void_1:     'hits/void/1',
+    hit_void_2:     'hits/void/2',
+    weapon_crit:  'weapons/crit',
+    weapon_miss:  'weapons/miss',
+    weapon_block: 'weapons/block',
+    mob_melee:          'mobs/melee',
+    mob_fist:           'mobs/fist',
+    mob_mage:           'mobs/mage cast',
+    mob_knights:        'mobs/knights',
+    mob_insects:        'mobs/insects',
+    mob_bow:            'mobs/bow',
+    mob_animals_flying: 'mobs/animals/flying animals',
+    mob_animals_ground: 'mobs/animals/not flying animals',
+    mob_animals_dragon: 'mobs/animals/dragons',
+    death_goblin:     'mobs/death/goblin',
+    death_skeleton:   'mobs/death/skeleton',
+    death_knight:     'mobs/death/knight',
+    death_beast:      'mobs/death/beast',
+    death_insect:     'mobs/death/insect',
+    death_spirit:     'mobs/death/spirit',
+    death_stone:      'mobs/death/stone',
+    death_ice:        'mobs/death/ice',
+    death_dragon:     'mobs/death/dragon',
+    death_spider_web: 'mobs/death/spider_web',
   };
+
+  Promise.all(
+    Object.entries(FOLDER_MAP).map(([key, folder]) => discoverFolder(folder, FILE_SOUNDS[key]))
+  );
 
   // Mob name → sound category key
   const MOB_SOUND_MAP = {
@@ -603,13 +624,227 @@ const DungeonSounds = (() => {
     'Fear Monger':       'mob_mage',
   };
 
+  function playCombo(swipeKey, hitKey) {
+    const layer1 = FILE_SOUNDS[swipeKey];
+    const layer2 = FILE_SOUNDS[hitKey];
+    if (!layer1?.length || !layer2?.length) return;
+    const a1 = new Audio(layer1[Math.floor(Math.random() * layer1.length)]);
+    const a2 = new Audio(layer2[Math.floor(Math.random() * layer2.length)]);
+    a1.volume = _volume;
+    a2.volume = _volume * 0.75;
+    Promise.all([
+      new Promise(r => { a1.addEventListener('canplaythrough', r, { once: true }); a1.load(); }),
+      new Promise(r => { a2.addEventListener('canplaythrough', r, { once: true }); a2.load(); }),
+    ]).then(() => {
+      a1.play().catch(() => {});
+      setTimeout(() => a2.play().catch(() => {}), 200);
+    });
+  }
+
   function playFileSound(key) {
     const files = FILE_SOUNDS[key];
     if (!files || !files.length) return;
-    const path = files[Math.floor(Math.random() * files.length)];
-    const audio = new Audio(path);
+    const audio = new Audio(files[Math.floor(Math.random() * files.length)]);
     audio.volume = _volume;
     audio.play().catch(() => {});
+  }
+
+  const MOB_MATERIAL_MAP = {
+    // 🩸 FLESH
+    'Goblin Scout': 'flesh', 'Goblin Shaman': 'flesh', 'Goblin Brute': 'flesh',
+    'Goblin Archer': 'flesh', 'Goblin Berserker': 'flesh', 'Spore Goblin': 'flesh',
+    'Mushroom Crawler': 'flesh', 'Fungal Shaman': 'flesh', 'Myconid Guard': 'flesh',
+    'Junk Goblin': 'flesh', 'River Troll': 'flesh', 'Bridge Troll': 'flesh',
+    'Troll Shaman': 'flesh', 'War Drummer': 'flesh', 'Swamp Hag': 'flesh',
+    'Goblin King': 'flesh',
+    'Cave Spider': 'flesh', 'Poison Spider': 'flesh', 'Spider Matriarch': 'flesh',
+    'Tomb Spider': 'flesh', 'Silk Wraith': 'flesh', 'Bog Spider': 'flesh',
+    'Phantom Weaver': 'flesh', 'Mirror Spider': 'flesh', 'Egg Guardian': 'flesh',
+    'Web Spinner': 'flesh', 'Brood Tender': 'flesh', 'Broodling Swarm': 'flesh',
+    'Marsh Lurker': 'flesh', 'Labyrinth Horror': 'flesh', 'Silk Shade': 'flesh',
+    'Spider Queen': 'flesh',
+    'Plague Acolyte': 'flesh', 'Rot Walker': 'flesh', 'Diseased Hound': 'flesh',
+    'Pestilence Shade': 'flesh', 'Ancient Revenant': 'flesh',
+    'Wolf Rider': 'flesh', 'Tundra Wolf Pack': 'flesh',
+    'Venom Drake': 'flesh',
+    // 🦴 BONE
+    'Skeleton Warrior': 'bone', 'Skeleton Guard': 'bone', 'Bone Archer': 'bone',
+    'Catapult Skeleton': 'bone', 'Crypt Crawler': 'bone', 'Grave Revenant': 'bone',
+    'Decay Walker': 'bone', 'Ossified Titan': 'bone', 'Cursed Digger': 'bone',
+    'Bone Knight': 'bone', 'Bone Drake': 'bone',
+    // ⚙️ METAL
+    'Goblin Warrior': 'metal', 'Goblin Soldier': 'metal', 'Iron Scavenger': 'metal',
+    'Scrap Golem': 'metal', 'Rust Knight': 'metal',
+    'Dark Knight': 'metal', 'Bone Sentinel': 'metal',
+    'Dragon Knight': 'metal', 'Throne Wraith': 'metal', 'Ashen Knight': 'metal',
+    // 🪨 STONE
+    'Stone Troll': 'stone',
+    'Tombstone Golem': 'stone', 'Mummified Pharaoh': 'stone', 'Sarcophagus Golem': 'stone',
+    'Lava Hound': 'stone', 'Ash Crawler': 'stone', 'Ember Wraith': 'stone',
+    'Scorched Golem': 'stone', 'Cinder Hound': 'stone', 'Lava Troll': 'stone',
+    'Molten Sentinel': 'stone', 'Ridge Harpy': 'stone', 'Fossil Golem': 'stone',
+    'Crown of Ash': 'stone', 'Magma Elemental': 'stone',
+    // 🧊 ICE
+    'Ice Mage': 'ice', 'Frozen Golem': 'ice', 'Frost Archer': 'ice',
+    'Glacial Worm': 'ice', 'Ice Gargoyle': 'ice', 'Storm Harpy': 'ice',
+    'Blizzard Wraith': 'ice', 'Avalanche Golem': 'ice', 'Frost Yeti': 'ice',
+    'Ice Lich': 'ice', 'Frozen Revenant': 'ice', 'Frozen Titan': 'ice',
+    'Frozen Leviathan': 'ice', 'Permafrost Crawler': 'ice', 'Tundra Specter': 'ice',
+    'Blizzard Shade': 'ice', 'Crystal Elemental': 'ice', 'Frost Giant': 'ice',
+    // 👻 VOID/ETHEREAL
+    'Dark Wraith': 'void', 'Shade Archer': 'void', 'Obsidian Golem': 'void',
+    'Mirror Wraith': 'void', 'Shadow Lord': 'void', 'Shadow Sprite': 'void',
+    'Glass Stalker': 'void', 'Echo Shade': 'void', 'Mirror Shade': 'void',
+    'Null Shade': 'void', 'Final Shade': 'void', 'Illusion Weaver': 'void',
+    'Shard Wraith': 'void',
+    'Abyss Crawler': 'void', 'Fractured Golem': 'void', 'Shard Elemental': 'void',
+    'Entropy Elemental': 'void', 'Entropy Wisp': 'void', 'Void Beast': 'void',
+    'Void Spawn': 'void', 'Void Stalker': 'void', 'Void Tendril': 'void',
+    'Void Wisp': 'void', 'Void Herald': 'void', 'Null Entity': 'void',
+    'Hollow Crawler': 'void', 'Rift Walker': 'void', 'Dimensional Horror': 'void',
+    'Expanse Horror': 'void', 'Reflection Horror': 'void', 'Unraveling Horror': 'void',
+    'End Walker': 'void', 'Unborn Specter': 'void', 'The Doppelganger': 'void',
+    'The Inevitable': 'void', 'The Nameless': 'void', 'Formless One': 'void',
+    'Fear Monger': 'void', 'Dream Merchant': 'void', 'Proto Beast': 'void',
+    'Overlord': 'void', 'Threshold Guardian': 'void',
+    'Wailing Specter': 'void', 'Soul Drinker': 'void', 'Fortress Wraith': 'void',
+    // 🐉 DRAGON SCALE
+    'Fire Drake': 'dragon', 'Wyvern Scout': 'dragon', 'Volcanic Drake': 'dragon',
+    'Ancient Wyvern': 'dragon', 'Cinder Dragon': 'dragon', 'Ancient Dragon': 'dragon',
+    // 🕸️ SPIDER WEB
+    'Thread Golem': 'spider web', 'Cocooned Skeleton': 'spider web',
+  };
+
+  const MOB_DEATH_MAP = {
+    // goblin
+    'Goblin Scout': 'goblin', 'Goblin Warrior': 'goblin', 'Goblin Soldier': 'goblin',
+    'Goblin Shaman': 'goblin', 'Goblin Brute': 'goblin', 'Goblin Archer': 'goblin',
+    'Goblin Berserker': 'goblin', 'Spore Goblin': 'goblin', 'Mushroom Crawler': 'goblin',
+    'Fungal Shaman': 'goblin', 'Myconid Guard': 'goblin', 'Junk Goblin': 'goblin',
+    'Iron Scavenger': 'goblin', 'River Troll': 'goblin', 'Bridge Troll': 'goblin',
+    'Troll Shaman': 'goblin', 'War Drummer': 'goblin', 'Swamp Hag': 'goblin',
+    'Goblin King': 'goblin',
+    // skeleton
+    'Skeleton Warrior': 'skeleton', 'Skeleton Guard': 'skeleton', 'Bone Archer': 'skeleton',
+    'Catapult Skeleton': 'skeleton', 'Crypt Crawler': 'skeleton', 'Grave Revenant': 'skeleton',
+    'Decay Walker': 'skeleton', 'Ossified Titan': 'skeleton', 'Cursed Digger': 'skeleton',
+    'Bone Knight': 'skeleton', 'Dark Knight': 'skeleton', 'Bone Sentinel': 'skeleton',
+    'Plague Acolyte': 'skeleton', 'Rot Walker': 'skeleton', 'Diseased Hound': 'skeleton',
+    'Pestilence Shade': 'skeleton', 'Ancient Revenant': 'skeleton',
+    // knight
+    'Rust Knight': 'knight', 'Dragon Knight': 'knight', 'Throne Wraith': 'knight',
+    'Ashen Knight': 'knight',
+    // beast
+    'Wolf Rider': 'beast', 'Tundra Wolf Pack': 'beast',
+    'Venom Drake': 'goblin', 'Bone Drake': 'skeleton',
+    // insect
+    'Cave Spider': 'insect', 'Poison Spider': 'insect', 'Spider Matriarch': 'insect',
+    'Tomb Spider': 'insect', 'Silk Wraith': 'insect', 'Bog Spider': 'insect',
+    'Phantom Weaver': 'insect', 'Mirror Spider': 'insect', 'Egg Guardian': 'insect',
+    'Web Spinner': 'insect', 'Brood Tender': 'insect', 'Broodling Swarm': 'insect',
+    'Marsh Lurker': 'insect', 'Labyrinth Horror': 'insect', 'Silk Shade': 'insect',
+    'Spider Queen': 'insect',
+    // spirit
+    'Dark Wraith': 'spirit', 'Shade Archer': 'spirit', 'Mirror Wraith': 'spirit',
+    'Shadow Lord': 'spirit', 'Shadow Sprite': 'spirit', 'Glass Stalker': 'spirit',
+    'Echo Shade': 'spirit', 'Mirror Shade': 'spirit', 'Null Shade': 'spirit',
+    'Final Shade': 'spirit', 'Illusion Weaver': 'spirit', 'Shard Wraith': 'spirit',
+    'Abyss Crawler': 'spirit', 'Fractured Golem': 'spirit', 'Shard Elemental': 'spirit',
+    'Entropy Elemental': 'spirit', 'Entropy Wisp': 'spirit', 'Void Beast': 'spirit',
+    'Void Spawn': 'spirit', 'Void Stalker': 'spirit', 'Void Tendril': 'spirit',
+    'Void Wisp': 'spirit', 'Void Herald': 'spirit', 'Null Entity': 'spirit',
+    'Hollow Crawler': 'spirit', 'Rift Walker': 'spirit', 'Dimensional Horror': 'spirit',
+    'Expanse Horror': 'spirit', 'Reflection Horror': 'spirit', 'Unraveling Horror': 'spirit',
+    'End Walker': 'spirit', 'Unborn Specter': 'spirit', 'The Doppelganger': 'spirit',
+    'The Inevitable': 'spirit', 'The Nameless': 'spirit', 'Formless One': 'spirit',
+    'Fear Monger': 'spirit', 'Dream Merchant': 'spirit', 'Proto Beast': 'spirit',
+    'Overlord': 'spirit', 'Threshold Guardian': 'spirit',
+    'Wailing Specter': 'spirit', 'Soul Drinker': 'spirit', 'Fortress Wraith': 'spirit',
+    // stone
+    'Stone Troll': 'stone', 'Tombstone Golem': 'stone', 'Mummified Pharaoh': 'stone',
+    'Sarcophagus Golem': 'stone', 'Scrap Golem': 'stone', 'Obsidian Golem': 'stone',
+    'Lava Hound': 'stone', 'Ash Crawler': 'stone', 'Ember Wraith': 'stone',
+    'Scorched Golem': 'stone', 'Cinder Hound': 'stone', 'Lava Troll': 'stone',
+    'Molten Sentinel': 'stone', 'Ridge Harpy': 'stone', 'Fossil Golem': 'stone',
+    'Crown of Ash': 'stone', 'Magma Elemental': 'stone',
+    // ice
+    'Ice Mage': 'ice', 'Frozen Golem': 'ice', 'Frost Archer': 'ice',
+    'Glacial Worm': 'ice', 'Ice Gargoyle': 'ice', 'Storm Harpy': 'ice',
+    'Blizzard Wraith': 'ice', 'Avalanche Golem': 'ice', 'Frost Yeti': 'ice',
+    'Ice Lich': 'ice', 'Frozen Revenant': 'ice', 'Frozen Titan': 'ice',
+    'Frozen Leviathan': 'ice', 'Permafrost Crawler': 'ice', 'Tundra Specter': 'ice',
+    'Blizzard Shade': 'ice', 'Crystal Elemental': 'ice', 'Frost Giant': 'ice',
+    // dragon
+    'Fire Drake': 'dragon', 'Wyvern Scout': 'dragon', 'Volcanic Drake': 'dragon',
+    'Ancient Wyvern': 'dragon', 'Cinder Dragon': 'dragon', 'Ancient Dragon': 'dragon',
+    // spider_web
+    'Thread Golem': 'spider_web', 'Cocooned Skeleton': 'spider_web',
+  };
+
+  function getDeathGroup(mobName) {
+    return MOB_DEATH_MAP[mobName] || 'goblin';
+  }
+
+  function getMaterial(mobName) {
+    return MOB_MATERIAL_MAP[mobName] || 'flesh';
+  }
+
+  const DOUBLE_LAYER_MATERIALS = new Set(['dragon', 'metal', 'stone', 'void']);
+
+  // Returns array of {audio, volume} for the material hit layers
+  function buildMaterialAudios(material) {
+    const rand = arr => arr[Math.floor(Math.random() * arr.length)];
+    if (DOUBLE_LAYER_MATERIALS.has(material)) {
+      const l1 = FILE_SOUNDS[`hit_${material}_1`];
+      const l2 = FILE_SOUNDS[`hit_${material}_2`];
+      if (!l1?.length || !l2?.length) return [];
+      return [
+        { audio: new Audio(rand(l1)), volume: _volume * 0.75 },
+        { audio: new Audio(rand(l2)), volume: _volume * 0.75 },
+      ];
+    }
+    const key = `hit_${material.replace(' ', '_')}`;
+    const files = FILE_SOUNDS[key]?.length ? FILE_SOUNDS[key] : FILE_SOUNDS['hit_flesh'];
+    if (!files?.length) return [];
+    return [{ audio: new Audio(rand(files)), volume: _volume * 0.75 }];
+  }
+
+  function playHit(mobName, isCrit, swipeKey = 'sword_swipe') {
+    const material = getMaterial(mobName);
+    const matAudios = buildMaterialAudios(material);
+    if (!matAudios.length) return;
+
+    if (isCrit) {
+      // swipe first, then crit + material layers after 200ms
+      const swipeFiles = FILE_SOUNDS[swipeKey];
+      const critFiles = FILE_SOUNDS['weapon_crit'];
+      if (!swipeFiles?.length || !critFiles?.length) return;
+      const swipeAudio = { audio: new Audio(swipeFiles[Math.floor(Math.random() * swipeFiles.length)]), volume: _volume };
+      const critAudio = { audio: new Audio(critFiles[Math.floor(Math.random() * critFiles.length)]), volume: _volume };
+      const all = [swipeAudio, critAudio, ...matAudios];
+      Promise.all(all.map(({ audio }) =>
+        new Promise(r => { audio.addEventListener('canplaythrough', r, { once: true }); audio.load(); })
+      )).then(() => {
+        swipeAudio.audio.play().catch(() => {});
+        setTimeout(() => {
+          critAudio.audio.volume = critAudio.volume; critAudio.audio.play().catch(() => {});
+          matAudios.forEach(({ audio, volume }) => { audio.volume = volume; audio.play().catch(() => {}); });
+        }, 200);
+      });
+      return;
+    }
+
+    // regular: swipe first, then material layers after 200ms
+    const swipeFiles = FILE_SOUNDS[swipeKey];
+    if (!swipeFiles?.length) return;
+    const swipeAudio = { audio: new Audio(swipeFiles[Math.floor(Math.random() * swipeFiles.length)]), volume: _volume };
+    const all = [swipeAudio, ...matAudios];
+    Promise.all(all.map(({ audio }) =>
+      new Promise(r => { audio.addEventListener('canplaythrough', r, { once: true }); audio.load(); })
+    )).then(() => {
+      swipeAudio.audio.play().catch(() => {});
+      setTimeout(() => matAudios.forEach(({ audio, volume }) => { audio.volume = volume; audio.play().catch(() => {}); }), 200);
+    });
   }
 
   // ── PUBLIC API ────────────────────────────────────────────────
@@ -635,6 +870,12 @@ const DungeonSounds = (() => {
     crit:         playCrit,
     dodge:        playDodge,
     block:        playBlock,
+
+    // алиасы для обратной совместимости с dungeon.js / app.js
+    sword_regular: playSword,
+    sword_crit:    playCrit,
+    sword_block:   () => playCombo('sword_swipe', 'weapon_block'),
+    sword_miss:    () => playCombo('sword_swipe', 'weapon_miss'),
     timer_danger: playTimerDanger,
     portal:       playPortal,
   };
@@ -650,6 +891,17 @@ const DungeonSounds = (() => {
       } catch (e) {
         console.warn('DungeonSounds error:', e);
       }
+    },
+
+    playHit(mobName, isCrit, weaponType = 'sword') {
+      if (!_enabled) return;
+      const swipeKey = `${weaponType}_swipe`;
+      try { playHit(mobName, isCrit, swipeKey); } catch (e) { console.warn('DungeonSounds error:', e); }
+    },
+
+    playDeath(mobName) {
+      if (!_enabled) return;
+      try { playMonsterDeath(mobName); } catch (e) { console.warn('DungeonSounds error:', e); }
     },
 
     // Определяет тип звука по типу оружия героя
